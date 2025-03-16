@@ -5,7 +5,7 @@ from elastic_transport import ObjectApiResponse, TransportError
 from elasticsearch import AsyncElasticsearch, NotFoundError
 
 from src.core.config import settings
-from src.core.exceptions import ElasticNotFoundError, ElasticServiceError
+from src.core.exceptions import ElasticServiceError
 from src.utils.decorators import with_retry
 
 logger = logging.getLogger(__name__)
@@ -38,9 +38,7 @@ class ElasticService:
                 "Запись не найдена в Elasticsearch: index=%s. %s",
                 index, log_info
             )
-            raise ElasticNotFoundError(
-                "Запись с ID %s не найдена в Elasticsearch", id
-            )
+            raise
 
         except settings.ELASTIC_EXCEPTIONS as e:
             logger.error(
@@ -69,6 +67,13 @@ class ElasticService:
                 index, count_records, log_info
             )
             return response
+
+        except NotFoundError:
+            logger.info(
+                "Не найдена ни одна запись в Elasticsearch: index=%s. %s",
+                index, log_info
+            )
+            raise
 
         except settings.ELASTIC_EXCEPTIONS as e:
             logger.error(

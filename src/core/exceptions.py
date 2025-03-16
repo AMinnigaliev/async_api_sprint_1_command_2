@@ -58,8 +58,3 @@ class CheckCacheError(BaseServiceError):
 class CheckElasticError(BaseServiceError):
     """Исключение для ошибок, связанных с проверкой записи в elastic."""
     pass
-
-
-class ElasticNotFoundError(BaseServiceError):
-    """Исключение для ошибок, связанных с отсутствием записи в elastic."""
-    pass
