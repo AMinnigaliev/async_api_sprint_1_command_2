@@ -1,15 +1,16 @@
+import asyncio
 import logging
 from typing import Any, Type
 
 import orjson
+from elasticsearch import NotFoundError
 from pydantic import BaseModel, ValidationError
 
 from src.core.exceptions import (CacheServiceError, CheckCacheError,
                                  CheckElasticError, CreateObjectError,
-                                 CreateObjectsError, ElasticNotFoundError,
-                                 ElasticParsingError, ElasticServiceError,
-                                 JsonLoadsError, ModelDumpError,
-                                 ModelDumpJsonError)
+                                 CreateObjectsError, ElasticParsingError,
+                                 ElasticServiceError, JsonLoadsError,
+                                 ModelDumpError, ModelDumpJsonError)
 from src.utils.cache_service import CacheService
 from src.utils.elastic_service import ElasticService
 
@@ -120,23 +121,11 @@ class BaseService:
             )
             raise JsonLoadsError(e)
 
-    @staticmethod
-    def _create_json_from_data(data: dict | list, log_info: str = "") -> bytes:
-        try:
-            return orjson.dumps(data)
-
-        except orjson.JSONEncodeError as e:
-            logger.error(
-                "Ошибка сериализации словаря в json: %s. "
-                "Входные данные: %s. %s",
-                e, data, log_info
-            )
-            raise ModelDumpJsonError(e)
-
     def _create_objects(
         self,
         model: Type[BaseModel],
         data: list[dict],
+        is_it_cache: bool = False,
         log_info: str = "",
     ) -> list[BaseModel]:
         """
@@ -155,7 +144,9 @@ class BaseService:
                 try:
                     model_obj = self._create_object_from_dict(model, record)
 
-                except CreateObjectError:
+                except CreateObjectError as e:
+                    if is_it_cache:
+                        raise CreateObjectError(e)
                     pass
 
                 else:
@@ -163,11 +154,14 @@ class BaseService:
 
         if not valid_objects:
             if data:
-                raise CreateObjectsError(
-                    "Не удалось создать ни одного объекта модели %s "
-                    "из переданных данных: %s. %s",
-                    model.__name__, data, log_info
+                message = (
+                    f"Не удалось создать ни одного объекта модели "
+                    f"{model.__name__} из переданных данных: {data}. "
+                    f"{log_info}"
                 )
+                logger.error(message)
+
+                raise CreateObjectsError(message)
 
         return valid_objects
 
@@ -178,18 +172,36 @@ class BaseService:
         Вспомогательный метод для создания json из списка объектов Pydantic.
         """
         valid_data = []
+        try:
+            for model_obj in data:
+                try:
+                    model_data = self._model_dump(model_obj)
 
-        for model_obj in data:
+                except ModelDumpError as e:
+                    raise ModelDumpJsonError(e)
+
+                else:
+                    valid_data.append({"_source": model_data})
+
+        except TypeError as e:
+            logger.error(
+                "Кеширование не выполняется по причине ошибки при обращении к "
+                "Elasticsearch. %s",
+                log_info
+            )
+            raise ModelDumpJsonError(e)
+
+        else:
             try:
-                model_data = self._model_dump(model_obj)
+                return orjson.dumps(data)
 
-            except ModelDumpError as e:
+            except orjson.JSONEncodeError as e:
+                logger.error(
+                    "Ошибка сериализации списка записей в виде словарей в json: "
+                    "%s. Входные данные: %s. %s",
+                    e, data, log_info
+                )
                 raise ModelDumpJsonError(e)
-
-            else:
-                valid_data.append({"_source": model_data})
-
-        return self._create_json_from_data(valid_data, log_info)
 
     async def _get_from_cache(
             self, model: Type[BaseModel], cache_key: str, log_info: str = ""
@@ -197,9 +209,12 @@ class BaseService:
         try:
             cache_json = await self.redis_client.get(cache_key, log_info)
             cache_data = self._get_data_from_json(cache_json, log_info)
-            result = self._create_objects(model, cache_data, log_info)
+            result = self._create_objects(model, cache_data, True, log_info)
 
-        except (CacheServiceError, JsonLoadsError, CreateObjectsError) as e:
+        except (
+            CacheServiceError, JsonLoadsError, CreateObjectError,
+            CreateObjectsError
+        ) as e:
             raise CheckCacheError(e)
 
         else:
@@ -207,63 +222,32 @@ class BaseService:
 
             return result
 
-    async def _get_record_from_elastic(
-        self,
-        model: Type[BaseModel],
-        index: str,
-        id: str,
-        log_info: str = "",
-    ) -> BaseModel | None:
-        """Вспомогательный метод для поиска записи в Elasticsearch."""
-        try:
-            response = await self.es_client.get(
-                index, id, log_info
-            )
-            record_data = self._get_record_from_source(response, log_info)
-            record_obj = self._create_object_from_dict(
-                model, record_data, log_info
-            )
-
-        except (
-            ElasticServiceError, CreateObjectError, ElasticParsingError
-        ) as e:
-            raise CheckElasticError(e)
-
-        except ElasticNotFoundError:
-            logger.info(
-                "Запись с ID %s не найдена в Elasticsearch. %s", id, log_info
-            )
-            return None
-
-        else:
-            logger.info(
-                "Запись с ID %s найдена в Elasticsearch. %s", id, log_info
-            )
-            return record_obj
-
-    async def _get_records_from_elastic(
+    async def _get_from_elastic(
         self,
         model: Type[BaseModel],
         index: str,
         body: dict,
         log_info: str = "",
-    ) -> list[BaseModel]:
+    ) -> list[BaseModel] | None:
         """Вспомогательный метод для поиска записей в Elasticsearch."""
         try:
             response = await self.es_client.search(
                 index, body, log_info)
             records_data = self._get_records_from_hits(response, log_info)
-            records_obj = self._create_objects(model, records_data, log_info)
+            records_obj = self._create_objects(
+                model, records_data, False, log_info
+            )
 
         except (
             ElasticServiceError, ElasticParsingError, CreateObjectsError
         ) as e:
-            logger.warning(
-                "Не удалось получить ни одного объекта модели %s из "
-                "полученных данных от Elasticsearch. %s",
-                model.__name__, log_info,
-            )
             raise CheckElasticError(e)
+
+        except NotFoundError:
+            logger.info(
+                "Запись с ID %s не найдена в Elasticsearch. %s", id, log_info
+            )
+            return []
 
         else:
             logger.info(
@@ -285,46 +269,54 @@ class BaseService:
         except (CacheServiceError, ModelDumpJsonError):
             pass
 
-    async def _get_by_id(
+    async def _base_get_no_cache(
             self,
             model: Type[BaseModel],
             index: str,
-            id: str,
+            body: dict,
+            log_info: str,
+    ) -> list[BaseModel] | None:
+        """
+        Вспомогательный базовый метод для получения записей без использования
+        кеша.
+        """
+        # Проверяем наличие результата в Elasticsearch
+        try:
+            obj = await self._get_from_elastic(
+                model, index, body, log_info
+            )
+        except CheckElasticError:
+            return None
+
+        else:
+            return obj
+
+    async def _base_get_with_cache(
+            self,
+            model: Type[BaseModel],
+            index: str,
+            body: dict,
             cache_key: str,
             log_info: str,
-    ) -> BaseModel | None:
+    ) -> list[BaseModel] | None:
         """
-        Вспомогательный метод для получения записи по ID. Поддерживает кеш.
+        Вспомогательный базовый метод для получения записей с использованием
+        кеша.
         """
         # Проверяем наличие результата в кеше (Redis)
         try:
             cache = await self._get_from_cache(
                 model, cache_key, log_info
             )
-            return cache[0]
-
-        except IndexError:
-            return None
+            return cache
 
         except CheckCacheError:
             pass
 
         # Проверяем наличие результата в Elasticsearch
-        try:
-            obj = await self._get_record_from_elastic(
-                model, index, id, log_info
-            )
-        except CheckElasticError:
-            return None
+        result = await self._base_get_no_cache(model, index, body, log_info)
 
-        else:
-            # Кешируем асинхронно фильм в Redis
-            if obj:
-                cache_data = [obj]
+        # Кешируем асинхронно фильм в Redis
+        asyncio.create_task(self._put_to_cache(cache_key, result, log_info))
 
-            else:
-                cache_data = []
-
-            await self._put_to_cache(cache_key, cache_data, log_info)
-
-            return obj
+        return result

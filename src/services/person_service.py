@@ -7,7 +7,6 @@ from fastapi import Depends
 from pydantic import BaseModel
 
 from src.core.config import settings
-from src.core.exceptions import CheckCacheError, CheckElasticError
 from src.db.elastic import get_elastic
 from src.db.redis_client import get_redis
 from src.models.models import FilmBase, Person
@@ -39,19 +38,22 @@ class PersonService(BaseService):
         # Модель Pydantic для возврата
         model = Person
 
-        return await self._get_by_id(
-            model, es_index, person_id, cache_key, log_info
+        # Формируем тело запроса для Elasticsearch
+        body = {"query": {"term": {"id": person_id}}}
+
+        return await self._base_get_with_cache(
+            model, es_index, body, cache_key, log_info
         )
 
     async def get_person_films(
             self,
-            person: UUID,
+            person_id: UUID,
     ) -> list[BaseModel] | None:
         """
         Получить список фильмов в производстве которых участвовала персона.
         """
         log_info = (
-            f"Запрос на получение фильмов с участием персоны: id = {person}."
+            f"Запрос на получение фильмов с участием персоны: id = {person_id}."
         )
 
         logger.info(log_info)
@@ -59,21 +61,9 @@ class PersonService(BaseService):
         #  Индекс для Elasticsearch
         es_index = "persons"
         # Ключ для кеша
-        cache_key = f"person_films:{person}"
+        cache_key = f"person_films:{person_id}"
         # Модель Pydantic для возврата
         model = FilmBase
-
-        # Проверяем наличие результата в кеше (Redis)
-        try:
-            cache_films = await self._get_from_cache(
-                model, cache_key, log_info
-            )
-            return cache_films
-
-        except CheckCacheError:
-            pass
-
-        # Если нет в кеше, ищем в Elasticsearch
 
         # Формируем тело запроса для Elasticsearch
         body = {"query": {"bool": {
@@ -83,7 +73,7 @@ class PersonService(BaseService):
                         "path": "actors",
                         "query": {
                             "term": {
-                                "actors.id": person,
+                                "actors.id": person_id,
                             }
                         }
                     }
@@ -93,7 +83,7 @@ class PersonService(BaseService):
                         "path": "writers",
                         "query": {
                             "term": {
-                                "writers.id": person,
+                                "writers.id": person_id,
                             }
                         }
                     }
@@ -103,7 +93,7 @@ class PersonService(BaseService):
                         "path": "directors",
                         "query": {
                             "term": {
-                                "directors.id": person,
+                                "directors.id": person_id,
                             }
                         }
                     }
@@ -112,20 +102,9 @@ class PersonService(BaseService):
             "minimum_should_match": 1,
         }}, "size" : settings.ELASTIC_RESPONSE_SIZE}
 
-        # Проверяем наличие результата в Elasticsearch
-        try:
-            films_obj = await self._get_records_from_elastic(
-                model, es_index, body, log_info
-            )
-
-        except CheckElasticError:
-            return None
-
-        else:
-            # Кешируем асинхронно результат в Redis
-            await self._put_to_cache(cache_key, films_obj, log_info)
-
-            return films_obj
+        return await self._base_get_with_cache(
+            model, es_index, body, cache_key, log_info
+        )
 
     async def search_persons(
         self,
@@ -168,14 +147,9 @@ class PersonService(BaseService):
         body["from"] = from_value
         body["size"] = page_size
 
-        # Проверяем наличие результата в Elasticsearch
-        try:
-            return await self._get_records_from_elastic(
-                model, es_index, body, log_info
-            )
-
-        except CheckElasticError:
-            return None
+        return await self._base_get_no_cache(
+            model, es_index, body, log_info
+        )
 
 
 @lru_cache()

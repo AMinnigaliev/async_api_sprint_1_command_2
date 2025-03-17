@@ -99,11 +99,10 @@ async def film_details(
     film = await film_service.get_film_by_id(film_id)
 
     if not film:
-        logger.info("Фильм с ID: %s не найден.", film_id)
         # Выбрасываем HTTP-исключение с кодом 404
         raise HTTPException(
             status_code=HTTPStatus.NOT_FOUND,
             detail="Film not found",
         )
 
-    return film
+    return film[0]

@@ -5,7 +5,6 @@ from typing import Annotated
 from fastapi import Depends
 from pydantic import BaseModel
 
-from src.core.exceptions import CheckCacheError, CheckElasticError
 from src.db.elastic import get_elastic, settings
 from src.db.redis_client import get_redis
 from src.models.models import GenreBase
@@ -37,8 +36,11 @@ class GenreService(BaseService):
         # Модель Pydantic для возврата
         model = GenreBase
 
-        return await self._get_by_id(
-            model, es_index, genre_id, cache_key, log_info
+        # Формируем тело запроса для Elasticsearch
+        body = {"query": {"term": {"id": genre_id}}}
+
+        return await self._base_get_with_cache(
+            model, es_index, body, cache_key, log_info
         )
 
     async def get_genres(self) -> list[BaseModel] | None:
@@ -54,37 +56,14 @@ class GenreService(BaseService):
         # Модель Pydantic для возврата
         model = GenreBase
 
-        # Проверяем наличие результата в кеше (Redis)
-        try:
-            cache_films = await self._get_from_cache(
-                model, cache_key, log_info
-            )
-            return cache_films
-
-        except CheckCacheError:
-            pass
-
-        # Если нет в кеше, ищем в Elasticsearch
-
         # Формируем тело запроса для Elasticsearch
         body = {
             "query": {"match_all": {}}, "size" : settings.ELASTIC_RESPONSE_SIZE
         }
 
-        # Проверяем наличие результата в Elasticsearch
-        try:
-            genres_obj = await self._get_records_from_elastic(
-                model, es_index, body, log_info
-            )
-
-        except CheckElasticError:
-            return None
-
-        else:
-            # Кешируем асинхронно результат в Redis
-            await self._put_to_cache(cache_key, genres_obj, log_info)
-
-            return genres_obj
+        return await self._base_get_with_cache(
+            model, es_index, body, cache_key, log_info
+        )
 
     async def search_genres(
         self, query: str | None = None
@@ -113,14 +92,9 @@ class GenreService(BaseService):
         else:
             body["query"]["match_all"] = {}
 
-        # Проверяем наличие результата в Elasticsearch
-        try:
-            return await self._get_records_from_elastic(
-                model, es_index, body, log_info
-            )
-
-        except CheckElasticError:
-            return None
+        return await self._base_get_no_cache(
+            model, es_index, body, log_info
+        )
 
 
 @lru_cache()
