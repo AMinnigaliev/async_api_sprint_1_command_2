@@ -7,7 +7,7 @@ from pydantic import BaseModel
 
 from src.core.exceptions import CheckCacheError, CheckElasticError
 from src.db.elastic import get_elastic, settings
-from src.db.redis_client import get_redis
+from src.db.redis_client import get_redis_cache
 from src.models.models import GenreBase
 from src.services.base_service import BaseService
 from src.utils.cache_service import CacheService
@@ -125,7 +125,7 @@ class GenreService(BaseService):
 
 @lru_cache()
 def get_genre_service(
-    redis: Annotated[CacheService, Depends(get_redis)],
+    redis: Annotated[CacheService, Depends(get_redis_cache)],
     elastic: Annotated[ElasticService, Depends(get_elastic)]
 ) -> GenreService:
     """

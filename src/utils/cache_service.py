@@ -43,7 +43,9 @@ class CacheService:
 
             logger.info("Ключ отсутствует в кеше: key=%s. %s", key, log_info)
 
-            raise CacheServiceError("Ключ отсутствует в кеше: key=%s. %s", key)
+            raise CacheServiceError(
+                "Ключ отсутствует в кеше: key=%s. %s", key, log_info
+            )
 
     @with_retry(settings.REDIS_EXCEPTIONS)
     async def set(self, key: str, value: bytes, log_info: str = "") -> None:
@@ -70,14 +72,17 @@ class CacheService:
             )
 
     async def close(self):
-        logger.info("Закрытие соединения с Redis...")
+        logger.info("Закрытие соединения с Redis по работе с кешом...")
 
         try:
             await self.redis_client.close()
-            logger.info("Соединение с Redis успешно закрыто.")
+            logger.info(
+                "Соединение с Redis по работе с кешом успешно закрыто."
+            )
 
         except (settings.REDIS_EXCEPTIONS, RuntimeError) as e:
             logger.error(
-                "Ошибка при закрытии соединения с Redis: %s", e
+                "Ошибка при закрытии соединения с Redis по работе с кешом: "
+                "%s", e
             )
             raise CacheServiceError(e)
