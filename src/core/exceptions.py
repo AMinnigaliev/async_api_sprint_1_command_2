@@ -3,6 +3,11 @@ class BaseServiceError(Exception):
     pass
 
 
+class TokenServiceError(BaseServiceError):
+    """Исключение для ошибок, связанных с access-токен."""
+    pass
+
+
 class CacheServiceError(BaseServiceError):
     """Исключение для ошибок, связанных с кэшем."""
     pass

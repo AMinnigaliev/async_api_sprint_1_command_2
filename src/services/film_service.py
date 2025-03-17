@@ -7,7 +7,7 @@ from fastapi import Depends
 from pydantic import BaseModel
 
 from src.db.elastic import get_elastic
-from src.db.redis_client import get_redis
+from src.db.redis_client import get_redis_cache
 from src.models.models import Film, FilmBase
 from src.services.base_service import BaseService
 from src.utils.cache_service import CacheService
@@ -155,7 +155,7 @@ class FilmService(BaseService):
 
 @lru_cache()
 def get_film_service(
-    redis: Annotated[CacheService, Depends(get_redis)],
+    redis: Annotated[CacheService, Depends(get_redis_cache)],
     elastic: Annotated[ElasticService, Depends(get_elastic)]
 ) -> FilmService:
     """

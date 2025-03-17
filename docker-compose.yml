@@ -3,6 +3,7 @@ version: "3.8"
 services:
   async_api:
     build: .
+    restart: unless-stopped
     ports:
       - "8000:8000"
     depends_on:
@@ -16,13 +17,14 @@ services:
   redis:
     image: redis:6.2
     container_name: ${REDIS_HOST}
-    command: [ "redis-server", "--port", "${REDIS_PORT}" ]
+    command: ["redis-server", "--port", "${REDIS_PORT}", "--requirepass", "${REDIS_PASSWORD}"]
+    restart: unless-stopped
     expose:
       - "${REDIS_PORT}"
     env_file:
       - ./.env
     healthcheck:
-      test: [ "CMD", "redis-cli", "-p", "${REDIS_PORT}", "--raw", "ping" ]
+      test: [ "CMD", "redis-cli", "-p", "${REDIS_PORT}", "--raw", "-a", "${REDIS_PASSWORD}", "ping" ]
       interval: 10s
       retries: 5
       start_period: 30s
@@ -31,6 +33,7 @@ services:
   elasticsearch:
     image: elasticsearch:8.6.2
     container_name: ${ELASTIC_HOST}
+    restart: unless-stopped
     environment:
       - ES_LOG_LEVEL=ERROR
       - discovery.type=single-node
@@ -50,5 +53,24 @@ services:
     volumes:
       - es_data:/usr/share/elasticsearch/data
 
+  postgres:
+    image: postgres:16-alpine
+    container_name: ${PG_HOST}
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${PG_NAME}
+      POSTGRES_USER: ${PG_USER}
+      POSTGRES_PASSWORD: ${PG_PASSWORD}
+    expose:
+      - ${PG_PORT}
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${PG_USER} -d ${PG_NAME}" ]
+      interval: 10s
+      retries: 5
+      timeout: 10s
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+
 volumes:
   es_data:
+  pg_data:
