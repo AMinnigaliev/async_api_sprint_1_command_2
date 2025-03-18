@@ -19,7 +19,7 @@ class CacheService:
         self.cache_expire = cache_expire
 
     @with_retry(settings.REDIS_EXCEPTIONS)
-    async def get(self, key: str, log_info: str = "") -> bytes:
+    async def get(self, key: str, log_info: str = "") -> bytes | None:
         logger.debug(
             "Попытка получить значение из кеша: key=%s. %s", key, log_info
         )
@@ -43,9 +43,7 @@ class CacheService:
 
             logger.info("Ключ отсутствует в кеше: key=%s. %s", key, log_info)
 
-            raise CacheServiceError(
-                "Ключ отсутствует в кеше: key=%s. %s", key, log_info
-            )
+            return None
 
     @with_retry(settings.REDIS_EXCEPTIONS)
     async def set(self, key: str, value: bytes, log_info: str = "") -> None:

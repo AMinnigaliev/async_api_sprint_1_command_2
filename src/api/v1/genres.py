@@ -65,4 +65,4 @@ async def genre_details(
             detail="Genre not found",
         )
 
-    return genre
+    return genre[0]

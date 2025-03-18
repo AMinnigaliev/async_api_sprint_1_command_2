@@ -86,4 +86,4 @@ async def person_details(
             detail="Person not found",
         )
 
-    return person
+    return person[0]

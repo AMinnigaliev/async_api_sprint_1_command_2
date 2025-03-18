@@ -123,15 +123,15 @@ class ElasticService:
             raise
 
     async def close(self):
-        logger.info("Закрытие соединения с Elasticsearch.")
+        logger.info("Закрытие подключения к Elasticsearch...")
 
         try:
             await self.es_client.close()
-            logger.info("Соединение с Elasticsearch успешно закрыто.")
+            logger.info("Подключение к Elasticsearch успешно закрыто.")
 
         except (TransportError, RuntimeError) as e:
             logger.error(
-                "Ошибка при закрытии соединения с Elasticsearch: %s", e
+                "Ошибка при закрытии подключения с Elasticsearch: %s", e
             )
             raise ElasticServiceError(e)
 

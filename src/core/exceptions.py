@@ -58,8 +58,3 @@ class JsonLoadsError(BaseServiceError):
 class CheckCacheError(BaseServiceError):
     """Исключение для ошибок, связанных с проверкой записи в кеше."""
     pass
-
-
-class CheckElasticError(BaseServiceError):
-    """Исключение для ошибок, связанных с проверкой записи в elastic."""
-    pass

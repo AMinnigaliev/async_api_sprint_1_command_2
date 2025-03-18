@@ -2,6 +2,7 @@ import logging
 
 from fastapi import FastAPI
 from fastapi.responses import ORJSONResponse
+from sqlalchemy import text
 
 from src.api.v1 import films, genres, persons, user, healthcheck
 from src.core.config import settings
@@ -29,27 +30,9 @@ async def startup():
     подключений к Redis и Elasticsearch.
     """
     # Инициализация PostgreSQL
+    logger.info("Инициализация базы данных PostgreSQL...")
     try:
-        logger.info("Инициализация базы данных PostgreSQL...")
-
         await create_database()
-
-        # Проверяем доступные таблицы в базе данных после инициализации
-        async with async_session() as session:
-            result = await session.execute(
-                "SELECT table_name FROM information_schema.tables WHERE "
-                "table_schema='public';"
-            )
-            tables = result.fetchall()
-            tables_name = [table[0] for table in tables]
-
-            if not tables_name:
-                print("База данных PostgreSQL пуста!")
-
-            else:
-                print(
-                    f"В базе данных PostgreSQL найдены таблицы: {tables_name}"
-                )
 
     except settings.PG_EXCEPTIONS as e:
         logger.error("Ошибка при инициализации базы данных PostgreSQL: %s", e)
@@ -59,10 +42,28 @@ async def startup():
             "Приложение завершает работу."
         )
 
-    # Инициализация подключении к Redis
-    try:
-        logger.info("Инициализация подключений к Redis...")
+    else:
+        # Проверяем доступные таблицы в базе данных после инициализации
+        async with async_session() as session:
+            result = await session.execute(text(
+                "SELECT table_name FROM information_schema.tables WHERE "
+                "table_schema='public';"
+            ))
+            tables = result.fetchall()
+            tables_name = [table[0] for table in tables]
 
+            if not tables_name:
+                logger.info("База данных PostgreSQL пуста!")
+
+            else:
+                logger.info(
+                    f"В базе данных PostgreSQL найдены таблицы: %s",
+                    tables_name
+                )
+
+    # Инициализация подключении к Redis
+    logger.info("Инициализация подключений к Redis...")
+    try:
         redis_auth = await get_redis_auth()
 
         # Проверяем доступность Redis-токен
@@ -75,8 +76,6 @@ async def startup():
         if not await redis_cache.redis_client.ping():
             raise ConnectionError("Redis-кеш не отвечает на запросы.")
 
-        logger.info("Подключения к Redis успешно установлено.")
-
     except settings.REDIS_EXCEPTIONS as e:
         logger.error("Ошибка подключения к Redis: %s", e)
 
@@ -84,17 +83,17 @@ async def startup():
             "Не удалось подключиться к Redis. Приложение завершает работу."
         )
 
-    # Инициализация подключения к Elasticsearch
-    try:
-        logger.info("Инициализация подключения к Elasticsearch...")
+    else:
+        logger.info("Подключения к Redis успешно установлено.")
 
+    # Инициализация подключения к Elasticsearch
+    logger.info("Инициализация подключения к Elasticsearch...")
+    try:
         es = await get_elastic()
 
         # Проверяем доступность Elasticsearch
         if not await es.es_client.ping():
             raise ConnectionError("Elasticsearch не отвечает на запросы.")
-
-        logger.info("Подключение к Elasticsearch успешно установлено.")
 
     except settings.ELASTIC_EXCEPTIONS as e:
         logger.error("Ошибка подключения к Elasticsearch: %s", e)
@@ -103,6 +102,9 @@ async def startup():
             "Не удалось подключиться к Elasticsearch. Приложение завершает "
             "работу."
         )
+
+    else:
+        logger.info("Подключение к Elasticsearch успешно установлено.")
 
     logger.info("Все подключения успешно установлены.")
 
@@ -114,35 +116,15 @@ async def shutdown():
     Elasticsearch.
     """
     # Закрытие подключений к Redis
-    try:
-        if redis_auth:
-            logger.info("Закрытие подключения к Redis-токен...")
+    if redis_auth:
+        await redis_auth.close()
 
-            await redis_auth.close()
-
-            logger.info("Подключение к Redis-токен успешно закрыто.")
-
-        if redis_cache:
-            logger.info("Закрытие подключения к Redis-кеш...")
-
-            await redis_cache.close()
-
-            logger.info("Подключение к Redis-кеш успешно закрыто.")
-
-    except settings.REDIS_EXCEPTIONS as e:
-        logger.error("Ошибка при закрытии подключений к Redis: %s", e)
+    if redis_cache:
+        await redis_cache.close()
 
     # Закрытие подключения к Elasticsearch
-    try:
-        if es:
-            logger.info("Закрытие подключения к Elasticsearch...")
-
-            await es.close()
-
-            logger.info("Подключение к Elasticsearch успешно закрыто.")
-
-    except settings.ELASTIC_EXCEPTIONS as e:
-        logger.error("Ошибка при закрытии подключения к Elasticsearch: %s", e)
+    if es:
+        await es.close()
 
 
 # Подключение роутеров

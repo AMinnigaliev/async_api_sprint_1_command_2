@@ -31,7 +31,7 @@ class Settings(BaseSettings):
     PG_USER: str = Field("user", env="PG_USER")
     PG_PASSWORD: str = Field("password", env="PG_PASSWORD")
     PG_HOST: str = Field("postgres", env="PG_HOST")
-    PG_PORT: int = Field(8080, env="PG_PORT")
+    PG_PORT: int = Field(5432, env="PG_PORT")
     PG_NAME: str = Field("name", env="PG_NAME")
 
     # Директория проекта
@@ -55,7 +55,6 @@ class Settings(BaseSettings):
     CACHE_EXPIRE_IN_SECONDS: int = 300
 
     TOKEN_REVOKE: ClassVar[bytes] = b'"revoked"'
-    REDIS_NOT_FOUND: ClassVar[bytes] = b'"not_found"'
 
 
 # Инициализация настроек

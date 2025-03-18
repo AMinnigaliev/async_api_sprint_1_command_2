@@ -200,9 +200,7 @@ async def main():
 
     finally:
         # Закрываем соединение с Elasticsearch
-        logger.info("Закрытие соединения с Elasticsearch.")
         await elastic_service.close()
-        logger.info("Соединение с Elasticsearch закрыто.")
 
 
 if __name__ == "__main__":
