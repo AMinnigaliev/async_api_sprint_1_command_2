@@ -54,7 +54,7 @@ class Settings(BaseSettings):
     # Настройки кеширования
     CACHE_EXPIRE_IN_SECONDS: int = 300
 
-    TOKEN_REVOKE: ClassVar[bytes] = b'"revoked"'
+    TOKEN_REVOKE: ClassVar[bytes] = b'revoked'
 
 
 # Инициализация настроек
