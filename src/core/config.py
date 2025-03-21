@@ -1,16 +1,18 @@
 import os
 from typing import Any, ClassVar
 
-from asyncpg.exceptions import (
-    PostgresError,
-    ConnectionDoesNotExistError as PGConnectionDoesNotExistError,
-    SyntaxOrAccessError as PGSyntaxOrAccessError,
-)
+from asyncpg.exceptions import \
+    ConnectionDoesNotExistError as PGConnectionDoesNotExistError
+from asyncpg.exceptions import PostgresError
+from asyncpg.exceptions import SyntaxOrAccessError as PGSyntaxOrAccessError
 from elastic_transport import TransportError as ESTransportError
 from elasticsearch import ApiError as ESApiError
 from pydantic import Field
 from pydantic_settings import BaseSettings
 from redis.exceptions import RedisError
+from sqlalchemy.exc import IntegrityError as SQLIntegrityError
+from sqlalchemy.exc import OperationalError as SQLOperationalError
+from sqlalchemy.exc import SQLAlchemyError
 
 
 class Settings(BaseSettings):
@@ -42,19 +44,23 @@ class Settings(BaseSettings):
     )
 
     ELASTIC_EXCEPTIONS: Any = (ESApiError, ESTransportError)
-
     REDIS_EXCEPTIONS: Any = (RedisError,)
-
     PG_EXCEPTIONS: Any = (
         PostgresError, PGConnectionDoesNotExistError, PGSyntaxOrAccessError
+    )
+    SQL_EXCEPTIONS: Any = (
+        SQLAlchemyError, SQLIntegrityError, SQLOperationalError
     )
 
     ELASTIC_RESPONSE_SIZE: int = 1000
 
-    # Настройки кеширования
     CACHE_EXPIRE_IN_SECONDS: int = 300
 
-    TOKEN_REVOKE: ClassVar[bytes] = b'revoked'
+    TOKEN_REVOKE: ClassVar[bytes] = b"revoked"
+    SECRET_KEY: str = Field("practix", env="SECRET_KEY")
+    ALGORITHM: str = "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 15
+    REFRESH_TOKEN_EXPIRE_DAYS = 7
 
 
 # Инициализация настроек

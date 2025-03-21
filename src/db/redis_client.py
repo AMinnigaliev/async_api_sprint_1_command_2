@@ -10,11 +10,11 @@ logger = logging.getLogger(__name__)
 
 settings = Settings()
 
-redis_cache: CacheService | None = None
 redis_auth: AuthService | None = None
+redis_cache: CacheService | None = None
 
 
-async def get_redis_auth() -> CacheService:
+async def get_redis_auth() -> AuthService:
     global redis_auth
     # Проверка, существует ли redis_auth и активно ли соединение
     if not redis_auth or not await redis_auth.redis_client.ping():
@@ -29,7 +29,7 @@ async def get_redis_auth() -> CacheService:
             if not await redis_client.ping():
                 raise ConnectionError("Redis недоступен!")
 
-            redis_auth = CacheService(redis_client)
+            redis_auth = AuthService(redis_client)
 
             logger.info("Клиент Redis для auth успешно создан.")
 

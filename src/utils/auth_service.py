@@ -48,7 +48,7 @@ class AuthService:
 
     @with_retry(settings.REDIS_EXCEPTIONS)
     async def set(
-            self, token_key: str, value: bytes, expire: int, log_info: str = ""
+        self, token_key: str, value: bytes, expire: int, log_info: str = ""
     ) -> None:
         logger.debug(
             "Добавление access-токена в список недействительных: "
