@@ -40,7 +40,6 @@ class FilmService(BaseService):
         # Формируем тело запроса для Elasticsearch
         body = {"query": {"term": {"id": film_id}}}
 
-
         return await self._base_get_with_cache(
             model, es_index, body, cache_key, log_info
         )

@@ -196,8 +196,8 @@ class BaseService:
 
             except orjson.JSONEncodeError as e:
                 logger.error(
-                    "Ошибка сериализации списка записей в виде словарей в json: "
-                    "%s. Входные данные: %s. %s",
+                    "Ошибка сериализации списка записей в виде словарей в "
+                    "json: %s. Входные данные: %s. %s",
                     e, data, log_info
                 )
                 raise ModelDumpJsonError(e)

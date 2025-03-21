@@ -4,13 +4,12 @@ from fastapi import FastAPI
 from fastapi.responses import ORJSONResponse
 from sqlalchemy import text
 
-from src.api.v1 import films, genres, persons, user, healthcheck
+from src.api.v1 import films, genres, healthcheck, persons, subscription, user
 from src.core.config import settings
-from src.db.elastic import es, get_elastic
+from src.db.elastic import get_elastic
 from src.db.init_postgres import create_database
 from src.db.postgres import async_session
-from src.db.redis_client import (redis_auth, get_redis_auth, redis_cache,
-                                 get_redis_cache)
+from src.db.redis_client import get_redis_auth, get_redis_cache
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -61,7 +60,7 @@ async def startup():
                     tables_name
                 )
 
-    # Инициализация подключении к Redis
+    # Инициализация подключений к Redis
     logger.info("Инициализация подключений к Redis...")
     try:
         redis_auth = await get_redis_auth()
@@ -116,13 +115,16 @@ async def shutdown():
     Elasticsearch.
     """
     # Закрытие подключений к Redis
+    redis_auth = await get_redis_auth()
     if redis_auth:
         await redis_auth.close()
 
+    redis_cache = await get_redis_cache()
     if redis_cache:
         await redis_cache.close()
 
     # Закрытие подключения к Elasticsearch
+    es = await get_elastic()
     if es:
         await es.close()
 
@@ -132,4 +134,7 @@ app.include_router(films.router, prefix="/api/v1/films", tags=["films"])
 app.include_router(persons.router, prefix="/api/v1/persons", tags=["persons"])
 app.include_router(genres.router, prefix="/api/v1/genres", tags=["genres"])
 app.include_router(user.router, prefix="/api/v1/users", tags=["Users"])
+app.include_router(
+    subscription.router, prefix="/api/v1/subscriptions", tags=["Subscriptions"]
+)
 app.include_router(healthcheck.router, prefix="/api/v1", tags=["healthcheck"])

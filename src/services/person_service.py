@@ -53,7 +53,8 @@ class PersonService(BaseService):
         Получить список фильмов в производстве которых участвовала персона.
         """
         log_info = (
-            f"Запрос на получение фильмов с участием персоны: id = {person_id}."
+            f"Запрос на получение фильмов с участием персоны: "
+            f"id = {person_id}."
         )
 
         logger.info(log_info)
@@ -100,7 +101,7 @@ class PersonService(BaseService):
                 },
             ],
             "minimum_should_match": 1,
-        }}, "size" : settings.ELASTIC_RESPONSE_SIZE}
+        }}, "size": settings.ELASTIC_RESPONSE_SIZE}
 
         return await self._base_get_with_cache(
             model, es_index, body, cache_key, log_info

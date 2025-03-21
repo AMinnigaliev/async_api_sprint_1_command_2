@@ -1,4 +1,4 @@
-from src.db.postgres import engine, Base
+from src.db.postgres import Base, engine
 
 
 async def create_database() -> None:

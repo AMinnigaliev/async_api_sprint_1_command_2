@@ -3,7 +3,6 @@ from http import HTTPStatus
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from pydantic import BaseModel
 
 from src.models.models import Film, FilmBase
 from src.services.film_service import FilmService, get_film_service
@@ -28,7 +27,7 @@ async def search_films(
         description="Смещение для пагинации (больше ноля)",
     ),
     film_service: FilmService = Depends(get_film_service),
-) -> list[BaseModel | None]:
+) -> list[FilmBase]:
     """
     Эндпоинт для поиска фильмов с поддержкой поиска по названию
     и пагинацией.
@@ -67,7 +66,7 @@ async def get_films(
             description="Смещение для пагинации (больше ноля)",
         ),
         film_service: FilmService = Depends(get_film_service),
-) -> list[BaseModel | None]:
+) -> list[FilmBase]:
     """
     Эндпоинт для получения фильмов с поддержкой сортировки по рейтингу,
     фильтрации по жанру и пагинацией.
@@ -93,7 +92,7 @@ async def get_films(
 async def film_details(
     film_id: UUID,
     film_service: FilmService = Depends(get_film_service),
-) -> BaseModel:
+) -> Film:
     """Эндпоинт для получения фильма по ID."""
     film_id = str(film_id)
     film = await film_service.get_film_by_id(film_id)
