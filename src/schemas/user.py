@@ -1,6 +1,5 @@
 from uuid import UUID
 from datetime import datetime
-from typing import Union
 from pydantic import BaseModel
 
 
@@ -19,6 +18,8 @@ class UserCreate(BaseUser):
 class UserInDB(BaseUser):
     """Модель пользователя в базе данных."""
     id: UUID
+    role: str
+    subscriptions: list[str]
 
     class Config:
         from_attributes = True
@@ -41,6 +42,6 @@ class Token(BaseModel):
 
 class UserUpdate(BaseModel):
     """Модель для обновления данных пользователя."""
-    first_name: Union[str, None] = None
-    last_name: Union[str, None] = None
-    password: Union[str, None] = None
+    first_name: str | None = None
+    last_name: str | None = None
+    password: str | None = None

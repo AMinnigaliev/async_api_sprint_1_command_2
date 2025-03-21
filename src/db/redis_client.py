@@ -14,9 +14,8 @@ redis_cache: CacheService | None = None
 redis_auth: AuthService | None = None
 
 
-async def get_redis_auth() -> CacheService:
+async def get_redis_auth() -> AuthService:
     global redis_auth
-    # Проверка, существует ли redis_auth и активно ли соединение
     if not redis_auth or not await redis_auth.redis_client.ping():
         logger.info("Создание клиента Redis для auth...")
         try:
@@ -29,7 +28,7 @@ async def get_redis_auth() -> CacheService:
             if not await redis_client.ping():
                 raise ConnectionError("Redis недоступен!")
 
-            redis_auth = CacheService(redis_client)
+            redis_auth = AuthService(redis_client)
 
             logger.info("Клиент Redis для auth успешно создан.")
 
@@ -42,7 +41,6 @@ async def get_redis_auth() -> CacheService:
 
 async def get_redis_cache() -> CacheService:
     global redis_cache
-    # Проверка, существует ли redis_cache и активно ли соединение
     if not redis_cache or not await redis_cache.redis_client.ping():
         logger.info("Создание клиента Redis для кеша...")
         try:
