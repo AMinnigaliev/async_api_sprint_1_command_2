@@ -17,7 +17,7 @@ class ElasticService:
 
     @with_retry(settings.ELASTIC_EXCEPTIONS)
     async def get(
-            self, index: str, id: str, log_info: str = ""
+        self, index: str, id: str, log_info: str = ""
     ) -> ObjectApiResponse[Any] | None:
         logger.debug(
             "Попытка выполнить запрос get в Elasticsearch: "
@@ -50,7 +50,7 @@ class ElasticService:
 
     @with_retry(settings.ELASTIC_EXCEPTIONS)
     async def search(
-            self, index: str, query: dict, log_info: str = ""
+        self, index: str, query: dict, log_info: str = ""
     ) -> ObjectApiResponse[Any]:
         logger.debug(
             "Попытка выполнить запрос search в Elasticsearch: "
@@ -84,7 +84,7 @@ class ElasticService:
             raise ElasticServiceError(e)
 
     async def index(
-            self, index: str, id: str, body: dict
+        self, index: str, id: str, body: dict
     ) -> ObjectApiResponse[Any]:
         """Добавить или обновить документ в Elasticsearch."""
         logger.debug(

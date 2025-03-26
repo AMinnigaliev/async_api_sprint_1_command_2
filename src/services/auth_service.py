@@ -1,44 +1,106 @@
+import logging
 from datetime import UTC, datetime
 
-from fastapi import Depends, HTTPException
+from redis.asyncio import Redis
 
 from src.core.config import settings
-from src.db.redis_client import get_redis_auth
+from src.core.exceptions import TokenServiceError
 from src.services.jwt_service import verify_token
-from src.utils.auth_service import AuthService
+from src.utils.decorators import with_retry
+
+logger = logging.getLogger(__name__)
 
 
-async def check_token(
-    token: str,
-    required_roles: tuple[str],
-    redis_client: AuthService = Depends(get_redis_auth)
-) -> None:
-    """
-    Проверка валидности токена: подпись, срок действия и отсутствие в списке
-    отозванных. Возвращает
-    """
-    if not token:
-        raise HTTPException(status_code=401, detail="Not authenticated")
+class AuthService:
+    def __init__(self, redis_client: Redis):
+        self.redis_client = redis_client
+        self.db = 0
 
-    payload = verify_token(token)
-    if await redis_client.is_revoke(token):
-        raise HTTPException(status_code=401, detail="Token has been revoked")
+    @with_retry(settings.REDIS_EXCEPTIONS)
+    async def check_value(
+        self, token_key: str, value: bytes, log_info: str = ""
+    ) -> bool:
+        logger.debug(
+            "Проверка токена в Redis: token_key=%s, check_value=%s. %s",
+            token_key, value, log_info
+        )
+        try:
+            redis_value = await self.redis_client.get(token_key)
 
-    if payload.get("role") not in required_roles:
-        raise HTTPException(status_code=401, detail="No access rights")
+        except settings.REDIS_EXCEPTIONS as e:
+            logger.error(
+                "Ошибка при проверке токена в Redis: "
+                "token_key=%s, check_value=%s, error=%s. %s",
+                token_key, value, e, log_info
+            )
+            raise TokenServiceError(e)
 
+        if redis_value == value:
+            logger.info(
+                "Токен найден в списке '%s': token_key=%s. %s",
+                value.decode(), token_key, log_info
+            )
+            return True
 
-async def revoke_token(
-    token: str, redis_client: AuthService = Depends(get_redis_auth)
-) -> None:
-    """
-    Отзыв токена: помещает его в Redis с TTL, равным
-    оставшемуся времени жизни токена.
-    """
-    payload = verify_token(token)
+        logger.info(
+            "Токен отсутствует в списке '%s': "
+            "token_key=%s. %s",
+            value.decode(), token_key, log_info
+        )
+        return False
 
-    if exp := payload.get("exp"):
-        ttl = int(exp - datetime.now(UTC).timestamp())
+    @with_retry(settings.REDIS_EXCEPTIONS)
+    async def set(
+        self, token_key: str, value: bytes, expire: int, log_info: str = ""
+    ) -> None:
+        logger.debug(
+            "Добавление access-токена в список недействительных: "
+            "token_key=%s, expire=%d сек. %s",
+            token_key, value, expire, log_info
+        )
+        try:
+            await self.redis_client.set(token_key, value, ex=expire)
 
-        if ttl > 0:
-            await redis_client.set(token, settings.TOKEN_REVOKE, ttl)
+        except settings.REDIS_EXCEPTIONS as e:
+            logger.error(
+                "Ошибка при добавлении access-токена в Redis: "
+                "token_key=%s, error=%s. %s",
+                token_key, value, e, log_info
+            )
+            raise TokenServiceError(e)
+
+        else:
+            logger.info(
+                "Access-токен добавлен в список недействительных: "
+                "token_key=%s, expire=%d сек. %s",
+                token_key, expire, log_info
+            )
+
+    async def revoke_token(self, token: str) -> None:
+        """
+        Отзыв токена: помещает его в Redis с TTL, равным
+        оставшемуся времени жизни токена.
+        """
+        payload = verify_token(token)
+
+        if exp := payload.get("exp"):
+            ttl = int(exp - datetime.now(UTC).timestamp())
+
+            if ttl > 0:
+                await self.set(token, settings.TOKEN_REVOKE, ttl)
+
+    async def close(self):
+        logger.info("Закрытие соединения с Redis по работе с access-токен...")
+
+        try:
+            await self.redis_client.close()
+            logger.info(
+                "Соединение с Redis по работе с access-токен успешно закрыто."
+            )
+
+        except (settings.REDIS_EXCEPTIONS, RuntimeError) as e:
+            logger.error(
+                "Ошибка при закрытии соединения с Redis по работе с "
+                "access-токен: %s", e
+            )
+            raise TokenServiceError(e)

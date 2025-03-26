@@ -4,7 +4,8 @@ from fastapi import FastAPI
 from fastapi.responses import ORJSONResponse
 from sqlalchemy import text
 
-from src.api.v1 import films, genres, healthcheck, persons, subscription, user
+from src.api.v1 import films, genres, healthcheck, persons, subscription, \
+    user_role, user_subscription, user
 from src.core.config import settings
 from src.db.elastic import get_elastic
 from src.db.init_postgres import create_database
@@ -134,6 +135,14 @@ app.include_router(films.router, prefix="/api/v1/films", tags=["films"])
 app.include_router(persons.router, prefix="/api/v1/persons", tags=["persons"])
 app.include_router(genres.router, prefix="/api/v1/genres", tags=["genres"])
 app.include_router(user.router, prefix="/api/v1/users", tags=["Users"])
+app.include_router(
+    user_role.router, prefix="/api/v1/users_role", tags=["Users_role"]
+)
+app.include_router(
+    user_subscription.router,
+    prefix="/api/v1/users_subscriptions",
+    tags=["Users_subscriptions"],
+)
 app.include_router(
     subscription.router, prefix="/api/v1/subscriptions", tags=["Subscriptions"]
 )

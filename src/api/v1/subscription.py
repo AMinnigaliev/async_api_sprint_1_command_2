@@ -1,91 +1,84 @@
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Security
-from fastapi.security import OAuth2PasswordBearer
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.future import select
+from fastapi import APIRouter, Depends
 
-from src.db.postgres import get_session
-from src.models.user import Subscription, UserRoleEnum
-from src.schemas.user import SubscriptionCreateUpdate, SubscriptionResponse
-from src.services.auth_service import check_token
+from src.dependencies.auth import role_dependency
+from src.models.subscription import Subscription
+from src.models.user import UserRoleEnum
+from src.schemas.subscription import SubscriptionCreateUpdate
+from src.schemas.user import SubscriptionResponse
+from src.services.subscription_service import (
+    SubscriptionService, get_subscription_service
+)
 
-router = APIRouter()
+router = APIRouter(
+    dependencies=[Depends(role_dependency(
+        (UserRoleEnum.SUPERUSER, UserRoleEnum.ADMIN,)
+    ))]
+)
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
-
-@router.get("/", response_model=list[SubscriptionResponse])
+@router.get(
+    "/",
+    response_model=list[SubscriptionResponse],
+    summary="Список существующих подписок",
+    description="Возвращает список всех подписок."
+)
 async def get_subscriptions(
-        db: AsyncSession = Depends(get_session)
-) -> tuple[Subscription]:
+    subscription_service: SubscriptionService = Depends(
+        get_subscription_service
+    ),
+) -> list[Subscription]:
     """Эндпоинт для получения всех подписок."""
-    result = await db.execute(select(Subscription))
-    return result.scalars().all()
+    return subscription_service.get_subscriptions()
 
 
-@router.post("/", response_model=SubscriptionResponse)
+@router.post(
+    "/",
+    response_model=SubscriptionResponse,
+    summary="Создание подписки",
+    description="Создает новую подписку на основе переданных данных.",
+)
 async def create_subscription(
     create_data: SubscriptionCreateUpdate,
-    token: str = Security(oauth2_scheme),
-    db: AsyncSession = Depends(get_session),
+    subscription_service: SubscriptionService = Depends(
+        get_subscription_service
+    ),
 ) -> Subscription:
     """Эндпоинт для создания новой подписки."""
-    if not token:
-        raise HTTPException(status_code=401, detail="Not authenticated")
-
-    await check_token(token, (UserRoleEnum.SUPERUSER, UserRoleEnum.ADMIN))
-
-    subscription = Subscription(**create_data.model_dump())
-
-    db.add(subscription)
-    await db.commit()
-    await db.refresh(subscription)
-    return subscription
+    return subscription_service.create_subscription(create_data)
 
 
-@router.put("/{subscription_id}", response_model=SubscriptionResponse)
+@router.put(
+    "/{subscription_id}",
+    response_model=SubscriptionResponse,
+    summary="Обновление подписки",
+    description="Обновляет подписку с заданным идентификатором на основе "
+                "переданных данных.",
+)
 async def subscription_update(
     subscription_id: UUID,
     update_data: SubscriptionCreateUpdate,
-    token: str = Security(oauth2_scheme),
-    db: AsyncSession = Depends(get_session),
+    subscription_service: SubscriptionService = Depends(
+        get_subscription_service
+    ),
 ) -> Subscription:
     """Эндпоинт для изменения подписки."""
-    if not token:
-        raise HTTPException(status_code=401, detail="Not authenticated")
-
-    await check_token(token, (UserRoleEnum.SUPERUSER, UserRoleEnum.ADMIN))
-
-    subscription = await db.get(Subscription, subscription_id)
-    if not subscription:
-        raise HTTPException(status_code=404, detail="Subscription not found")
-
-    for key, value in update_data.model_dump(exclude_unset=True).items():
-        setattr(subscription, key, value)
-
-    await db.commit()
-    await db.refresh(subscription)
-
-    return subscription
+    return subscription_service.subscription_update(
+        subscription_id, update_data
+    )
 
 
-@router.delete("/{subscription_id}")
-async def delete_role(
+@router.delete(
+    "/{subscription_id}",
+    summary="Удаление подписки",
+    description="Удаляет подписку с заданным идентификатором.",
+)
+async def delete_subscription(
     subscription_id: UUID,
-    token: str = Security(oauth2_scheme),
-    db: AsyncSession = Depends(get_session),
+    subscription_service: SubscriptionService = Depends(
+        get_subscription_service
+    ),
 ) -> dict:
     """Эндпоинт для удаления подписки."""
-    if not token:
-        raise HTTPException(status_code=401, detail="Not authenticated")
-
-    await check_token(token, (UserRoleEnum.SUPERUSER, UserRoleEnum.ADMIN))
-
-    subscription = await db.get(Subscription, subscription_id)
-    if not subscription:
-        raise HTTPException(status_code=404, detail="Subscription not found")
-
-    await db.delete(subscription)
-    await db.commit()
-    return {"message": "Subscription deleted"}
+    return subscription_service.delete_subscription(subscription_id)

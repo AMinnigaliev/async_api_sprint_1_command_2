@@ -1,60 +1,18 @@
 import uuid
 from datetime import UTC, datetime
 
-from sqlalchemy import Column, DateTime, Enum, ForeignKey, String, Table, Text
+from sqlalchemy import Column, DateTime, Enum, String
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from src.db.postgres import Base
 
-user_subscriptions = Table(
-    'user_subscriptions',
-    Base.metadata,
-    Column(
-        'user_id',
-        UUID(as_uuid=True),
-        ForeignKey("users.id"),
-        primary_key=True,
-    ),
-    Column(
-        'subscription_id',
-        UUID(as_uuid=True),
-        ForeignKey("subscriptions.id"),
-        primary_key=True,
-    ),
-)
-
 
 class UserRoleEnum(str, Enum):
     SUPERUSER = "superuser"
     ADMIN = "admin"
     USER = "user"
-
-
-class Subscription(Base):
-    __tablename__ = "subscriptions"
-
-    id = Column(
-        UUID(as_uuid=True),
-        primary_key=True,
-        default=uuid.uuid4,
-        unique=True,
-        nullable=False,
-        index=True,
-    )
-    name = Column(String(50), unique=True, nullable=False)
-    description = Column(Text, nullable=True)
-    users = relationship(
-        "User", secondary=user_subscriptions, back_populates="subscriptions"
-    )
-
-    def __init__(self, name: str, description: str | None = None) -> None:
-        self.name = name
-        self.description = description
-
-    def __repr__(self):
-        return f"<Role {self.name}>"
 
 
 class User(Base):
@@ -77,7 +35,7 @@ class User(Base):
         Enum(UserRoleEnum), nullable=False, default=UserRoleEnum.USER
     )
     subscriptions = relationship(
-        "Subscription", secondary=user_subscriptions, back_populates="users"
+        "Subscription", secondary="user_subscriptions", back_populates="users"
     )
 
     def __init__(
