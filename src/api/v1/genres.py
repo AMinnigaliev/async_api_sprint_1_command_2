@@ -3,7 +3,6 @@ from http import HTTPStatus
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from pydantic import BaseModel
 
 from src.models.models import GenreBase
 from src.services.genre_service import GenreService, get_genre_service
@@ -17,7 +16,7 @@ router = APIRouter()
 async def search_genres(
     query: str | None = Query(None, description="Поисковый запрос по жанрам"),
     genre_service: GenreService = Depends(get_genre_service),
-) -> list[BaseModel | None]:
+) -> list[GenreBase]:
     """Эндпоинт для поиска жанров."""
     genres = await genre_service.search_genres(query=query)
 
@@ -34,7 +33,7 @@ async def search_genres(
 @router.get("", response_model=list[GenreBase])
 async def get_genres(
     genre_service: GenreService = Depends(get_genre_service),
-) -> list[BaseModel | None]:
+) -> list[GenreBase]:
     """Эндпоинт для получения всех жанров."""
     genres = await genre_service.get_genres()
 
@@ -52,7 +51,7 @@ async def get_genres(
 async def genre_details(
     genre_id: UUID,
     genre_service: GenreService = Depends(get_genre_service),
-) -> BaseModel:
+) -> GenreBase:
     """Эндпоинт для получения конкретного жанра по ID."""
     genre_id = str(genre_id)
     genre = await genre_service.get_genre_by_id(genre_id)

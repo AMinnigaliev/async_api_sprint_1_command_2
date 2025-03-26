@@ -3,7 +3,6 @@ from http import HTTPStatus
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from pydantic import BaseModel
 
 from src.models.models import FilmBase, Person
 from src.services.person_service import PersonService, get_person_service
@@ -13,7 +12,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
-@router.get("/search", response_model=list[FilmBase])
+@router.get("/search", response_model=list[Person])
 async def search_persons(
     query: str | None = Query(
         None, description="Поисковый запрос по персонам"
@@ -30,9 +29,9 @@ async def search_persons(
         description="Смещение для пагинации (больше ноля)",
     ),
     person_service: PersonService = Depends(get_person_service),
-) -> list[BaseModel | None]:
+) -> list[Person]:
     """
-    Эндпоинт для поиска фильмов с поддержкой поиска по названию
+    Эндпоинт для поиска персон с поддержкой поиска по названию
     и пагинацией.
     """
     persons = await person_service.search_persons(
@@ -48,11 +47,11 @@ async def search_persons(
     return persons
 
 
-@router.get("/{person_id}/film", response_model=FilmBase)
+@router.get("/{person_id}/film", response_model=[FilmBase])
 async def person_films(
     person_id: UUID,
     person_service: PersonService = Depends(get_person_service),
-) -> list[BaseModel | None]:
+) -> list[FilmBase]:
     """
     Эндпоинт для получения фильмов в производстве которых участвовала персона.
     """
@@ -73,7 +72,7 @@ async def person_films(
 async def person_details(
     person_id: UUID,
     person_service: PersonService = Depends(get_person_service),
-) -> BaseModel:
+) -> Person:
     """Эндпоинт для получения полной информации о персоне по ID."""
     person_id = str(person_id)
     person = await person_service.get_person_by_id(person_id)

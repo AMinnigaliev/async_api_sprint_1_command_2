@@ -17,6 +17,7 @@ class CacheService:
     ):
         self.redis_client = redis_client
         self.cache_expire = cache_expire
+        self.db = 1
 
     @with_retry(settings.REDIS_EXCEPTIONS)
     async def get(self, key: str, log_info: str = "") -> bytes | None:

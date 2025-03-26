@@ -1,11 +1,7 @@
-import functools
-import inspect
 from typing import Type
 
 from tenacity import (retry, retry_if_exception_type, stop_after_attempt,
                       wait_exponential)
-
-from src.core.exceptions import CheckCacheError
 
 
 def with_retry(exception: Type[Exception] = Exception):
