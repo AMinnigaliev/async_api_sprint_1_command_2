@@ -23,11 +23,23 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/user/login")
 
 async def get_auth_service() -> AuthService:
     redis_auth = await get_redis_auth()
-    return AuthService(redis_auth)
+    return redis_auth
 
 
-@router.post("/register", response_model=UserInDB, status_code=status.HTTP_201_CREATED)
-async def register_user(user_create: UserCreate, db: AsyncSession = Depends(get_db)) -> UserInDB:
+@router.post(
+    "/register",
+    response_model=UserInDB,
+    status_code=status.HTTP_201_CREATED,
+    summary="Регистрация нового пользователя",
+    description="Создание нового пользователя с логином, паролем и профилем. Возвращает объект пользователя."
+)
+async def register_user(
+    user_create: UserCreate,
+    db: AsyncSession = Depends(get_db)
+) -> UserInDB:
+    """
+    Регистрирует нового пользователя.
+    """
     existing_user = await User.get_user_by_login(db, user_create.login)
     if existing_user:
         raise HTTPException(status_code=400, detail="Login already registered")
@@ -37,12 +49,20 @@ async def register_user(user_create: UserCreate, db: AsyncSession = Depends(get_
     return new_user
 
 
-@router.post("/login", response_model=Token)
+@router.post(
+    "/login",
+    response_model=Token,
+    summary="Аутентификация пользователя",
+    description="Проверяет логин и пароль. Возвращает access и refresh токены."
+)
 async def login(
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: AsyncSession = Depends(get_db),
     auth_service: AuthService = Depends(get_auth_service),
 ) -> Token:
+    """
+    Аутентифицирует пользователя и возвращает JWT токены.
+    """
     user = await User.get_user_by_login(db, form_data.username)
     if not user or not verify_password(form_data.password, user.password):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect login or password")
@@ -53,18 +73,27 @@ async def login(
     access_token = create_access_token(user.id, role, subscriptions, timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES))
     refresh_token = create_refresh_token(user.id, role, subscriptions, timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS))
 
-    await auth_service.set(refresh_token, b"active", expire=settings.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60)
+    await auth_service.set(refresh_token, settings.TOKEN_ACTIVE, expire=settings.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60)
     await user.add_login_history(db)
 
     return Token(access_token=access_token, refresh_token=refresh_token)
 
 
-@router.post("/refresh", response_model=Token)
+@router.post(
+    "/refresh",
+    response_model=Token,
+    summary="Обновление access-токена",
+    description="Обновляет access-токен при валидном refresh-токене. Возвращает новые токены."
+)
 async def refresh_token(
     refresh_token: str,
     auth_service: AuthService = Depends(get_auth_service),
 ) -> Token:
-    if await auth_service.is_revoke(refresh_token):
+    """
+    Обновляет access и refresh токены, если refresh валиден.
+    """
+    is_valid = await auth_service.check_value(refresh_token, settings.TOKEN_ACTIVE)
+    if not is_valid:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token expired or revoked")
 
     try:
@@ -78,27 +107,41 @@ async def refresh_token(
     access_token = create_access_token(user_id, role, subscriptions, timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES))
     new_refresh_token = create_refresh_token(user_id, role, subscriptions, timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS))
 
-    await auth_service.set(new_refresh_token, b"active", expire=settings.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60)
+    await auth_service.set(new_refresh_token, settings.TOKEN_ACTIVE, expire=settings.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60)
 
     return Token(access_token=access_token, refresh_token=new_refresh_token)
 
 
-@router.post("/logout")
+@router.post(
+    "/logout",
+    summary="Выход из системы",
+    description="Удаляет refresh токен и отзывает access токен."
+)
 async def logout(
     refresh_token: str,
     token: str = Depends(oauth2_scheme),
     auth_service: AuthService = Depends(get_auth_service),
 ) -> dict[str, str]:
-    await auth_service.delete(refresh_token)
-    await auth_service.set(token, settings.TOKEN_REVOKE, expire=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60)
+    """
+    Удаляет refresh и отзывает access токен.
+    """
+    await auth_service.delete(access_token=token, refresh_token=refresh_token)
     return {"message": "Successfully logged out"}
 
 
-@router.get("/history", response_model=list[LoginHistory])
+@router.get(
+    "/history",
+    response_model=list[LoginHistory],
+    summary="История входов пользователя",
+    description="Возвращает список логинов пользователя по токену."
+)
 async def login_history(
     db: AsyncSession = Depends(get_db),
     token: str = Depends(oauth2_scheme),
 ) -> list[LoginHistory]:
+    """
+    Возвращает историю входов пользователя.
+    """
     user = await User.get_user_by_token(db, token)
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")

@@ -62,11 +62,11 @@ class Settings(BaseSettings):
 
     # Безопасность
     TOKEN_REVOKE: ClassVar[bytes] = b"revoked"
+    TOKEN_ACTIVE: ClassVar[bytes] = b"active"
     SECRET_KEY: str = Field("practix", env="SECRET_KEY")
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 15
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
-
 
 # Инициализация настроек
 settings = Settings()

@@ -27,7 +27,9 @@ class UserInDB(BaseUser):
 
 class LoginHistory(BaseModel):
     """Модель истории входов пользователя."""
+    user_id: UUID
     login_time: datetime
+    user_agent: str
 
     class Config:
         from_attributes = True
