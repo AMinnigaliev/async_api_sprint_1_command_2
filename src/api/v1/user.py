@@ -4,7 +4,7 @@ from fastapi.encoders import jsonable_encoder
 
 from src.db.postgres import get_session
 from src.models.user import User
-from src.schemas.user import UserCreate, UserInDB
+from src.schemas.user import UserCreate, UserResponse as UserInDB
 
 router = APIRouter()
 

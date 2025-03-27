@@ -47,7 +47,7 @@ async def search_persons(
     return persons
 
 
-@router.get("/{person_id}/film", response_model=[FilmBase])
+@router.get("/{person_id}/film", response_model=list[FilmBase])
 async def person_films(
     person_id: UUID,
     person_service: PersonService = Depends(get_person_service),

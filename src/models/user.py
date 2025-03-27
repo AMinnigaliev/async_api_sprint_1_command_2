@@ -1,12 +1,15 @@
 import uuid
 from datetime import UTC, datetime
+from enum import Enum
 
-from sqlalchemy import Column, DateTime, Enum, String
+from sqlalchemy import Column, DateTime, Enum as SQLAEnum, String
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from src.db.postgres import Base
+from src.models.subscription import Subscription
+from src.models.user_subscription import user_subscriptions
 
 
 class UserRoleEnum(str, Enum):
@@ -27,15 +30,17 @@ class User(Base):
         index=True,
     )
     login = Column(String(100), unique=True, nullable=False)
-    password = Column(String(100), nullable=False)
+    password = Column(String(255), nullable=False)
     first_name = Column(String(100), nullable=True)
     last_name = Column(String(100), nullable=True)
-    created_at = Column(DateTime, default=datetime.now(UTC))
+    created_at = Column(
+        DateTime(timezone=True), default=datetime.now(UTC)
+    )
     role = Column(
-        Enum(UserRoleEnum), nullable=False, default=UserRoleEnum.USER
+        SQLAEnum(UserRoleEnum), nullable=False, default=UserRoleEnum.USER
     )
     subscriptions = relationship(
-        "Subscription", secondary="user_subscriptions", back_populates="users"
+        Subscription, secondary=user_subscriptions, back_populates="users"
     )
 
     def __init__(

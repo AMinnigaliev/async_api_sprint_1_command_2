@@ -1,4 +1,5 @@
 import logging
+from typing import Type
 
 from redis.asyncio import Redis
 
@@ -13,33 +14,36 @@ redis_cache: CacheService | None = None
 
 
 async def get_redis(
-    redis: AuthService | CacheService,
-) -> AuthService | CacheService:
+    redis: AuthService | CacheService | None,
+    redis_service: Type[AuthService | CacheService],
+    db: int,
+    log_info: str,
+) -> AuthService | CacheService | None:
     """
     Проверяет доступность переданного Redis-клиента и создаёт новый, если он
     недоступен.
     """
     # Проверка, существует ли redis и активно ли соединение
     if not redis or not await redis.redis_client.ping():
-        logger.info("Создание клиента %s", redis.__class__.__name__)
+        logger.info("Создание клиента %s", log_info)
         try:
             redis_client = Redis(
                 host=settings.REDIS_HOST,
                 port=settings.REDIS_PORT,
                 password=settings.REDIS_PASSWORD,
-                db=redis.db,
+                db=db,
             )
             if not await redis_client.ping():
                 raise ConnectionError("Redis недоступен!")
 
-            redis = redis.__class__(redis_client)
+            redis = redis_service(redis_client)
 
-            logger.info("Клиент %s успешно создан.", redis.__class__.__name__)
+            logger.info("Клиент %s успешно создан.", log_info)
 
         except Exception as e:
             logger.error(
                 "Ошибка при создании клиента %s: %s",
-                redis.__class__.__name__, e
+                log_info, e
             )
             raise
 
@@ -52,7 +56,7 @@ async def get_redis_auth() -> AuthService:
     аутентификации.
     """
     global redis_auth
-    return await get_redis(redis_auth)
+    return await get_redis(redis_auth, AuthService, 0, "auth")
 
 
 async def get_redis_cache() -> CacheService:
@@ -61,4 +65,4 @@ async def get_redis_cache() -> CacheService:
     кэширования.
     """
     global redis_cache
-    return await get_redis(redis_cache)
+    return await get_redis(redis_cache, CacheService, 1, "кеша")

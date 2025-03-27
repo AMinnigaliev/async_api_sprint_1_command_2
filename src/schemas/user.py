@@ -28,7 +28,7 @@ class UserCreate(BaseUser):
 class UserResponse(BaseUser):
     """Модель для представления информации о пользователе."""
     id: UUID = Field(..., description="Уникальный идентификатор пользователя")
-    role: str = Field(..., discriminator="Роль пользователя")
+    role: str = Field(..., description="Роль пользователя")
     subscriptions: list[SubscriptionResponse] = Field(
         default_factory=[], description="Подписки пользователя"
     )

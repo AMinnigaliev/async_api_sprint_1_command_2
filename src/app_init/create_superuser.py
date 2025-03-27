@@ -3,36 +3,64 @@ import logging
 import os
 
 from dotenv import load_dotenv
-from fastapi import Depends
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 
 from src.core.config import settings
-from src.db.postgres import get_session
+from src.db.postgres import async_session, engine, Base
 from src.models.user import User, UserRoleEnum
 
 load_dotenv()
+
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+)
 logger = logging.getLogger(__name__)
 
 
-async def create_superuser(db: AsyncSession = Depends(get_session)) -> None:
+async def init_db():
+    """Функция для инициализации базы данных"""
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+
+    logger.info("База данных инициализирована.")
+
+
+async def create_superuser() -> None:
     """Функция для создания суперпользователя."""
     logger.info("Начало работы скрипта по созданию суперпользователя.")
 
-    superuser = User(
-        login=os.getenv("SUPERUSER_NAME"),
-        password=os.getenv("SUPERUSER_PASSWORD"),
-        role=UserRoleEnum.SUPERUSER,
-    )
-    try:
-        db.add(superuser)
-        await db.commit()
+    async with async_session() as db:
+        existing_user = await db.execute(
+            select(User).filter_by(role=UserRoleEnum.SUPERUSER)
+        )
+        if existing_user.scalars().first():
+            logger.info(
+                "Суперпользователь уже существует."
+            )
+            return
 
-    except settings.SQL_EXCEPTIONS as e:
-        logger.error("Ошибка при добавлении суперпользователя: %s", e)
-        raise
+        superuser = User(
+            login=os.getenv("SUPERUSER_NAME"),
+            password=os.getenv("SUPERUSER_PASSWORD"),
+            role=UserRoleEnum.SUPERUSER,
+        )
+
+        try:
+            db.add(superuser)
+            await db.commit()
+
+        except settings.SQL_EXCEPTIONS as e:
+            logger.error("Ошибка при добавлении суперпользователя: %s", e)
+            await db.rollback()
+            raise
 
     logger.info("Суперпользователь создан.")
 
 
+async def main():
+    await init_db()
+    await create_superuser()
+
+
 if __name__ == "__main__":
-    asyncio.run(create_superuser())
+    asyncio.run(main())

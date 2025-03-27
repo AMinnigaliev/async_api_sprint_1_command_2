@@ -14,7 +14,6 @@ logger = logging.getLogger(__name__)
 class AuthService:
     def __init__(self, redis_client: Redis):
         self.redis_client = redis_client
-        self.db = 0
 
     @with_retry(settings.REDIS_EXCEPTIONS)
     async def check_value(
