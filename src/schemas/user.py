@@ -25,6 +25,13 @@ class UserCreate(BaseUser):
     )
 
 
+class UserUpdate(BaseUser):
+    """Модель для обновления данных пользователя."""
+    password: str | None = Field(
+        None, min_length=8, max_length=150, description="Пароль пользователя"
+    )
+
+
 class UserResponse(BaseUser):
     """Модель для представления информации о пользователе."""
     id: UUID = Field(..., description="Уникальный идентификатор пользователя")
