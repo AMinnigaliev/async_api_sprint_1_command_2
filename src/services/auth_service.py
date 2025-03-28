@@ -62,7 +62,8 @@ class AuthService:
 
         except settings.REDIS_EXCEPTIONS as e:
             logger.error(
-                "Ошибка при добавлении токена в Redis: token_key=%s, error=%s. %s",
+                "Ошибка при добавлении токена в Redis: "
+                "token_key=%s, error=%s. %s",
                 token_key, e, log_info
             )
             raise TokenServiceError(e)
@@ -73,30 +74,22 @@ class AuthService:
         )
 
     @with_retry(settings.REDIS_EXCEPTIONS)
-    async def delete(self, access_token: str, refresh_token: str, log_info: str = "") -> None:
-        """Удаляет refresh-токен и помечает access-токен как отозванный."""
-        logger.debug(
-            "Удаление токенов: refresh_token=%s, access_token=%s. %s",
-            refresh_token, access_token, log_info
-        )
+    async def delete(self, token: str, log_info: str = "") -> None:
+        """Удаляет токен из Redis."""
+        logger.debug("Удаление токена: token=%s. %s", token, log_info)
         try:
-            await self.redis_client.delete(refresh_token)
-            await self.redis_client.set(
-                access_token,
-                settings.TOKEN_REVOKE,
-                ex=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60
-            )
+            await self.redis_client.delete(token)
 
         except settings.REDIS_EXCEPTIONS as e:
             logger.error(
-                "Ошибка при отзыве токенов: refresh_token=%s, access_token=%s, error=%s. %s",
-                refresh_token, access_token, e, log_info
+                "Ошибка при удалении токена: token=%s, error=%s. %s",
+                token, e, log_info
             )
             raise TokenServiceError(e)
 
         logger.info(
-            "Refresh-токен удалён, access-токен отозван. refresh_token=%s, access_token=%s. %s",
-            refresh_token, access_token, log_info
+            "Токен удалён: token=%s. %s",
+            token, log_info
         )
 
     async def revoke_token(self, token: str) -> None:
@@ -118,6 +111,9 @@ class AuthService:
         try:
             await self.redis_client.close()
             logger.info("Соединение с Redis (auth) успешно закрыто.")
+
         except (settings.REDIS_EXCEPTIONS, RuntimeError) as e:
-            logger.error("Ошибка при закрытии соединения с Redis (auth): %s", e)
+            logger.error(
+                "Ошибка при закрытии соединения с Redis (auth): %s", e
+            )
             raise TokenServiceError(e)

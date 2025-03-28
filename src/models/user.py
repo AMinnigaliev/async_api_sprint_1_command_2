@@ -2,14 +2,17 @@ import uuid
 from datetime import UTC, datetime
 from enum import Enum
 
-from sqlalchemy import Column, DateTime, Enum as SQLAEnum, ForeignKey, String
+from jose import jwt, JWTError
+from sqlalchemy import Boolean, Column, DateTime, Enum as SQLAEnum, String
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from werkzeug.security import check_password_hash, generate_password_hash
 
+from src.core.config import settings
 from src.db.postgres import Base
+from src.models.login_history import LoginHistory
 from src.models.subscription import Subscription
 from src.models.user_subscription import user_subscriptions
 
@@ -36,13 +39,17 @@ class User(Base):
     first_name = Column(String(100), nullable=True)
     last_name = Column(String(100), nullable=True)
     created_at = Column(
-        DateTime(timezone=True), default=datetime.now(UTC)
+        DateTime(timezone=True), nullable=False, default=datetime.now(UTC)
     )
     role = Column(
         SQLAEnum(UserRoleEnum), nullable=False, default=UserRoleEnum.USER
     )
+    is_active = Column(Boolean, default=True, nullable=False)
     subscriptions = relationship(
         Subscription, secondary=user_subscriptions, back_populates="users"
+    )
+    login_history = relationship(
+        "LoginHistory", back_populates="user", cascade="all, delete-orphan"
     )
 
     def __init__(
@@ -63,7 +70,9 @@ class User(Base):
         return check_password_hash(self.password, password)
 
     @classmethod
-    async def get_user_by_login(cls, db: AsyncSession, login: str) -> "User | None":
+    async def get_user_by_login(
+        cls, db: AsyncSession, login: str
+    ) -> "User | None":
         """
         Возвращает пользователя по логину.
         """
@@ -71,12 +80,16 @@ class User(Base):
         return result.scalar_one_or_none()
 
     @classmethod
-    async def get_user_by_token(cls, db: AsyncSession, token: str) -> "User | None":
+    async def get_user_by_token(
+        cls, db: AsyncSession, token: str
+    ) -> "User | None":
         """
         Извлекает пользователя из JWT access-токена.
         """
         try:
-            payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+            payload = jwt.decode(
+                token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
+            )
             user_id = payload.get("user_id")
             if not user_id:
                 return None
@@ -86,7 +99,9 @@ class User(Base):
         result = await db.execute(select(cls).where(cls.id == user_id))
         return result.scalar_one_or_none()
 
-    async def add_login_history(self, db: AsyncSession, user_agent: str = "unknown") -> None:
+    async def add_login_history(
+            self, db: AsyncSession, user_agent: str = "unknown"
+    ) -> None:
         """
         Добавляет запись входа в систему.
         """
@@ -102,18 +117,3 @@ class User(Base):
 
     def __repr__(self) -> str:
         return f"<User {self.login}>"
-
-
-
-class LoginHistory(Base):
-    __tablename__ = "login_history"
-
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, unique=True, nullable=False)
-    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
-    login_time = Column(DateTime, nullable=False, default=datetime.utcnow)
-    user_agent = Column(String(512), nullable=False, default="unknown")
-
-    user = relationship("User", back_populates="login_history")
-
-    def __repr__(self) -> str:
-        return f"<LoginHistory user_id={self.user_id} login_time={self.login_time}>"

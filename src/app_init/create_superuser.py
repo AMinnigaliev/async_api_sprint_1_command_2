@@ -6,7 +6,8 @@ from dotenv import load_dotenv
 from sqlalchemy import select
 
 from src.core.config import settings
-from src.db.postgres import async_session, engine, Base
+from src.db.init_postgres import create_database
+from src.db.postgres import async_session
 from src.models.user import User, UserRoleEnum
 
 load_dotenv()
@@ -15,14 +16,6 @@ logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger(__name__)
-
-
-async def init_db():
-    """Функция для инициализации базы данных"""
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-
-    logger.info("База данных инициализирована.")
 
 
 async def create_superuser() -> None:
@@ -58,7 +51,7 @@ async def create_superuser() -> None:
 
 
 async def main():
-    await init_db()
+    await create_database()
     await create_superuser()
 
 
