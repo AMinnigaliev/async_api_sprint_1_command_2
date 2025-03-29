@@ -15,7 +15,7 @@ class AuthService:
     def __init__(self, redis_client: Redis):
         self.redis_client = redis_client
 
-    @with_retry(settings.REDIS_EXCEPTIONS)
+    @with_retry()
     async def check_value(
             self, token_key: str, value: bytes, log_info: str = ""
     ) -> bool:
@@ -48,7 +48,7 @@ class AuthService:
         )
         return False
 
-    @with_retry(settings.REDIS_EXCEPTIONS)
+    @with_retry()
     async def set(
         self, token_key: str, value: bytes, expire: int, log_info: str = ""
     ) -> None:
@@ -73,7 +73,7 @@ class AuthService:
             token_key, expire, log_info
         )
 
-    @with_retry(settings.REDIS_EXCEPTIONS)
+    @with_retry()
     async def delete(self, token: str, log_info: str = "") -> None:
         """Удаляет токен из Redis."""
         logger.debug("Удаление токена: token=%s. %s", token, log_info)
