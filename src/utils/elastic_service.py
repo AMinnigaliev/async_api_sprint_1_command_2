@@ -15,7 +15,7 @@ class ElasticService:
     def __init__(self, es_client: AsyncElasticsearch):
         self.es_client = es_client
 
-    @with_retry(settings.ELASTIC_EXCEPTIONS)
+    @with_retry()
     async def get(
         self, index: str, id: str, log_info: str = ""
     ) -> ObjectApiResponse[Any] | None:
@@ -48,7 +48,7 @@ class ElasticService:
             )
             raise ElasticServiceError(e)
 
-    @with_retry(settings.ELASTIC_EXCEPTIONS)
+    @with_retry()
     async def search(
         self, index: str, query: dict, log_info: str = ""
     ) -> ObjectApiResponse[Any]:
@@ -83,6 +83,7 @@ class ElasticService:
             )
             raise ElasticServiceError(e)
 
+    @with_retry()
     async def index(
         self, index: str, id: str, body: dict
     ) -> ObjectApiResponse[Any]:
@@ -109,6 +110,7 @@ class ElasticService:
             )
             raise ElasticServiceError(e)
 
+    @with_retry()
     async def index_exists(self, index_name: str) -> bool:
         """
         Проверяет, существует ли индекс в Elasticsearch.

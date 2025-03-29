@@ -18,7 +18,7 @@ class CacheService:
         self.redis_client = redis_client
         self.cache_expire = cache_expire
 
-    @with_retry(settings.REDIS_EXCEPTIONS)
+    @with_retry()
     async def get(self, key: str, log_info: str = "") -> bytes | None:
         logger.debug(
             "Попытка получить значение из кеша: key=%s. %s", key, log_info
@@ -45,7 +45,7 @@ class CacheService:
 
             return None
 
-    @with_retry(settings.REDIS_EXCEPTIONS)
+    @with_retry()
     async def set(self, key: str, value: bytes, log_info: str = "") -> None:
         logger.debug(
             "Попытка сохранить значение в кеш: "
