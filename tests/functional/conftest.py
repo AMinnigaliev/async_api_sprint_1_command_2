@@ -1,56 +1,57 @@
-import logging
-import uuid
+from typing import Any, AsyncGenerator
 
-import aiohttp
 import pytest_asyncio
-import pytest
-
-from elasticsearch import Elasticsearch
-from elasticsearch.helpers import async_bulk
 from elasticsearch import AsyncElasticsearch
 
-from tests.functional.settings import test_settings
+from settings import config
 
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(levelname)s - %(message)s"
-)
-logger = logging.getLogger(__name__)
-
-# Фикстура для клиента Elasticsearch
 @pytest_asyncio.fixture
-async def es_client():
+async def es_client() -> AsyncGenerator[AsyncElasticsearch, Any]:
     """
     Создает экземпляр клиента Elasticsearch для тестов.
-    После завершения теста удаляет созданный индекс (если он существует) и закрывает соединение.
 
-    :return: Асинхронный клиент Elasticsearch.
+    @rtype AsyncGenerator[AsyncElasticsearch, Any]:
+    @return client:
     """
     client = AsyncElasticsearch(
-        hosts=test_settings.es_host,
-        verify_certs=False,
-        request_timeout=30
+        hosts="http://{}:{}/".format(config.elastic_host, config.elastic_port),
+        basic_auth=(config.elastic_name, config.elastic_password),
+        request_timeout=config.request_timeout,
     )
+
     try:
-        yield client  # Возвращаем сам клиент
+        yield client
+
     finally:
         await client.close()
+
+# TODO:
+import uuid
+
+import pytest
+from elasticsearch.helpers import async_bulk
+
+from settings import config
+
 
 @pytest.fixture
 def generate_film_data():
     """
-    Фикстура для генерации данных фильма.
-    Может создавать один или несколько фильмов.
+    Фикстура для генерации данных фильма. Может создавать один или несколько фильмов.
 
-    :return: Функция-генератор данных фильма.
+    @rtype: None
+    @return:
     """
-    def _generate_film_data(count=1):
+    def _generate_film_data(count: int = 1) -> list[dict]:
         """
         Генерирует указанное количество фильмов.
 
-        :param count: Количество фильмов.
-        :return: Список данных фильмов (если count > 1) или один фильм.
+        @type count: int
+        @param count: Количество фильмов.
+
+        @rtype films: list[dict]
+        @return films: Список данных фильмов (если count > 1) или один фильм.
         """
         films = []
         for _ in range(count):
@@ -80,19 +81,21 @@ def generate_film_data():
 
     return _generate_film_data
 
-import pytest
-from elasticsearch.helpers import async_bulk
 
 @pytest.fixture
-async def load_bulk_data_to_es(es_client, generate_film_data):
+async def load_bulk_data_to_es(es_client, generate_film_data) -> list[dict]:
     """
     Асинхронная фикстура для массовой загрузки данных фильмов в Elasticsearch.
 
-    :param es_client: Асинхронный клиент Elasticsearch.
-    :param generate_film_data: Фикстура для генерации данных фильмов.
-    :return: Загруженные данные фильмов.
+    @type es_client:
+    @param es_client: Асинхронный клиент Elasticsearch.
+    @type generate_film_data:
+    @param generate_film_data: Фикстура для генерации данных фильмов.
+
+    @rtype es_data: list[dict]
+    @return es_data: Загруженные данные фильмов.
     """
-    index_name = test_settings.es_index
+    index_name = config.elastic_index
     count = 5  # Можно задать другое значение в тесте, если нужно
 
     # Генерируем данные фильмов
@@ -103,7 +106,7 @@ async def load_bulk_data_to_es(es_client, generate_film_data):
         await es_client.indices.delete(index=index_name)
 
     # Создаем индекс с маппингом
-    await es_client.indices.create(index=index_name, body=test_settings.es_index_mapping)
+    await es_client.indices.create(index=index_name, body=config.elastic_index_mapping)
 
     # Формируем bulk-запрос
     bulk_query = [
@@ -126,42 +129,24 @@ async def load_bulk_data_to_es(es_client, generate_film_data):
 
     return es_data
 
-@pytest.fixture
-async def fetch_api_response():
-    """
-    Фикстура для выполнения GET-запросов к API.
-
-    :return: Функция для выполнения GET-запроса.
-    """
-    async def _fetch(session, url, query_data):
-        """
-        Выполняет GET-запрос.
-
-        :param session: Экземпляр aiohttp.ClientSession.
-        :param url: URL для запроса.
-        :param query_data: Параметры запроса.
-        :return: Тело ответа, заголовки и статус.
-        """
-        async with session.get(url, params=query_data) as response:
-            return response
-
-    return _fetch
-
 
 @pytest.fixture
 def generate_person_data():
     """
-    Фикстура для генерации данных персоны.
-    Может создавать одну или несколько персон.
+    Фикстура для генерации данных персоны. Может создавать одну или несколько персон.
 
-    :return: Функция-генератор данных персоны.
+    @rtype:
+    @return: Функция-генератор данных персоны.
     """
     def _generate_person_data(count=1):
         """
-        Генерирует указанное количество персон.
+        Генерирует указанное количество фильмов.
 
-        :param count: Количество персон.
-        :return: Список данных персон (если count > 1) или одна персона.
+        @type count: int
+        @param count: Количество персон.
+
+        @rtype persons: list[dict]
+        @return persons: Список данных персон (если count > 1) или одна персона.
         """
         persons = []
         for _ in range(count):
@@ -184,14 +169,19 @@ def generate_person_data():
 
     return _generate_person_data
 
+
 @pytest.fixture
 async def load_bulk_data_to_persons_es(es_client, generate_person_data):
     """
-    Асинхронная фикстура для массовой загрузки данных фильмов в Elasticsearch.
+    Асинхронная фикстура для массовой загрузки данных персон в Elasticsearch.
 
-    :param es_client: Асинхронный клиент Elasticsearch.
-    :param generate_person_data: Фикстура для генерации данных фильмов.
-    :return: Загруженные данные фильмов.
+    @type es_client:
+    @param es_client: Асинхронный клиент Elasticsearch.
+    @type generate_person_data:
+    @param generate_person_data: Фикстура для генерации данных персон.
+
+    @rtype es_data: list[dict]
+    @return es_data: Загруженные данные персон.
     """
     index_name = 'persons'
     count = 5  # Можно задать другое значение в тесте, если нужно
@@ -204,7 +194,7 @@ async def load_bulk_data_to_persons_es(es_client, generate_person_data):
         await es_client.indices.delete(index=index_name)
 
     # Создаем индекс с маппингом
-    await es_client.indices.create(index=index_name, body=test_settings.es_index_mapping)
+    await es_client.indices.create(index=index_name, body=config.elastic_index_mapping)
 
     # Формируем bulk-запрос
     bulk_query = [

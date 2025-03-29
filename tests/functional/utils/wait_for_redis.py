@@ -1,16 +1,36 @@
 import time
 
 import redis
+from redis.exceptions import ConnectionError as RedisConnectionError
+
+from logger import logger
+from settings import config
+
 
 if __name__ == '__main__':
-    redis_client = redis.Redis(host='redis', port=6379, db=0)
+    redis_client = redis.Redis(
+        host=config.redis_host,
+        port=config.redis_port,
+        password=config.redis_password,
+        db=config.redis_db,
+    )
+    concat_ = 1
+    connection_attempt = 0
 
-    while True:
+    while connection_attempt <= config.max_connection_attempt:
         try:
             if redis_client.ping():
-                print("Redis is up and running!")
-                break
-        except redis.exceptions.ConnectionError as e:
-            print(f"Redis is not yet available. Error: {e}")
+                redis_client.close()
+                logger.debug("Connection to Redis has been made")
 
-        time.sleep(1)
+                break
+
+            time.sleep(config.break_time_sec)
+            connection_attempt += concat_
+
+            if connection_attempt == config.max_connection_attempt:
+                raise ConnectionError("number of connection attempts exceeded")
+
+        except (RedisConnectionError, ConnectionError) as ex:
+            logger.error(f"Redis is not yet available. Error: {ex}")
+            raise

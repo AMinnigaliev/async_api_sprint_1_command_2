@@ -22,6 +22,7 @@ async def main():
                 f"{settings.ELASTIC_SCHEME}://{settings.ELASTIC_HOST}:"
                 f"{settings.ELASTIC_PORT}"
             ],
+            basic_auth=(settings.ELASTIC_NAME, settings.ELASTIC_PASSWORD),
             request_timeout=30,
         )
 

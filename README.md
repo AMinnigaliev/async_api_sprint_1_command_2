@@ -16,7 +16,7 @@
 ```
 🔹 **Запуск тестов:**
 ```sh
-# TODO: 
+docker compose -f ./tests/docker-compose-apps.yaml -f ./tests/docker-compose.override.yaml -f ./tests/docker-compose-services.yaml -f ./tests/docker-compose-tests.yaml up -d
 ```
 
 ## Стек технологий

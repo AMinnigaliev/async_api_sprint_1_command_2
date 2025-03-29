@@ -1,33 +1,46 @@
-import logging
 from uuid import uuid4
 
-from pydantic import Field
-from pydantic_settings import BaseSettings
-from tests.functional.es_mapping import ESIndexMapping, get_es_index_mapping, get_persons_index_mapping
+from pydantic import Field, computed_field
+from pydantic_settings import BaseSettings, SettingsConfigDict
+from testdata.es_mapping import ESIndexMapping, get_es_index_mapping, get_persons_index_mapping
 
-# Настройка логирования
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-
-APP_IP = 'app'
 
 class TestSettings(BaseSettings):
-    # Константы для переменных окружения
-    ELASTIC_HOST: str = "http://elasticsearch:9200"
-    REDIS_HOST: str = "http://redis:6379"
-    SERVICE_URL: str = f"http://{APP_IP}:8000"
+    model_config = SettingsConfigDict(
+        env_file="../.env",
+        env_file_encoding="utf-8",
+        extra="allow",
+    )
 
-    # Поля настроек
-    es_host: str = Field(default=ELASTIC_HOST, json_schema_extra={'env': 'ELASTIC_HOST'})
-    es_index: str = "films"
-    es_id_field: str = Field(default_factory=lambda: str(uuid4()))
-    es_index_mapping: ESIndexMapping = get_es_index_mapping()
-    es_persons_index_mapping: ESIndexMapping = get_persons_index_mapping()
+    skip_test: str = Field(default="true", alias="SKIP_TEST")
 
-    redis_host: str = Field(default=REDIS_HOST, json_schema_extra={'env': 'REDIS_HOST'})
-    service_url: str = Field(default=SERVICE_URL, json_schema_extra={'env': 'SERVICE_URL'})
+    src_app_host: str = Field(default="127.0.0.1", alias="SRC_APP_HOST")
+    src_app_port: int = Field(default=8000, alias="SRC_APP_PORT")
 
-    SKIP: str = "true"
+    redis_host: str = Field(default="127.0.0.1", alias="REDIS_HOST")
+    redis_port: int = Field(default=6379, alias="REDIS_PORT")
+    redis_password: str = Field(default="123qwe", alias="REDIS_PASSWORD")
+    redis_db: int = Field(default=0, alias="REDIS_DB")
+
+    elastic_schema: str = Field(default="film", alias="ELASTIC_SCHEMA")
+    elastic_name: str = Field(default="elastic", alias="ELASTIC_USERNAME")
+    elastic_host: str = Field(default="127.0.0.1", alias="ELASTIC_HOST")
+    elastic_port: int = Field(default=9200, alias="ELASTIC_PORT")
+    elastic_password: str = Field(default="123qwe", alias="ES_PASSWORD")
+
+    elastic_index: str = "films"  # TODO:
+    elastic_id_field: str = Field(default_factory=lambda: str(uuid4()))
+    elastic_index_mapping: ESIndexMapping = get_es_index_mapping()
+    elastic_persons_index_mapping: ESIndexMapping = get_persons_index_mapping()
+
+    request_timeout: int = Field(default=1 * 30, alias="REQUEST_TIME_OUT")
+    max_connection_attempt: int = Field(default=5, alias="MAX_CONNECTION_ATTEMPT")
+    break_time_sec: int = Field(default=5, alias="BREAK_TIME_SEC")
+
+    @computed_field
+    @property
+    def service_url(self) -> str:
+        return f"http://{self.src_app_host}:{self.src_app_port}"
 
 
-test_settings = TestSettings()
+config = TestSettings()

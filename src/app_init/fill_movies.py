@@ -19,7 +19,8 @@ es_client = AsyncElasticsearch(
     hosts=[
         f'{settings.ELASTIC_SCHEME}://{settings.ELASTIC_HOST}:'
         f'{settings.ELASTIC_PORT}'
-    ]
+    ],
+    basic_auth=(settings.ELASTIC_NAME, settings.ELASTIC_PASSWORD),
 )
 
 elastic_service = ElasticService(es_client)
