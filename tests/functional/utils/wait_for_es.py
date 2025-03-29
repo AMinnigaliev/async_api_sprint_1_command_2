@@ -1,17 +1,34 @@
 import time
 
 from elasticsearch import Elasticsearch
-from elasticsearch.exceptions import ConnectionError
+from elasticsearch.exceptions import ConnectionError as ElasticsearchConnectionError
+
+from logger import logger
+from settings import config
+
 
 if __name__ == '__main__':
-    es_client = Elasticsearch(hosts=['http://elasticsearch:9200'], verify_certs=False)
+    es_client = Elasticsearch(
+        hosts="http://{}:{}/".format(config.elastic_host, config.elastic_port),
+        basic_auth=(config.elastic_name, config.elastic_password),
+    )
+    concat_ = 1
+    connection_attempt = 0
 
-    while True:
+    while connection_attempt <= config.max_connection_attempt:
         try:
             if es_client.ping():
-                print("Elasticsearch is up and running!")
-                break
-        except ConnectionError as e:
-            print(f"Elasticsearch is not yet available. Error: {e}")
+                es_client.close()
+                logger.debug("Connection to Elasticsearch has been made")
 
-        time.sleep(1)
+                break
+
+            time.sleep(config.break_time_sec)
+            connection_attempt += concat_
+
+            if connection_attempt == config.max_connection_attempt:
+                raise ConnectionError("number of connection attempts exceeded")
+
+        except (ElasticsearchConnectionError, ConnectionError) as ex:
+            logger.error(f"Elasticsearch is not yet available. Error: {ex}")
+            raise
