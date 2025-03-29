@@ -198,6 +198,7 @@ async def main():
 
     except Exception as e:
         logger.error(f"Критическая ошибка во время выполнения скрипта: {e}")
+        raise
 
     finally:
         # Закрываем соединение с Elasticsearch
