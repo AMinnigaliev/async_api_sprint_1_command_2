@@ -3,7 +3,7 @@ import logging
 import os
 
 from dotenv import load_dotenv
-from sqlalchemy import select
+from sqlalchemy import select, cast, String
 
 from src.core.config import settings
 from src.db.init_postgres import create_database
@@ -23,13 +23,12 @@ async def create_superuser() -> None:
     logger.info("Начало работы скрипта по созданию суперпользователя.")
 
     async with async_session() as db:
+        # Проверка существования по логину, а не по роли
         existing_user = await db.execute(
-            select(User).filter_by(role=UserRoleEnum.SUPERUSER)
+            select(User).where(User.login == os.getenv("SUPERUSER_NAME"))
         )
         if existing_user.scalars().first():
-            logger.info(
-                "Суперпользователь уже существует."
-            )
+            logger.info("Суперпользователь уже существует.")
             return
 
         superuser = User(

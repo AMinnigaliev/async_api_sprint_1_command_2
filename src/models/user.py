@@ -8,6 +8,7 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
+from sqlalchemy.dialects.postgresql import ENUM as PgEnum
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from src.core.config import settings
@@ -42,7 +43,9 @@ class User(Base):
         DateTime(timezone=True), nullable=False, default=datetime.now(UTC)
     )
     role = Column(
-        SQLAEnum(UserRoleEnum), nullable=False, default=UserRoleEnum.USER
+        PgEnum(UserRoleEnum, name="userroleenum", native_enum=True, create_type=False),
+        nullable=False,
+        default=UserRoleEnum.USER,
     )
     is_active = Column(Boolean, default=True, nullable=False)
     subscriptions = relationship(

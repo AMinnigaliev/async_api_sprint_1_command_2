@@ -1,7 +1,6 @@
 from uuid import UUID
-
+from datetime import datetime
 from pydantic import BaseModel, Field
-
 from src.schemas.subscription import SubscriptionResponse
 
 
@@ -39,5 +38,28 @@ class UserResponse(BaseUser):
     subscriptions: list[SubscriptionResponse] = Field(
         default_factory=[], description="Подписки пользователя"
     )
+
+    model_config = {"from_attributes": True}
+
+
+class UserInDB(UserResponse):
+    """Модель пользователя для внутреннего использования (например, в БД)."""
+    hashed_password: str = Field(..., description="Хэшированный пароль")
+
+    model_config = {"from_attributes": True}
+
+class Token(BaseModel):
+    """Модель JWT-токена для ответа на аутентификацию и обновление."""
+    access_token: str = Field(..., description="JWT access-токен")
+    refresh_token: str = Field(..., description="JWT refresh-токен")
+    token_type: str = Field(default="bearer", description="Тип токена")
+
+class LoginHistory(BaseModel):
+    """Модель записи истории входов пользователя."""
+    id: UUID = Field(..., description="Уникальный идентификатор записи")
+    user_id: UUID = Field(..., description="ID пользователя")
+    user_agent: str = Field(..., description="User-Agent клиента")
+    ip_address: str = Field(..., description="IP-адрес клиента")
+    timestamp: datetime = Field(..., description="Дата и время входа")
 
     model_config = {"from_attributes": True}
