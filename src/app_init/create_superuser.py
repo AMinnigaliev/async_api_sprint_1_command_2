@@ -24,12 +24,10 @@ async def create_superuser() -> None:
 
     async with async_session() as db:
         existing_user = await db.execute(
-            select(User).filter_by(role=UserRoleEnum.SUPERUSER)
+            select(User).where(User.login == os.getenv("SUPERUSER_NAME"))
         )
         if existing_user.scalars().first():
-            logger.info(
-                "Суперпользователь уже существует."
-            )
+            logger.info("Суперпользователь уже существует.")
             return
 
         superuser = User(

@@ -5,7 +5,7 @@ from redis.asyncio import Redis
 
 from src.core.config import settings
 from src.core.exceptions import TokenServiceError
-from src.services.jwt_service import verify_token
+from src.core.security import verify_token
 from src.utils.decorators import with_retry
 
 logger = logging.getLogger(__name__)
@@ -17,7 +17,7 @@ class AuthService:
 
     @with_retry()
     async def check_value(
-            self, token_key: str, value: bytes, log_info: str = ""
+        self, token_key: str, value: bytes, log_info: str = ""
     ) -> bool:
         """Проверяет, соответствует ли значение токена заданному."""
         logger.debug(
@@ -92,7 +92,7 @@ class AuthService:
             token, log_info
         )
 
-    async def revoke_token(self, token: str) -> None:
+    async def revoke_token(self, token: str, log_info: str = "") -> None:
         """
         Отзыв токена: помещает его в Redis с TTL, равным
         оставшемуся времени жизни токена.
@@ -103,7 +103,7 @@ class AuthService:
             ttl = int(exp - datetime.now(UTC).timestamp())
 
             if ttl > 0:
-                await self.set(token, settings.TOKEN_REVOKE, ttl)
+                await self.set(token, settings.TOKEN_REVOKE, ttl, log_info)
 
     async def close(self):
         """Закрывает соединение с Redis."""

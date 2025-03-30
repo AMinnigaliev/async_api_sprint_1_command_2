@@ -8,7 +8,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.db.postgres import get_session
 from src.models.subscription import Subscription
 from src.models.user import User
-from src.repositories.user import get_user_by_id
 
 logger = logging.getLogger(__name__)
 
@@ -16,14 +15,14 @@ logger = logging.getLogger(__name__)
 class UserSubscriptionService:
     """Сервис для работы с подписками пользователей."""
 
-    def __init__(self, db: AsyncSession = Depends(get_session)):
+    def __init__(self, db: AsyncSession):
         self.db = db
 
     async def assign_subscription(
         self, user_id: UUID, subscription_id: UUID
     ) -> User:
         """Назначает подписку пользователю."""
-        user = await get_user_by_id(user_id, self.db)
+        user = await User.get_user_by_id(self.db, user_id)
 
         subscription = await self.db.get(Subscription, subscription_id)
         if not subscription:
@@ -46,7 +45,7 @@ class UserSubscriptionService:
             self, user_id: UUID, subscription_id: UUID
     ) -> User:
         """Отменяет подписку у пользователя."""
-        user = await get_user_by_id(user_id, self.db)
+        user = await User.get_user_by_id(self.db, user_id)
 
         subscription = await self.db.get(Subscription, subscription_id)
         if not subscription or subscription not in user.subscriptions:
@@ -64,7 +63,7 @@ class UserSubscriptionService:
             self, user_id: UUID
     ) -> list[Subscription]:
         """Возвращает список подписок пользователя."""
-        user = await get_user_by_id(user_id, self.db)
+        user = await User.get_user_by_id(self.db, user_id)
 
         return user.subscriptions
 
