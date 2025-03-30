@@ -8,7 +8,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.db.postgres import get_session
 from src.models.user import User, UserRoleEnum
-from src.repositories.user import get_user_by_id
 
 logger = logging.getLogger(__name__)
 
@@ -16,7 +15,7 @@ logger = logging.getLogger(__name__)
 class UserRoleService:
     """Сервис для работы с ролями пользователей."""
 
-    def __init__(self, db: AsyncSession = Depends(get_session)):
+    def __init__(self, db: AsyncSession):
         self.db = db
 
     async def assign_role(self, user_id: UUID, role: UserRoleEnum) -> User:
@@ -27,7 +26,7 @@ class UserRoleService:
                 detail="Cannot assign superuser role",
             )
 
-        user = await get_user_by_id(user_id, self.db)
+        user = await User.get_user_by_id(self.db, user_id)
 
         user.role = role
         await self.db.commit()
@@ -37,7 +36,7 @@ class UserRoleService:
 
     async def get_user_role(self, user_id: UUID) -> str:
         """Возвращает роль пользователя в виде строки."""
-        user = await get_user_by_id(user_id, self.db)
+        user = await User.get_user_by_id(self.db, user_id)
 
         return str(user.role)
 

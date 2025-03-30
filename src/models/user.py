@@ -2,6 +2,7 @@ import uuid
 from datetime import UTC, datetime
 from enum import Enum
 
+from fastapi import HTTPException, status
 from jose import jwt, JWTError
 from sqlalchemy import Boolean, Column, DateTime, Enum as SQLAEnum, String
 from sqlalchemy.dialects.postgresql import UUID
@@ -11,6 +12,7 @@ from sqlalchemy.future import select
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from src.core.config import settings
+from src.core.security import verify_token
 from src.db.postgres import Base
 from src.models.login_history import LoginHistory
 from src.models.subscription import Subscription
@@ -46,7 +48,10 @@ class User(Base):
     )
     is_active = Column(Boolean, default=True, nullable=False)
     subscriptions = relationship(
-        Subscription, secondary=user_subscriptions, back_populates="users"
+        Subscription,
+        secondary=user_subscriptions,
+        back_populates="users",
+        lazy="selectin",
     )
     login_history = relationship(
         "LoginHistory", back_populates="user", cascade="all, delete-orphan"
@@ -70,6 +75,16 @@ class User(Base):
         return check_password_hash(self.password, password)
 
     @classmethod
+    async def get_user_by_id(cls, db: AsyncSession, user_id: UUID) -> "User":
+        if user_id:
+            if user := await db.get(cls, user_id):
+                return user
+
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
+        )
+
+    @classmethod
     async def get_user_by_login(
         cls, db: AsyncSession, login: str
     ) -> "User | None":
@@ -86,18 +101,10 @@ class User(Base):
         """
         Извлекает пользователя из JWT access-токена.
         """
-        try:
-            payload = jwt.decode(
-                token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
-            )
-            user_id = payload.get("user_id")
-            if not user_id:
-                return None
-        except JWTError:
-            return None
+        payload = verify_token(token)
+        user_id = payload.get("user_id")
 
-        result = await db.execute(select(cls).where(cls.id == user_id))
-        return result.scalar_one_or_none()
+        return await cls.get_user_by_id(db, user_id)
 
     async def add_login_history(
             self, db: AsyncSession, user_agent: str = "unknown"

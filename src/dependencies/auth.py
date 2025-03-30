@@ -1,11 +1,11 @@
-from fastapi import HTTPException, Security, Depends
+from fastapi import HTTPException, Security, Depends, status
 from fastapi.security import OAuth2PasswordBearer
 
 from src.core.config import settings
 from src.db.redis_client import get_redis_auth
 from src.models.user import UserRoleEnum
 from src.services.auth_service import AuthService
-from src.services.jwt_service import verify_token
+from src.core.security import verify_token
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
@@ -25,15 +25,21 @@ def role_dependency(required_roles: tuple[UserRoleEnum]):
         redis_client: AuthService = Depends(get_redis_auth)
     ):
         if not token:
-            raise HTTPException(status_code=401, detail="Not authenticated")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Not authenticated",
+            )
 
         payload = verify_token(token)
         if await redis_client.check_value(token, settings.TOKEN_REVOKE):
             raise HTTPException(
-                status_code=401, detail="Token has been revoked"
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Token expired or revoked",
             )
 
         if payload.get("role") not in required_roles:
-            raise HTTPException(status_code=403, detail="Forbidden")
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden"
+            )
 
     return _check_role

@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 class SubscriptionService:
     """Сервис для работы с подписками."""
 
-    def __init__(self, db: AsyncSession = Depends(get_session)):
+    def __init__(self, db: AsyncSession):
         self.db = db
 
     async def get_subscriptions(self) -> list[Subscription]:

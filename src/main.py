@@ -8,7 +8,6 @@ from src.api.v1 import films, genres, healthcheck, persons, subscription, \
     user_role, user_subscription, user
 from src.core.config import settings
 from src.db.elastic import get_elastic
-from src.db.init_postgres import create_database
 from src.db.postgres import async_session
 from src.db.redis_client import get_redis_auth, get_redis_cache
 
@@ -29,37 +28,25 @@ async def startup():
     Событие запуска приложения: инициализация базы данных PostgreSQL и
     подключений к Redis и Elasticsearch.
     """
-    # Инициализация PostgreSQL
-    logger.info("Инициализация базы данных PostgreSQL...")
-    try:
-        await create_database()
+    # Проверяем доступные таблицы в базе данных после инициализации
+    logger.info("Проверяем доступные таблицы в базе данных PostgreSQL...")
 
-    except settings.PG_EXCEPTIONS as e:
-        logger.error("Ошибка при инициализации базы данных PostgreSQL: %s", e)
+    async with async_session() as session:
+        result = await session.execute(text(
+            "SELECT table_name FROM information_schema.tables WHERE "
+            "table_schema='public';"
+        ))
+        tables = result.fetchall()
+        tables_name = [table[0] for table in tables]
 
-        raise ConnectionError(
-            "Не удалось инициализировать базу данных PostgreSQL. "
-            "Приложение завершает работу."
-        )
+        if not tables_name:
+            logger.info("База данных PostgreSQL пуста!")
 
-    else:
-        # Проверяем доступные таблицы в базе данных после инициализации
-        async with async_session() as session:
-            result = await session.execute(text(
-                "SELECT table_name FROM information_schema.tables WHERE "
-                "table_schema='public';"
-            ))
-            tables = result.fetchall()
-            tables_name = [table[0] for table in tables]
-
-            if not tables_name:
-                logger.info("База данных PostgreSQL пуста!")
-
-            else:
-                logger.info(
-                    f"В базе данных PostgreSQL найдены таблицы: %s",
-                    tables_name
-                )
+        else:
+            logger.info(
+                f"В базе данных PostgreSQL найдены таблицы: %s",
+                tables_name
+            )
 
     # Инициализация подключений к Redis
     logger.info("Инициализация подключений к Redis...")

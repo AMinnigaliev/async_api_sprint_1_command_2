@@ -2,7 +2,7 @@ from datetime import datetime, timedelta, UTC
 from typing import Any
 from uuid import UUID
 
-from fastapi import HTTPException
+from fastapi import HTTPException, status
 from jose import jwt, ExpiredSignatureError, JWTError
 
 from src.core.config import settings
@@ -52,10 +52,22 @@ def verify_token(token: str) -> dict:
         payload = jwt.decode(
             token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
         )
+        # Список обязательных полей, которые должен содержать токен
+        required_fields = ["user_id", "role", "subscriptions", "exp"]
+
+        for field in required_fields:
+            if field not in payload:
+                raise JWTError
+
         return payload
 
     except ExpiredSignatureError:
-        raise HTTPException(status_code=401, detail="Token has expired")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token has expired",
+        )
 
     except JWTError:
-        raise HTTPException(status_code=403, detail="Invalid token")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token"
+        )
