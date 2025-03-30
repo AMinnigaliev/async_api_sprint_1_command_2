@@ -7,9 +7,8 @@ from src.models.subscription import Subscription
 from src.models.user import UserRoleEnum
 from src.schemas.subscription import SubscriptionCreateUpdate
 from src.schemas.user import SubscriptionResponse
-from src.services.subscription_service import (
-    SubscriptionService, get_subscription_service
-)
+from src.services.subscription_service import (SubscriptionService,
+                                               get_subscription_service)
 
 router = APIRouter(
     dependencies=[Depends(role_dependency(

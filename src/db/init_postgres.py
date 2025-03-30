@@ -1,5 +1,6 @@
 import logging
 
+from src.core.config import settings
 from src.db.postgres import Base, engine
 
 logger = logging.getLogger(__name__)

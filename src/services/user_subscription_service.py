@@ -2,7 +2,8 @@ import logging
 from functools import lru_cache
 from typing import Annotated
 from uuid import UUID
-from fastapi import HTTPException, Depends
+
+from fastapi import Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.db.postgres import get_session

@@ -10,6 +10,7 @@ from src.etl.etl_persons import ETLPersonService
 logging.config.dictConfig(LOGGING)
 logger = logging.getLogger(__name__)
 
+
 async def main():
     """
     Основная функция для запуска ETL-процесса.
@@ -38,7 +39,9 @@ async def main():
         films_index = "films"  # Индекс фильмов
         person_index = "persons"  # Индекс персон
 
-        await etl_service.run_etl(films_index=films_index, person_index=person_index)
+        await etl_service.run_etl(
+            films_index=films_index, person_index=person_index
+        )
 
     except ConnectionError as e:
         logger.error(f"Ошибка подключения к Elasticsearch: {e}")

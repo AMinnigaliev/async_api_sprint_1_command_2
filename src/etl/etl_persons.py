@@ -24,7 +24,9 @@ class ETLPersonService:
         retry=retry_if_exception_type((ConnectionError, RequestError)),
         reraise=True,
     )
-    async def extract_persons_from_films(self, films_index: str) -> Set[Tuple[str, str, str]]:
+    async def extract_persons_from_films(
+            self, films_index: str
+    ) -> Set[Tuple[str, str, str]]:
         """
         Извлекает уникальные данные о персонах из индекса фильмов.
 
@@ -35,36 +37,57 @@ class ETLPersonService:
         persons = set()
 
         try:
-            # Используем Scroll API для извлечения всех документов из индекса `films`
-            async for doc in helpers.async_scan(self.elastic, index=films_index):
-                film_id = doc["_id"]
+            # Используем Scroll API для извлечения всех документов из индекса
+            # `films`
+            async for doc in helpers.async_scan(
+                    self.elastic, index=films_index
+            ):
+                # film_id = doc["_id"]
                 actors = doc["_source"].get("actors", [])
                 writers = doc["_source"].get("writers", [])
                 directors = doc["_source"].get("directors", [])
 
                 for actor in actors:
-                    if isinstance(actor, dict) and "id" in actor and "full_name" in actor:
-                        persons.add((actor["id"], actor["full_name"], "actor"))
+                    if isinstance(
+                            actor, dict
+                    ) and "id" in actor and "full_name" in actor:
+                        persons.add(
+                            (actor["id"], actor["full_name"], "actor")
+                        )
                     else:
                         logger.warning(f"Неверный формат актера: {actor}")
 
                 for writer in writers:
-                    if isinstance(writer, dict) and "id" in writer and "full_name" in writer:
-                        persons.add((writer["id"], writer["full_name"], "writer"))
+                    if isinstance(
+                            writer, dict
+                    ) and "id" in writer and "full_name" in writer:
+                        persons.add(
+                            (writer["id"], writer["full_name"], "writer")
+                        )
                     else:
                         logger.warning(f"Неверный формат сценариста: {writer}")
 
                 for director in directors:
-                    if isinstance(director, dict) and "id" in director and "full_name" in director:
-                        persons.add((director["id"], director["full_name"], "director"))
+                    if isinstance(
+                            director, dict
+                    ) and "id" in director and "full_name" in director:
+                        persons.add(
+                            (director["id"], director["full_name"], "director")
+                        )
                     else:
-                        logger.warning(f"Неверный формат режиссера: {director}")
+                        logger.warning(
+                            f"Неверный формат режиссера: {director}"
+                        )
 
         except ConnectionError:
-            logger.error("Ошибка подключения к Elasticsearch. Попробуем снова...")
+            logger.error(
+                "Ошибка подключения к Elasticsearch. Попробуем снова..."
+            )
             raise
         except Exception as e:
-            logger.error(f"Произошла ошибка при извлечении данных о персонах: {e}")
+            logger.error(
+                f"Произошла ошибка при извлечении данных о персонах: {e}"
+            )
             raise
 
         logger.info(f"Извлечено {len(persons)} уникальных персон.")
@@ -78,7 +101,8 @@ class ETLPersonService:
     )
     async def recreate_person_index(self, person_index: str):
         """
-        Удаляет существующий индекс `persons` (если он существует) и создаёт новый с указанным маппингом.
+        Удаляет существующий индекс `persons` (если он существует) и создаёт
+        новый с указанным маппингом.
 
         :param person_index: Имя индекса персон.
         """
@@ -87,11 +111,16 @@ class ETLPersonService:
             exists = await self.elastic.indices.exists(index=person_index)
 
             if exists:
-                logger.info(f"Индекс {person_index} уже существует. Удаление индекса...")
+                logger.info(
+                    f"Индекс {person_index} уже существует. "
+                    f"Удаление индекса..."
+                )
                 await self.elastic.indices.delete(index=person_index)
                 logger.info(f"Индекс {person_index} успешно удалён.")
 
-            logger.info(f"Создание нового индекса {person_index} с маппингом...")
+            logger.info(
+                f"Создание нового индекса {person_index} с маппингом..."
+            )
             # Определяем схему индекса
             body = {
                 "mappings": {
@@ -109,10 +138,14 @@ class ETLPersonService:
             logger.error(f"Ошибка при создании индекса {person_index}: {e}")
             raise
         except ConnectionError:
-            logger.error("Ошибка подключения к Elasticsearch. Попробуем снова...")
+            logger.error(
+                "Ошибка подключения к Elasticsearch. Попробуем снова..."
+            )
             raise
         except Exception as e:
-            logger.error(f"Произошла ошибка при проверке/создании индекса: {e}")
+            logger.error(
+                f"Произошла ошибка при проверке/создании индекса: {e}"
+            )
             raise
 
     @retry(
@@ -121,7 +154,9 @@ class ETLPersonService:
         retry=retry_if_exception_type((ConnectionError, RequestError)),
         reraise=True,
     )
-    async def load_persons_to_index(self, person_index: str, persons: Set[Tuple[str, str, str]]):
+    async def load_persons_to_index(
+            self, person_index: str, persons: Set[Tuple[str, str, str]]
+    ):
         """
         Загружает уникальные данные о персонах в индекс `persons`.
 
@@ -137,7 +172,7 @@ class ETLPersonService:
                     "id": person_id,
                     "name": person_name,
                     "role": person_role,
-                    "films": [],  # Пустой список фильмов (можно дополнить позже)
+                    "films": [],
                 },
             }
             for person_id, person_name, person_role in persons
@@ -146,9 +181,14 @@ class ETLPersonService:
         try:
             # Используем Bulk API для загрузки данных
             await helpers.async_bulk(self.elastic, actions)
-            logger.info(f"Загрузка завершена. Загружено {len(persons)} персон.")
+            logger.info(
+                f"Загрузка завершена. Загружено {len(persons)} персон."
+            )
         except ConnectionError:
-            logger.error("Ошибка подключения при загрузке данных в Elasticsearch. Попробуем снова...")
+            logger.error(
+                "Ошибка подключения при загрузке данных в Elasticsearch. "
+                "Попробуем снова..."
+            )
             raise
         except Exception as e:
             logger.error(f"Произошла ошибка при загрузке данных: {e}")

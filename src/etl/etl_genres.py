@@ -39,16 +39,23 @@ class ETLService:
         genres = set()
 
         try:
-            # Используем Scroll API для извлечения всех документов из индекса `films`
-            async for doc in helpers.async_scan(self.elastic, index=films_index):
+            # Используем Scroll API для извлечения всех документов из индекса
+            # `films`
+            async for doc in helpers.async_scan(
+                    self.elastic, index=films_index
+            ):
                 film_genres = doc["_source"].get("genre", [])
                 for genre in film_genres:
-                    if isinstance(genre, dict) and "id" in genre and "name" in genre:
+                    if isinstance(
+                            genre, dict
+                    ) and "id" in genre and "name" in genre:
                         genres.add((genre["id"], genre["name"]))
                     else:
                         logger.warning(f"Неверный формат жанра: {genre}")
         except ConnectionError:
-            logger.error("Ошибка подключения к Elasticsearch. Попробуем снова...")
+            logger.error(
+                "Ошибка подключения к Elasticsearch. Попробуем снова..."
+            )
             raise
         except Exception as e:
             logger.error(f"Произошла ошибка при извлечении жанров: {e}")
@@ -65,7 +72,8 @@ class ETLService:
     )
     async def recreate_genres_index(self, genres_index: str):
         """
-        Удаляет существующий индекс `genres` (если он существует) и создаёт новый с указанным маппингом.
+        Удаляет существующий индекс `genres` (если он существует) и создаёт
+        новый с указанным маппингом.
 
         :param genres_index: Имя индекса жанров.
         """
@@ -74,11 +82,16 @@ class ETLService:
             exists = await self.elastic.indices.exists(index=genres_index)
 
             if exists:
-                logger.info(f"Индекс {genres_index} уже существует. Удаление индекса...")
+                logger.info(
+                    f"Индекс {genres_index} уже существует. "
+                    f"Удаление индекса..."
+                )
                 await self.elastic.indices.delete(index=genres_index)
                 logger.info(f"Индекс {genres_index} успешно удалён.")
 
-            logger.info(f"Создание нового индекса {genres_index} с маппингом...")
+            logger.info(
+                f"Создание нового индекса {genres_index} с маппингом..."
+            )
             # Определяем схему индекса
             body = {
                 "mappings": {
@@ -94,10 +107,14 @@ class ETLService:
             logger.error(f"Ошибка при создании индекса {genres_index}: {e}")
             raise
         except ConnectionError:
-            logger.error("Ошибка подключения к Elasticsearch. Попробуем снова...")
+            logger.error(
+                "Ошибка подключения к Elasticsearch. Попробуем снова..."
+            )
             raise
         except Exception as e:
-            logger.error(f"Произошла ошибка при проверке/создании индекса: {e}")
+            logger.error(
+                f"Произошла ошибка при проверке/создании индекса: {e}"
+            )
             raise
 
     @retry(
@@ -128,7 +145,10 @@ class ETLService:
             await helpers.async_bulk(self.elastic, actions)
             logger.info(f"Загрузка завершена. Загружено {len(genres)} жанров.")
         except ConnectionError:
-            logger.error("Ошибка подключения при загрузке данных в Elasticsearch. Попробуем снова...")
+            logger.error(
+                "Ошибка подключения при загрузке данных в Elasticsearch. "
+                "Попробуем снова..."
+            )
             raise
         except Exception as e:
             logger.error(f"Произошла ошибка при загрузке данных: {e}")

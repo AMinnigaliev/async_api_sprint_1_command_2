@@ -1,9 +1,9 @@
-from datetime import datetime, timedelta, UTC
+from datetime import UTC, datetime, timedelta
 from typing import Any
 from uuid import UUID
 
 from fastapi import HTTPException, status
-from jose import jwt, ExpiredSignatureError, JWTError
+from jose import ExpiredSignatureError, JWTError, jwt
 
 from src.core.config import settings
 
@@ -19,7 +19,7 @@ def create_access_token(
         "role": role,
         "subscriptions": subscriptions,
         "exp": datetime.now(UTC) + (expires_delta or timedelta(
-                minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES
+            minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES
         )),
     }
     return jwt.encode(

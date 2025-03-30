@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends,  status
+from fastapi import APIRouter, Depends, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 
 from src.schemas.login_history import LoginHistory

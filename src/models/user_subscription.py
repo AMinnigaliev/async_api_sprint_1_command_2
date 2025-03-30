@@ -3,7 +3,6 @@ from sqlalchemy.dialects.postgresql import UUID
 
 from src.db.postgres import Base
 
-
 user_subscriptions = Table(
     'user_subscriptions',
     Base.metadata,

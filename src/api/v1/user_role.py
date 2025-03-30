@@ -5,9 +5,8 @@ from fastapi import APIRouter, Depends
 from src.dependencies.auth import role_dependency
 from src.models.user import User, UserRoleEnum
 from src.schemas.user import UserResponse
-from src.services.user_role_service import (
-    UserRoleService, get_user_role_service
-)
+from src.services.user_role_service import (UserRoleService,
+                                            get_user_role_service)
 
 router = APIRouter(
     dependencies=[Depends(role_dependency(

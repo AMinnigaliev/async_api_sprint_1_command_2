@@ -1,21 +1,18 @@
 import os
 from typing import Any, ClassVar
 
-from asyncpg.exceptions import (
-    ConnectionDoesNotExistError as PGConnectionDoesNotExistError,
-    PostgresError,
-    SyntaxOrAccessError as PGSyntaxOrAccessError
-)
+from asyncpg.exceptions import \
+    ConnectionDoesNotExistError as PGConnectionDoesNotExistError
+from asyncpg.exceptions import PostgresError
+from asyncpg.exceptions import SyntaxOrAccessError as PGSyntaxOrAccessError
 from elastic_transport import TransportError as ESTransportError
 from elasticsearch import ApiError as ESApiError
 from pydantic import Field
 from pydantic_settings import BaseSettings
 from redis.exceptions import RedisError
-from sqlalchemy.exc import (
-    IntegrityError as SQLIntegrityError,
-    OperationalError as SQLOperationalError,
-    SQLAlchemyError
-)
+from sqlalchemy.exc import IntegrityError as SQLIntegrityError
+from sqlalchemy.exc import OperationalError as SQLOperationalError
+from sqlalchemy.exc import SQLAlchemyError
 
 
 class Settings(BaseSettings):
@@ -69,6 +66,7 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 15
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
+
 
 # Инициализация настроек
 settings = Settings()

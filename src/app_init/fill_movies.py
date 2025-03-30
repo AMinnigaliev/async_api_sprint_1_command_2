@@ -12,7 +12,9 @@ from src.core.config import settings
 from src.models.models import Film, GenreBase, PersonBase
 from src.utils.elastic_service import ElasticService
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+)
 logger = logging.getLogger(__name__)
 
 es_client = AsyncElasticsearch(
@@ -44,10 +46,18 @@ async def create_fake_films(num_films: int, index_name: str):
 
         # Добавление фильма в индекс Elasticsearch
         try:
-            response = await elastic_service.index(index=index_name, id=film.id, body=film_dict)
-            logger.info(f"Фильм '{film.title}' успешно добавлен в индекс {index_name}. Response: {response}")
+            response = await elastic_service.index(
+                index=index_name, id=film.id, body=film_dict
+            )
+            logger.info(
+                f"Фильм '{film.title}' успешно добавлен в индекс "
+                f"{index_name}. Response: {response}"
+            )
         except Exception as e:
-            logger.error(f"Ошибка при добавлении фильма '{film.title}' в индекс {index_name}: {e}")
+            logger.error(
+                f"Ошибка при добавлении фильма '{film.title}' в индекс "
+                f"{index_name}: {e}"
+            )
 
 
 def generate_fake_film() -> Film:
@@ -57,20 +67,34 @@ def generate_fake_film() -> Film:
     logger.debug("Начало генерации фейкового фильма.")
 
     # Генерация жанров
-    genres = [GenreBase(id=uuid4(), name=fake.word()) for _ in range(random.randint(1, 3))]
+    genres = [GenreBase(
+        id=uuid4(), name=fake.word()
+    ) for _ in range(random.randint(1, 3))]
     logger.debug(f"Сгенерированы жанры: {[genre.name for genre in genres]}")
 
     # Генерация актёров
-    actors = [PersonBase(id=uuid4(), full_name=fake.name()) for _ in range(random.randint(2, 5))]
-    logger.debug(f"Сгенерированы актёры: {[actor.full_name for actor in actors]}")
+    actors = [PersonBase(
+        id=uuid4(), full_name=fake.name()
+    ) for _ in range(random.randint(2, 5))]
+    logger.debug(
+        f"Сгенерированы актёры: {[actor.full_name for actor in actors]}"
+    )
 
     # Генерация сценаристов
-    writers = [PersonBase(id=uuid4(), full_name=fake.name()) for _ in range(random.randint(1, 3))]
-    logger.debug(f"Сгенерированы сценаристы: {[writer.full_name for writer in writers]}")
+    writers = [PersonBase(
+        id=uuid4(), full_name=fake.name()
+    ) for _ in range(random.randint(1, 3))]
+    logger.debug(
+        f"Сгенерированы сценаристы: {[writer.full_name for writer in writers]}"
+    )
 
     # Генерация режиссёров
-    directors = [PersonBase(id=uuid4(), full_name=fake.name()) for _ in range(random.randint(1, 2))]
-    logger.debug(f"Сгенерированы режиссёры: {[director.full_name for director in directors]}")
+    directors = [PersonBase(
+        id=uuid4(), full_name=fake.name()
+    ) for _ in range(random.randint(1, 2))]
+    logger.debug(f"Сгенерированы режиссёры: {[
+        director.full_name for director in directors
+    ]}")
 
     # Создание объекта Film
     film = Film(
@@ -91,7 +115,10 @@ async def bulk_create_films(films: list[Film], index_name: str):
     """
     Выполняет массовое создание фильмов через Bulk API.
     """
-    logger.info(f"Начало массового создания {len(films)} фильмов в индекс {index_name}.")
+    logger.info(
+        f"Начало массового создания {len(films)} фильмов в индекс "
+        f"{index_name}."
+    )
 
     actions = [
         {
@@ -105,14 +132,20 @@ async def bulk_create_films(films: list[Film], index_name: str):
 
     try:
         await async_bulk(elastic_service.es_client, actions)
-        logger.info(f"Успешно добавлено {len(films)} фильмов в индекс {index_name}.")
+        logger.info(
+            f"Успешно добавлено {len(films)} фильмов в индекс {index_name}."
+        )
     except Exception as e:
-        logger.error(f"Ошибка при массовом добавлении фильмов в индекс {index_name}: {e}")
+        logger.error(
+            f"Ошибка при массовом добавлении фильмов в индекс "
+            f"{index_name}: {e}"
+        )
 
 
 async def recreate_index_with_mapping(index_name: str):
     """
-    Удаляет существующий индекс (если он существует) и создаёт новый с маппингом.
+    Удаляет существующий индекс (если он существует) и создаёт новый с
+    маппингом.
     """
     logger.info(f"Проверка существования индекса {index_name}...")
     if await elastic_service.index_exists(index_name):
@@ -168,7 +201,9 @@ async def recreate_index_with_mapping(index_name: str):
     }
 
     try:
-        await es_client.indices.create(index=index_name, body=mapping, ignore=400)
+        await es_client.indices.create(
+            index=index_name, body=mapping, ignore=400
+        )
         logger.info(f"Индекс {index_name} успешно создан с маппингом.")
     except Exception as e:
         logger.error(f"Ошибка при создании индекса {index_name}: {e}")

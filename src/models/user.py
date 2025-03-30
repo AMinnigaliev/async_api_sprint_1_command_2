@@ -3,15 +3,15 @@ from datetime import UTC, datetime
 from enum import Enum
 
 from fastapi import HTTPException, status
-from jose import jwt, JWTError
-from sqlalchemy import Boolean, Column, DateTime, Enum as SQLAEnum, String
+from sqlalchemy import Boolean, Column, DateTime
+from sqlalchemy import Enum as SQLAEnum
+from sqlalchemy import String
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import relationship
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
+from sqlalchemy.orm import relationship
 from werkzeug.security import check_password_hash, generate_password_hash
 
-from src.core.config import settings
 from src.core.security import verify_token
 from src.db.postgres import Base
 from src.models.login_history import LoginHistory

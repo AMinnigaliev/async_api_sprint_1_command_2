@@ -3,18 +3,18 @@ from datetime import timedelta
 from functools import lru_cache
 from typing import Annotated
 
+from fastapi import Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
-from fastapi import HTTPException, status, Depends
 from werkzeug.security import generate_password_hash
 
+from src.core.config import settings
+from src.core.security import (create_access_token, create_refresh_token,
+                               verify_token)
 from src.db.postgres import get_session
 from src.db.redis_client import get_redis_auth
 from src.models.user import User
 from src.schemas.token import Token
 from src.schemas.user import UserCreate, UserUpdate
-from src.core.config import settings
-from src.core.security import create_access_token, create_refresh_token, \
-    verify_token
 from src.services.auth_service import AuthService
 
 logger = logging.getLogger(__name__)
@@ -89,7 +89,9 @@ class UserService:
                 detail="Token has revoked"
             )
 
-        access_token, new_refresh_token = await self._create_tokens_from_user(user)
+        access_token, new_refresh_token = await self._create_tokens_from_user(
+            user
+        )
 
         await self.redis_client.delete(refresh_token)
 

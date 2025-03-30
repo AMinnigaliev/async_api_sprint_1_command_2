@@ -4,8 +4,8 @@ from fastapi import FastAPI
 from fastapi.responses import ORJSONResponse
 from sqlalchemy import text
 
-from src.api.v1 import films, genres, healthcheck, persons, subscription, \
-    user_role, user_subscription, user
+from src.api.v1 import (films, genres, healthcheck, persons, subscription,
+                        user, user_role, user_subscription)
 from src.core.config import settings
 from src.db.elastic import get_elastic
 from src.db.postgres import async_session
@@ -44,7 +44,7 @@ async def startup():
 
         else:
             logger.info(
-                f"В базе данных PostgreSQL найдены таблицы: %s",
+                "В базе данных PostgreSQL найдены таблицы: %s",
                 tables_name
             )
 
