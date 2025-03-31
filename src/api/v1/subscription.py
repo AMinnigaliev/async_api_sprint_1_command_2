@@ -29,7 +29,7 @@ async def get_subscriptions(
     ),
 ) -> list[Subscription]:
     """Эндпоинт для получения всех подписок."""
-    return subscription_service.get_subscriptions()
+    return await subscription_service.get_subscriptions()
 
 
 @router.post(
@@ -45,7 +45,7 @@ async def create_subscription(
     ),
 ) -> Subscription:
     """Эндпоинт для создания новой подписки."""
-    return subscription_service.create_subscription(create_data)
+    return await subscription_service.create_subscription(create_data)
 
 
 @router.put(
@@ -63,7 +63,7 @@ async def subscription_update(
     ),
 ) -> Subscription:
     """Эндпоинт для изменения подписки."""
-    return subscription_service.subscription_update(
+    return await subscription_service.subscription_update(
         subscription_id, update_data
     )
 
@@ -80,4 +80,4 @@ async def delete_subscription(
     ),
 ) -> dict:
     """Эндпоинт для удаления подписки."""
-    return subscription_service.delete_subscription(subscription_id)
+    return await subscription_service.delete_subscription(subscription_id)

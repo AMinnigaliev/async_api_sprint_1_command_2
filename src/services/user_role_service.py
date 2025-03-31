@@ -39,7 +39,7 @@ class UserRoleService:
         """Возвращает роль пользователя в виде строки."""
         user = await User.get_user_by_id(self.db, user_id)
 
-        return str(user.role)
+        return user.role.value
 
 
 @lru_cache()

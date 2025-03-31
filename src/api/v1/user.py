@@ -1,13 +1,13 @@
 from fastapi import APIRouter, Depends, status
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from fastapi.security import OAuth2PasswordRequestForm
 
+from src.dependencies.auth import oauth2_scheme
 from src.schemas.login_history import LoginHistory
 from src.schemas.token import Token
 from src.schemas.user import UserCreate, UserResponse, UserUpdate
 from src.services.user_service import UserService, get_user_service
 
 router = APIRouter()
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/user/login")
 
 
 @router.post(

@@ -54,8 +54,9 @@ class AuthService:
     ) -> None:
         """Добавляет токен в Redis с временем жизни."""
         logger.debug(
-            "Добавление токена в Redis: token_key=%s, expire=%d сек. %s",
-            token_key, expire, log_info
+            "Добавление токена в Redis: token_key=%s, value=%s, expire=%d сек."
+            " %s",
+            token_key, value, expire, log_info
         )
         try:
             await self.redis_client.set(token_key, value, ex=expire)

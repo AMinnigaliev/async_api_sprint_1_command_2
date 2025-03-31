@@ -41,7 +41,9 @@ class UserService:
         await self.redis_client.set(
             refresh_token,
             settings.TOKEN_ACTIVE,
-            expire=timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS),
+            expire=int(timedelta(
+                days=settings.REFRESH_TOKEN_EXPIRE_DAYS).total_seconds()
+            ),
         )
 
         return access_token, refresh_token
@@ -122,12 +124,36 @@ class UserService:
         return user
 
     async def logout_user(self, access_token: str, refresh_token: str) -> None:
-        access_payload = verify_token(access_token).pop("exp")
-        refresh_payload = verify_token(refresh_token).pop("exp")
+        if await self.redis_client.check_value(
+            access_token, settings.TOKEN_REVOKE
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Access-token has revoked"
+            )
+
+        access_payload = verify_token(access_token)
+        del access_payload["exp"]
+        refresh_payload = verify_token(refresh_token)
+        del refresh_payload["exp"]
 
         if access_payload == refresh_payload:
-            await self.redis_client.revoke_token(access_token)
-            await self.redis_client.delete(refresh_token)
+            if self.redis_client.check_value(
+                refresh_token, settings.TOKEN_ACTIVE
+            ):
+                await self.redis_client.revoke_token(access_token)
+                await self.redis_client.delete(refresh_token)
+                return None
+
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Refresh-token has revoked"
+            )
+
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect refresh-token"
+        )
 
     async def get_login_history(self, token: str) -> list:
         user = await User.get_user_by_token(self.db, token)

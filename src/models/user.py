@@ -54,7 +54,10 @@ class User(Base):
         lazy="selectin",
     )
     login_history = relationship(
-        "LoginHistory", back_populates="user", cascade="all, delete-orphan"
+        "LoginHistory",
+        back_populates="user",
+        cascade="all, delete-orphan",
+        lazy="selectin",
     )
 
     def __init__(

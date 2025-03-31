@@ -3,8 +3,9 @@ from functools import lru_cache
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import Depends, HTTPException
+from fastapi import Depends, HTTPException, status
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.db.postgres import get_session
@@ -22,7 +23,8 @@ class SubscriptionService:
 
     async def get_subscriptions(self) -> list[Subscription]:
         """Возвращает список всех подписок."""
-        await self.db.execute(select(Subscription))
+        result = await self.db.execute(select(Subscription))
+        return result.scalars().all()
 
     async def create_subscription(
         self, create_data: SubscriptionCreateUpdate
@@ -31,7 +33,15 @@ class SubscriptionService:
         subscription = Subscription(**create_data.model_dump())
 
         self.db.add(subscription)
-        await self.db.commit()
+        try:
+            await self.db.commit()
+
+        except IntegrityError:
+            await self.db.rollback()
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Subscription with this name already exists."
+            )
         await self.db.refresh(subscription)
 
         return subscription
