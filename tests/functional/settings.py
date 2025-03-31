@@ -19,7 +19,7 @@ class TestSettings(BaseSettings):
 
     redis_host: str = Field(default="127.0.0.1", alias="REDIS_HOST")
     redis_port: int = Field(default=6379, alias="REDIS_PORT")
-    redis_password: str = Field(default="123qwe", alias="REDIS_PASSWORD")
+    redis_password: str = Field(default="password", alias="REDIS_PASSWORD")
     redis_db: int = Field(default=0, alias="REDIS_DB")
 
     elastic_schema: str = Field(default="film", alias="ELASTIC_SCHEMA")
@@ -28,10 +28,19 @@ class TestSettings(BaseSettings):
     elastic_port: int = Field(default=9200, alias="ELASTIC_PORT")
     elastic_password: str = Field(default="123qwe", alias="ES_PASSWORD")
 
-    elastic_index: str = "films"  # TODO:
+    elastic_index: str = "films"  # TODO: bad
     elastic_id_field: str = Field(default_factory=lambda: str(uuid4()))
     elastic_index_mapping: ESIndexMapping = get_es_index_mapping()
     elastic_persons_index_mapping: ESIndexMapping = get_persons_index_mapping()
+
+    postgres_driver_name: str = Field(
+        default="postgresql+psycopg2", alias="POSTGRES_DRIVER_NAME"
+    )
+    postgres_db: str = Field(default="name", alias="PG_NAME")
+    postgres_user: str = Field(default="user", alias="PG_USER")
+    postgres_host: str = Field(default="127.0.0.1", alias="PG_HOST")
+    postgres_port: int = Field(default=5432, alias="PG_PORT")
+    postgres_password: str = Field(default="password", alias="PG_PASSWORD")
 
     request_timeout: int = Field(default=1 * 30, alias="REQUEST_TIME_OUT")
     max_connection_attempt: int = Field(default=5, alias="MAX_CONNECTION_ATTEMPT")

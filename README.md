@@ -10,14 +10,33 @@
 - **AUTH** сервис;
 - **Тесты** сервисов;
 
-🔹 **Запуск проекта:**
+* * *
+
+🔹 **Запуск проекта (запуск в текущей директории):**
 ```sh
-# TODO: 
+docker compose up -d
 ```
-🔹 **Запуск тестов:**
+🔹 **Запуск проекта с открытыми портами сервисов (запуск в текущей директории):**
 ```sh
-docker compose -f ./tests/docker-compose-apps.yaml -f ./tests/docker-compose.override.yaml -f ./tests/docker-compose-services.yaml -f ./tests/docker-compose-tests.yaml up -d
+docker compose -f ./docker-compose.yaml -f ./docker-compose.override.yaml up -d
 ```
+
+* * *
+
+🔹 **Запуск тестов (запуск в директории 'tests'):**
+```sh
+docker compose -f ./docker-compose-apps.yaml -f ./docker-compose-services.yaml -f ./docker-compose-tests.yaml up -d
+```
+🔹 **Запуск тестов с открытыми портами сервисов (запуск в директории 'tests'):**
+```sh
+docker compose -f ./docker-compose-apps.yaml -f ./docker-compose.override.yaml -f ./docker-compose-services.yaml -f ./docker-compose-tests.yaml up -d
+```
+🔹 **Запуск сервисов с открытыми портами для написания тестов (запуск в директории 'tests'):**
+```sh
+docker compose -f ./docker-compose-apps.yaml -f ./docker-compose-services.yaml -f ./docker-compose.override.yaml up -d
+```
+
+* * *
 
 ## Стек технологий
 - Python 3.10;
