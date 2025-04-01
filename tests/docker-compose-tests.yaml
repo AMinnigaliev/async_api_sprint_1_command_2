@@ -13,4 +13,5 @@ services:
       sh -c "python3 utils/wait_for_es.py
       && python3 utils/wait_for_redis.py
       && python3 utils/wait_for_service.py
-      && pytest ./src/"
+      && pytest ./src/users/
+      && pytest ./src/users_role/"

@@ -25,7 +25,6 @@ def wait_for_service(url: str, timeout: int = 30):
         time.sleep(1)
 
 
-
 if __name__ == "__main__":
     health_check_url = f"http://{config.src_app_host}:{config.src_app_port}/api/v1"
     wait_for_service(url=health_check_url)

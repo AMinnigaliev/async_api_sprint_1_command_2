@@ -1,0 +1,45 @@
+# Исключаем виртуальное окружение
+venv/
+.env
+.Python
+
+# Исключаем кеши и временные файлы Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Исключаем зависимости (если они устанавливаются в контейнере)
+Pipfile
+Pipfile.lock
+poetry.lock
+
+# Исключаем файлы и папки IDE
+.vscode/
+.idea/
+*.iml
+
+# Исключаем файлы тестов, отчетов и кешей
+tests/
+.coverage
+htmlcov/
+pytest_cache/
+*.pytest_cache
+
+# Исключаем файлы логов
+logs/
+*.log
+
+# Исключаем файлы Docker (если они не нужны в контейнере)
+Dockerfile
+docker-compose.yml
+
+# Исключаем файлы Git
+.git/
+.gitignore
+
+# Исключаем временные файлы и артефакты
+*.swp
+*.swo
+*.bak
+.DS_Store
