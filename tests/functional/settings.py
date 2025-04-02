@@ -22,11 +22,11 @@ class TestSettings(BaseSettings):
     redis_password: str = Field(default="password", alias="REDIS_PASSWORD")
     redis_db: int = Field(default=0, alias="REDIS_DB")
 
-    elastic_schema: str = Field(default="film", alias="ELASTIC_SCHEMA")
+    elastic_schema: str = Field(default="http", alias="ELASTIC_SCHEMA")
     elastic_name: str = Field(default="elastic", alias="ELASTIC_USERNAME")
     elastic_host: str = Field(default="127.0.0.1", alias="ELASTIC_HOST")
     elastic_port: int = Field(default=9200, alias="ELASTIC_PORT")
-    elastic_password: str = Field(default="123qwe", alias="ES_PASSWORD")
+    elastic_password: str = Field(default="123qwe", alias="ELASTIC_PASSWORD")
 
     elastic_index: str = "films"  # TODO: bad
     elastic_id_field: str = Field(default_factory=lambda: str(uuid4()))

@@ -3,40 +3,36 @@ version: '3.9'
 services:
   redis:
     image: redis:6.2
-    container_name: redis
+    container_name: ${REDIS_HOST}
     env_file:
       - .env
-    command: >
-      sh -c '
-        mkdir -p /usr/local/etc/redis &&
-        echo "requirepass $REDIS_PASSWORD" >> /usr/local/etc/redis/redis.conf &&
-        redis-server /usr/local/etc/redis/redis.conf
-      '
+    command: ["redis-server", "--port", "${REDIS_PORT}", "--requirepass", "${REDIS_PASSWORD}"]
     healthcheck:
-      test: [ "CMD", "redis-cli", "-a", "$REDIS_PASSWORD", "ping" ]
+      test: [ "CMD", "redis-cli", "-p", "${REDIS_PORT}", "--raw", "-a", "${REDIS_PASSWORD}", "ping" ]
       interval: 3s
       timeout: 2s
       retries: 2
 
   elasticsearch:
     image: elasticsearch:8.6.2
-    container_name: elasticsearch
+    container_name: ${ELASTIC_HOST}
     environment:
       - discovery.type=single-node
       - xpack.security.enabled=true
+      - http.port=${ELASTIC_PORT}
       - ELASTIC_USERNAME=$ELASTIC_USERNAME
       - ELASTIC_PASSWORD=$ELASTIC_PASSWORD
     env_file:
       - .env
     healthcheck:
-      test: curl -s http://elasticsearch:9200 >/dev/null || exit 1
+      test: [ "CMD-SHELL", "curl -s ${ELASTIC_SCHEME}://${ELASTIC_HOST}:${ELASTIC_PORT} >/dev/null || exit 1" ]
       interval: 5s
       timeout: 10s
       retries: 10
 
   postgres:
     image: postgres:16.6
-    container_name: postgres
+    container_name: ${PG_HOST}
     restart: unless-stopped
     environment:
       POSTGRES_DB: ${PG_NAME}

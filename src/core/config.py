@@ -29,7 +29,7 @@ class Settings(BaseSettings):
     ELASTIC_PORT: int = Field(9200, env="ELASTIC_PORT")
     ELASTIC_SCHEME: str = Field("http", env="ELASTIC_SCHEME")
     ELASTIC_NAME: str = Field(default="elastic", alias="ELASTIC_USERNAME")
-    ELASTIC_PASSWORD: str = Field(default="123qwe", alias="ES_PASSWORD")
+    ELASTIC_PASSWORD: str = Field(default="123qwe", alias="ELASTIC_PASSWORD")
 
     # Конфигурация PostgreSQL
     PG_USER: str = Field("user", env="PG_USER")

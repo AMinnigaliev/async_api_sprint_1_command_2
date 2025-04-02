@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import os
+import sys
 
 from dotenv import load_dotenv
 from sqlalchemy import select
@@ -20,19 +21,31 @@ logger = logging.getLogger(__name__)
 
 async def create_superuser() -> None:
     """Функция для создания суперпользователя."""
+    logger.info("Проверка наличия логина и пароля суперпользователя.")
+
+    login = os.getenv("SUPERUSER_NAME"),
+    password = os.getenv("SUPERUSER_PASSWORD")
+
+    if not login or not password:
+        logger.error(
+            "Нет логина или пароля суперпользователя. "
+            "Суперпользователь не будет создан."
+        )
+        sys.exit()
+
     logger.info("Начало работы скрипта по созданию суперпользователя.")
 
     async with async_session() as db:
         existing_user = await db.execute(
-            select(User).where(User.login == os.getenv("SUPERUSER_NAME"))
+            select(User).where(User.login == login)
         )
         if existing_user.scalars().first():
             logger.info("Суперпользователь уже существует.")
             return
 
         superuser = User(
-            login=os.getenv("SUPERUSER_NAME"),
-            password=os.getenv("SUPERUSER_PASSWORD"),
+            login=login,
+            password=password,
             role=UserRoleEnum.SUPERUSER,
         )
 
