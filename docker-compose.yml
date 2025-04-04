@@ -1,9 +1,19 @@
 services:
-  async_api:
-    build: .
-    restart: unless-stopped
+  nginx:
+    build: nginx
+    container_name: nginx_proxy
     ports:
       - "8000:8000"
+    depends_on:
+      - auth_service
+      - movies_service
+
+  auth_service:
+    build: auth_service
+    container_name: auth_service
+    restart: unless-stopped
+    expose:
+      - "8000"
     depends_on:
       redis:
         condition: service_healthy
@@ -12,7 +22,23 @@ services:
       postgres:
         condition: service_healthy
     env_file:
-      - ./.env
+      - .env
+
+  movies_service:
+    build: movies_service
+    container_name: movies_service
+    restart: unless-stopped
+    expose:
+      - "8000"
+    depends_on:
+      redis:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    env_file:
+      - .env
 
   redis:
     image: redis:6.2
@@ -21,8 +47,6 @@ services:
     restart: unless-stopped
     expose:
       - "${REDIS_PORT}"
-    env_file:
-      - ./.env
     healthcheck:
       test: [ "CMD", "redis-cli", "-p", "${REDIS_PORT}", "--raw", "-a", "${REDIS_PASSWORD}", "ping" ]
       interval: 10s
@@ -44,8 +68,6 @@ services:
       - ELASTIC_PASSWORD=$ELASTIC_PASSWORD
     expose:
       - "${ELASTIC_PORT}"
-    env_file:
-      - ./.env
     healthcheck:
       test: [ "CMD-SHELL", "curl -s ${ELASTIC_SCHEME}://${ELASTIC_HOST}:${ELASTIC_PORT} >/dev/null || exit 1" ]
       interval: 10s
