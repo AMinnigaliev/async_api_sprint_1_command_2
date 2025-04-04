@@ -1,11 +1,9 @@
 from datetime import UTC, datetime, timedelta
-from typing import Any
-from uuid import UUID
-
 from fastapi import HTTPException, status
 from jose import ExpiredSignatureError, JWTError, jwt
-
 from src.core.config import settings
+from typing import Any
+from uuid import UUID
 
 
 def create_access_token(

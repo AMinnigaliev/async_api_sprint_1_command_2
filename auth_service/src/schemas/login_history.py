@@ -1,7 +1,6 @@
 from datetime import datetime
-from uuid import UUID
-
 from pydantic import BaseModel, Field
+from uuid import UUID
 
 
 class LoginHistory(BaseModel):

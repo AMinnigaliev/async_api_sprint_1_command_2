@@ -1,9 +1,6 @@
 import os
-from typing import Any, ClassVar
-
-from asyncpg.exceptions import (
+from asyncpg.exceptions import \
     ConnectionDoesNotExistError as PGConnectionDoesNotExistError
-)
 from asyncpg.exceptions import PostgresError
 from asyncpg.exceptions import SyntaxOrAccessError as PGSyntaxOrAccessError
 from elastic_transport import TransportError as ESTransportError
@@ -11,6 +8,7 @@ from elasticsearch import ApiError as ESApiError
 from pydantic import Field
 from pydantic_settings import BaseSettings
 from redis.exceptions import RedisError
+from typing import Any
 
 
 class Settings(BaseSettings):

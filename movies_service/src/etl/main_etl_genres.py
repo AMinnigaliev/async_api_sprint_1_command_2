@@ -1,9 +1,7 @@
 import asyncio
 # Настройка логирования
 import logging.config
-
 from elasticsearch import AsyncElasticsearch
-
 from src.core.config import settings  # Импортируем настройки
 from src.core.logger import LOGGING
 from src.etl.etl_genres import ETLService

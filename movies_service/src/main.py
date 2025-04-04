@@ -1,9 +1,7 @@
 import logging
-
-from fastapi import FastAPI, APIRouter
+from fastapi import APIRouter, FastAPI
 from fastapi.responses import ORJSONResponse
 from sqlalchemy import text
-
 from src.api.v1 import films, genres, healthcheck, persons
 from src.core.config import settings
 from src.db.elastic import get_elastic

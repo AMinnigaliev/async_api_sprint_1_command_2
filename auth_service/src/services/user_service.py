@@ -1,12 +1,8 @@
 import logging
 from datetime import timedelta
-from functools import lru_cache
-from typing import Annotated
-
 from fastapi import Depends, HTTPException, status
+from functools import lru_cache
 from sqlalchemy.ext.asyncio import AsyncSession
-from werkzeug.security import generate_password_hash
-
 from src.core.config import settings
 from src.core.security import (create_access_token, create_refresh_token,
                                verify_token)
@@ -16,6 +12,8 @@ from src.models.user import User
 from src.schemas.token import Token
 from src.schemas.user import UserCreate, UserUpdate
 from src.services.auth_service import AuthService
+from typing import Annotated
+from werkzeug.security import generate_password_hash
 
 logger = logging.getLogger(__name__)
 

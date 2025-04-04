@@ -1,7 +1,5 @@
 import logging
-
 from redis.asyncio import Redis
-
 from src.core.config import settings
 from src.services.auth_service import AuthService
 

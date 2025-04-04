@@ -1,11 +1,9 @@
 import logging
-from http import HTTPStatus
-from uuid import UUID
-
 from fastapi import APIRouter, Depends, HTTPException, Query
-
+from http import HTTPStatus
 from src.models.models import FilmBase, Person
 from src.services.person_service import PersonService, get_person_service
+from uuid import UUID
 
 logger = logging.getLogger(__name__)
 

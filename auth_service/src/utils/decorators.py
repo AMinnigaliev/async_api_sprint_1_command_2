@@ -1,7 +1,6 @@
-from typing import Type
-
 from tenacity import (retry, retry_if_exception_type, stop_after_attempt,
                       wait_exponential)
+from typing import Type
 
 
 def with_retry(exception: Type[Exception] = Exception):

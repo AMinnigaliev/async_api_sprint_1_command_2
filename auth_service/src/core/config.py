@@ -1,6 +1,4 @@
 import os
-from typing import Any, ClassVar
-
 from asyncpg.exceptions import \
     ConnectionDoesNotExistError as PGConnectionDoesNotExistError
 from asyncpg.exceptions import PostgresError
@@ -11,6 +9,7 @@ from redis.exceptions import RedisError
 from sqlalchemy.exc import IntegrityError as SQLIntegrityError
 from sqlalchemy.exc import OperationalError as SQLOperationalError
 from sqlalchemy.exc import SQLAlchemyError
+from typing import Any, ClassVar
 
 
 class Settings(BaseSettings):

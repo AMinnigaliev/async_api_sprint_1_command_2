@@ -1,8 +1,6 @@
 import logging
 from datetime import UTC, datetime
-
 from redis.asyncio import Redis
-
 from src.core.config import settings
 from src.core.exceptions import TokenServiceError
 from src.core.security import verify_token

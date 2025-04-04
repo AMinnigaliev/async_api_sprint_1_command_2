@@ -1,11 +1,7 @@
 import logging
-from functools import lru_cache
-from typing import Annotated
-from uuid import UUID
-
 from fastapi import Depends
+from functools import lru_cache
 from pydantic import BaseModel
-
 from src.core.config import settings
 from src.db.elastic import get_elastic
 from src.db.redis_client import get_redis_cache
@@ -13,6 +9,8 @@ from src.models.models import FilmBase, Person
 from src.services.base_service import BaseService
 from src.utils.cache_service import CacheService
 from src.utils.elastic_service import ElasticService
+from typing import Annotated
+from uuid import UUID
 
 logger = logging.getLogger(__name__)
 
