@@ -9,7 +9,10 @@ from settings import config
 
 if __name__ == '__main__':
     es_client = Elasticsearch(
-        hosts="http://{}:{}/".format(config.elastic_host, config.elastic_port),
+        hosts=[
+            f"{config.elastic_schema}://{config.elastic_host}:"
+            f"{config.elastic_port}"
+        ],
         basic_auth=(config.elastic_name, config.elastic_password),
     )
     concat_ = 1

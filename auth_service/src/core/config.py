@@ -21,6 +21,13 @@ class Settings(BaseSettings):
     REDIS_PORT: int = Field(6379, env="REDIS_PORT")
     REDIS_PASSWORD: str = Field("password", env="REDIS_PASSWORD")
 
+    # Конфигурация Elasticsearch
+    ELASTIC_HOST: str = Field("elasticsearch", env="ELASTIC_HOST")
+    ELASTIC_PORT: int = Field(9200, env="ELASTIC_PORT")
+    ELASTIC_SCHEME: str = Field("http", env="ELASTIC_SCHEME")
+    ELASTIC_NAME: str = Field(default="elastic", alias="ELASTIC_USERNAME")
+    ELASTIC_PASSWORD: str = Field(default="123qwe", alias="ES_PASSWORD")
+
     # Конфигурация PostgreSQL
     PG_USER: str = Field("user", env="PG_USER")
     PG_PASSWORD: str = Field("password", env="PG_PASSWORD")

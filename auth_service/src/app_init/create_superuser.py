@@ -1,8 +1,10 @@
 import asyncio
 import logging
 import os
+
 from dotenv import load_dotenv
 from sqlalchemy import select
+
 from src.core.config import settings
 from src.db.init_postgres import create_database
 from src.db.postgres import async_session
