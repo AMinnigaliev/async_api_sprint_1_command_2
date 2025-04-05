@@ -11,8 +11,8 @@ COPY requirements.txt .
 RUN pip install --upgrade pip && \
     pip install -r requirements.txt --no-cache-dir
 
-COPY ./src ./src
-COPY entrypoint.sh .
+COPY src ./src
+COPY entrypoint.sh alembic.ini ./
 
 RUN chmod +x ./entrypoint.sh
 

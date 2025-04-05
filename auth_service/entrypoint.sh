@@ -4,8 +4,9 @@ set -e
 
 # Проверяем, выполнена ли инициализация
 if [ ! -f /app/.init_done ]; then
+    echo "Применение миграций."
+    alembic upgrade head
     echo "Запуск предварительных скриптов..."
-
     python3 /app/src/app_init/create_superuser.py || { echo "Ошибка при выполнении create_superuser.py"; exit 1; }
     touch /app/.init_done
 

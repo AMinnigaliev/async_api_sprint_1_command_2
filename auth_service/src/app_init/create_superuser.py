@@ -6,7 +6,6 @@ from dotenv import load_dotenv
 from sqlalchemy import select
 
 from src.core.config import settings
-from src.db.init_postgres import create_database
 from src.db.postgres import async_session
 from src.models.user import User, UserRoleEnum
 
@@ -49,7 +48,6 @@ async def create_superuser() -> None:
 
 
 async def main():
-    await create_database()
     await create_superuser()
 
 

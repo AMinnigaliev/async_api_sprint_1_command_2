@@ -1,6 +1,6 @@
 services:
   nginx:
-    build: nginx
+    build: ./nginx
     container_name: nginx_proxy
     ports:
       - "8000:8000"
@@ -9,7 +9,7 @@ services:
       - movies_service
 
   auth_service:
-    build: auth_service
+    build: ./auth_service
     container_name: auth_service
     restart: unless-stopped
     expose:
