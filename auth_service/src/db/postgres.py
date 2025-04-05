@@ -5,15 +5,21 @@ from src.core.config import settings
 Base = declarative_base()
 
 dsn = (
-    f"postgresql+asyncpg://{settings.PG_USER}:{settings.PG_PASSWORD}@"
-    f"{settings.PG_HOST}:{settings.PG_PORT}/{settings.PG_NAME}"
+    f"postgresql+asyncpg://{settings.pg_user}:{settings.pg_password}@"
+    f"{settings.pg_host}:{settings.pg_port}/{settings.pg_name}"
 )
 engine = create_async_engine(dsn, echo=True, future=True)
-async_session = sessionmaker(
-    bind=engine, class_=AsyncSession, expire_on_commit=False
-)
+async_session = sessionmaker(bind=engine, class_=AsyncSession, expire_on_commit=False)
 
 
 async def get_session() -> AsyncSession:
     async with async_session() as session:
-        yield session
+        try:
+            yield session
+
+        except Exception:
+            session.rollback()
+            raise
+
+        finally:
+            session.close()

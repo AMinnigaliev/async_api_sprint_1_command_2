@@ -15,11 +15,11 @@ def create_access_token(
         "user_id": str(user_id),
         "role": role,
         "exp": datetime.now(UTC) + (expires_delta or timedelta(
-            minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES
+            minutes=settings.access_token_expire_minutes
         )),
     }
     return jwt.encode(
-        to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM
+        to_encode, settings.secret_key, algorithm=settings.algorithm
     )
 
 
@@ -32,11 +32,11 @@ def create_refresh_token(
         "user_id": str(user_id),
         "role": role,
         "exp": datetime.now(UTC) + (expires_delta or timedelta(
-            days=settings.REFRESH_TOKEN_EXPIRE_DAYS
+            days=settings.refresh_token_expire_days
         )),
     }
     return jwt.encode(
-        to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM
+        to_encode, settings.secret_key, algorithm=settings.algorithm
     )
 
 
@@ -44,7 +44,7 @@ def verify_token(token: str) -> dict:
     """Проверяет валидность JWT-токена."""
     try:
         payload = jwt.decode(
-            token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
+            token, settings.secret_key, algorithms=[settings.algorithm]
         )
         # Список обязательных полей, которые должен содержать токен
         required_fields = ["user_id", "role", "exp"]

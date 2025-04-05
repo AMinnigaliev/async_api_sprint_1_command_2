@@ -12,7 +12,7 @@ async def create_database() -> None:
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
 
-    except settings.PG_EXCEPTIONS as e:
+    except settings.pg_exceptions as e:
         logger.error("Ошибка при инициализации базы данных PostgreSQL: %s", e)
 
         raise ConnectionError(

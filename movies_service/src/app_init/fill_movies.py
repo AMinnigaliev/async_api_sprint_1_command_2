@@ -17,10 +17,10 @@ logger = logging.getLogger(__name__)
 
 es_client = AsyncElasticsearch(
     hosts=[
-        f'{settings.ELASTIC_SCHEME}://{settings.ELASTIC_HOST}:'
-        f'{settings.ELASTIC_PORT}'
+        f'{settings.elastic_scheme}://{settings.elastic_host}:'
+        f'{settings.elastic_port}'
     ],
-    basic_auth=(settings.ELASTIC_NAME, settings.ELASTIC_PASSWORD),
+    basic_auth=(settings.elastic_name, settings.elastic_password),
 )
 
 elastic_service = ElasticService(es_client)
@@ -90,9 +90,7 @@ def generate_fake_film() -> Film:
     directors = [PersonBase(
         id=uuid4(), full_name=fake.name()
     ) for _ in range(random.randint(1, 2))]
-    logger.debug(f"Сгенерированы режиссёры: {[
-        director.full_name for director in directors
-    ]}")
+    logger.debug(f"Сгенерированы режиссёры: {[director.full_name for director in directors]}")
 
     # Создание объекта Film
     film = Film(

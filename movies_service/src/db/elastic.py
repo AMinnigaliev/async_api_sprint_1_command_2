@@ -16,13 +16,12 @@ async def get_elastic() -> ElasticService:
         logger.info("Создание клиента Elasticsearch...")
         es_client = None
         try:
-            print(settings.ELASTIC_NAME, settings.ELASTIC_PASSWORD, )
             es_client = AsyncElasticsearch(
                 hosts=[
-                    f"{settings.ELASTIC_SCHEME}://{settings.ELASTIC_HOST}:"
-                    f"{settings.ELASTIC_PORT}"
+                    f"{settings.elastic_scheme}://{settings.elastic_host}:"
+                    f"{settings.elastic_port}"
                 ],
-                basic_auth=(settings.ELASTIC_NAME, settings.ELASTIC_PASSWORD),
+                basic_auth=(settings.elastic_name, settings.elastic_password),
             )
             if not await es_client.ping():
                 raise ConnectionError("Elasticsearch недоступен.")

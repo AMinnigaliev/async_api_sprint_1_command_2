@@ -30,7 +30,7 @@ def role_dependency(required_roles: tuple[UserRoleEnum]):
             )
 
         payload = verify_token(token)
-        if await redis_client.check_value(token, settings.TOKEN_REVOKE):
+        if await redis_client.check_value(token, settings.token_revoke):
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Token expired or revoked",

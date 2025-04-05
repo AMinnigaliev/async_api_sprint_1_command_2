@@ -19,10 +19,10 @@ async def main():
         logger.info("Инициализация клиента Elasticsearch...")
         es_client = AsyncElasticsearch(
             hosts=[
-                f"{settings.ELASTIC_SCHEME}://{settings.ELASTIC_HOST}:"
-                f"{settings.ELASTIC_PORT}"
+                f"{settings.elastic_scheme}://{settings.elastic_host}:"
+                f"{settings.elastic_port}"
             ],
-            basic_auth=(settings.ELASTIC_NAME, settings.ELASTIC_PASSWORD),
+            basic_auth=(settings.elastic_name, settings.elastic_password),
             request_timeout=30,
         )
 
