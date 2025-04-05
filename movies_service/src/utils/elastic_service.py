@@ -38,7 +38,7 @@ class ElasticService:
             )
             raise
 
-        except settings.ELASTIC_EXCEPTIONS as e:
+        except settings.elastic_exceptions as e:
             logger.error(
                 "Ошибка при выполнении запроса get в Elasticsearch: "
                 "index=%s, error=%s. %s",
@@ -73,7 +73,7 @@ class ElasticService:
             )
             raise
 
-        except settings.ELASTIC_EXCEPTIONS as e:
+        except settings.elastic_exceptions as e:
             logger.error(
                 "Ошибка при выполнении запроса search в Elasticsearch: "
                 "index=%s, error=%s. %s",
@@ -100,7 +100,7 @@ class ElasticService:
             )
             return response
 
-        except settings.ELASTIC_EXCEPTIONS as e:
+        except settings.elastic_exceptions as e:
             logger.error(
                 "Ошибка при добавлении документа в Elasticsearch: "
                 "index=%s, id=%s, error=%s",
@@ -115,7 +115,7 @@ class ElasticService:
         """
         try:
             return await self.es_client.indices.exists(index=index_name)
-        except settings.ELASTIC_EXCEPTIONS as e:
+        except settings.elastic_exceptions as e:
             logger.error(
                 "Ошибка при проверке существования индекса %s: %s",
                 index_name, e

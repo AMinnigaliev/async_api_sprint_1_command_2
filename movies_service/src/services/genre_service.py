@@ -56,7 +56,7 @@ class GenreService(BaseService):
 
         # Формируем тело запроса для Elasticsearch
         body = {
-            "query": {"match_all": {}}, "size": settings.ELASTIC_RESPONSE_SIZE
+            "query": {"match_all": {}}, "size": settings.elastic_response_size
         }
 
         return await self._base_get_with_cache(
@@ -77,7 +77,7 @@ class GenreService(BaseService):
         model = GenreBase
 
         # Формируем тело запроса для Elasticsearch
-        body = {"query": {}, "size": settings.ELASTIC_RESPONSE_SIZE}
+        body = {"query": {}, "size": settings.elastic_response_size}
 
         #  Поиск, если есть
         if query:

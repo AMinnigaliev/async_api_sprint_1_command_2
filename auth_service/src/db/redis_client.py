@@ -19,9 +19,9 @@ async def get_redis_auth() -> AuthService:
         logger.info("Создание клиента Redis для auth...")
         try:
             redis_client = Redis(
-                host=settings.REDIS_HOST,
-                port=settings.REDIS_PORT,
-                password=settings.REDIS_PASSWORD,
+                host=settings.redis_host,
+                port=settings.redis_port,
+                password=settings.redis_password,
                 db=0,
             )
             if not await redis_client.ping():

@@ -1,64 +1,57 @@
 import os
-from asyncpg.exceptions import \
-    ConnectionDoesNotExistError as PGConnectionDoesNotExistError
-from asyncpg.exceptions import PostgresError
-from asyncpg.exceptions import SyntaxOrAccessError as PGSyntaxOrAccessError
+from typing import Any, ClassVar
+
 from pydantic import Field
 from pydantic_settings import BaseSettings
 from redis.exceptions import RedisError
+from asyncpg.exceptions import PostgresError
+from asyncpg.exceptions import SyntaxOrAccessError as PGSyntaxOrAccessError
+from asyncpg.exceptions import ConnectionDoesNotExistError as PGConnectionDoesNotExistError
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.exc import IntegrityError as SQLIntegrityError
 from sqlalchemy.exc import OperationalError as SQLOperationalError
-from sqlalchemy.exc import SQLAlchemyError
-from typing import Any, ClassVar
 
 
 class Settings(BaseSettings):
-    # Общая конфигурация
-    PROJECT_NAME: str = Field("movies", env="PROJECT_NAME")
-
-    # Конфигурация Redis
-    REDIS_HOST: str = Field("redis", env="REDIS_HOST")
-    REDIS_PORT: int = Field(6379, env="REDIS_PORT")
-    REDIS_PASSWORD: str = Field("password", env="REDIS_PASSWORD")
-
-    # Конфигурация Elasticsearch
-    ELASTIC_HOST: str = Field("elasticsearch", env="ELASTIC_HOST")
-    ELASTIC_PORT: int = Field(9200, env="ELASTIC_PORT")
-    ELASTIC_SCHEME: str = Field("http", env="ELASTIC_SCHEME")
-    ELASTIC_NAME: str = Field(default="elastic", alias="ELASTIC_USERNAME")
-    ELASTIC_PASSWORD: str = Field(default="123qwe", alias="ES_PASSWORD")
-
-    # Конфигурация PostgreSQL
-    PG_USER: str = Field("user", env="PG_USER")
-    PG_PASSWORD: str = Field("password", env="PG_PASSWORD")
-    PG_HOST: str = Field("postgres", env="PG_HOST")
-    PG_PORT: int = Field(5432, env="PG_PORT")
-    PG_NAME: str = Field("name", env="PG_NAME")
-
-    # Директория проекта
-    BASE_DIR: str = Field(
+    project_name: str = Field(default="movies", env="PROJECT_NAME")
+    base_dir: str = Field(
         default_factory=lambda: os.path.dirname(
             os.path.dirname(os.path.abspath(__file__))
         )
     )
 
-    # Исключения
-    REDIS_EXCEPTIONS: Any = (RedisError,)
-    PG_EXCEPTIONS: Any = (
+    redis_host: str = Field("redis", env="REDIS_HOST")
+    redis_port: int = Field(6379, env="REDIS_PORT")
+    redis_password: str = Field("password", env="REDIS_PASSWORD")
+
+    elastic_host: str = Field("elasticsearch", env="ELASTIC_HOST")
+    elastic_port: int = Field(9200, env="ELASTIC_PORT")
+    elastic_scheme: str = Field("http", env="ELASTIC_SCHEME")
+    elastic_name: str = Field(default="elastic", alias="ELASTIC_USERNAME")
+    elastic_password: str = Field(default="123qwe", alias="ES_PASSWORD")
+
+    pg_user: str = Field("user", env="PG_USER")
+    pg_password: str = Field("password", env="PG_PASSWORD")
+    pg_host: str = Field("postgres", env="PG_HOST")
+    pg_port: int = Field(5432, env="PG_PORT")
+    pg_name: str = Field("name", env="PG_NAME")
+
+    # Exceptions
+    redis_exceptions: Any = (RedisError,)
+    pg_exceptions: Any = (
         PostgresError, PGConnectionDoesNotExistError, PGSyntaxOrAccessError
     )
-    SQL_EXCEPTIONS: Any = (
+    sql_exceptions: Any = (
         SQLAlchemyError, SQLIntegrityError, SQLOperationalError
     )
 
     # Безопасность
-    TOKEN_REVOKE: ClassVar[bytes] = b"revoked"
-    TOKEN_ACTIVE: ClassVar[bytes] = b"active"
-    SECRET_KEY: str = Field("practix", env="SECRET_KEY")
-    ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 15
-    REFRESH_TOKEN_EXPIRE_DAYS: int = 7
+    token_revoke: ClassVar[bytes] = b"revoked"
+    token_active: ClassVar[bytes] = b"active"
+    secret_key: str = Field("practix", env="SECRET_KEY")
+    algorithm: str = "HS256"
+    access_token_expire_minutes: int = 15
+    refresh_token_expire_days: int = 7
 
 
-# Инициализация настроек
 settings = Settings()

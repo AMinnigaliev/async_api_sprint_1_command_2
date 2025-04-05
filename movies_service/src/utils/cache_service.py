@@ -11,7 +11,7 @@ class CacheService:
     def __init__(
         self,
         redis_client: Redis,
-        cache_expire: int = settings.CACHE_EXPIRE_IN_SECONDS,
+        cache_expire: int = settings.cache_expire_in_seconds,
     ):
         self.redis_client = redis_client
         self.cache_expire = cache_expire
@@ -24,7 +24,7 @@ class CacheService:
         try:
             value = await self.redis_client.get(key)
 
-        except settings.REDIS_EXCEPTIONS as e:
+        except settings.redis_exceptions as e:
             logger.error(
                 "Ошибка при получении значения из кеша: key=%s, error=%s. %s",
                 key, e, log_info
@@ -53,7 +53,7 @@ class CacheService:
         try:
             await self.redis_client.set(key, value, ex=self.cache_expire)
 
-        except settings.REDIS_EXCEPTIONS as e:
+        except settings.redis_exceptions as e:
             logger.error(
                 "Ошибка при сохранении значения в кеш:"
                 " key=%s, value=%s, error=%s. %s",
@@ -76,7 +76,7 @@ class CacheService:
                 "Соединение с Redis по работе с кешом успешно закрыто."
             )
 
-        except (settings.REDIS_EXCEPTIONS, RuntimeError) as e:
+        except (settings.redis_exceptions, RuntimeError) as e:
             logger.error(
                 "Ошибка при закрытии соединения с Redis по работе с кешом: "
                 "%s", e

@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
 app = FastAPI(
-    title=settings.PROJECT_NAME,
+    title=settings.project_name,
     docs_url='/api/auth/openapi',
     openapi_url='/api/auth/openapi.json',
     default_response_class=ORJSONResponse,
@@ -56,7 +56,7 @@ async def startup():
         if not await redis_auth.redis_client.ping():
             raise ConnectionError("Redis-токен не отвечает на запросы.")
 
-    except settings.REDIS_EXCEPTIONS as e:
+    except settings.redis_exceptions as e:
         logger.error("Ошибка подключения к Redis: %s", e)
 
         raise ConnectionError(

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, status, Query
 from fastapi.security import OAuth2PasswordRequestForm
 from src.dependencies.auth import oauth2_scheme
 from src.schemas.login_history import LoginHistory
@@ -102,9 +102,20 @@ async def logout(
 )
 async def login_history(
     token: str = Depends(oauth2_scheme),
+    page_size: int = Query(
+        default=10,
+        ge=1,
+        le=100,
+        description="Кол-во записей",
+    ),
+    page_number: int = Query(
+        default=1,
+        ge=1,
+        description="Пагинация",
+    ),
     user_service: UserService = Depends(get_user_service),
 ) -> list[LoginHistory]:
     """
     Возвращает историю входов пользователя.
     """
-    return await user_service.get_login_history(token)
+    return await user_service.get_login_history(token=token, page_size=page_size, page_number=page_number)

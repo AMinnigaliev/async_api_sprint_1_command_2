@@ -37,9 +37,9 @@ class UserService:
 
         await self.redis_client.set(
             refresh_token,
-            settings.TOKEN_ACTIVE,
+            settings.token_active,
             expire=int(timedelta(
-                days=settings.REFRESH_TOKEN_EXPIRE_DAYS).total_seconds()
+                days=settings.refresh_token_expire_days).total_seconds()
             ),
         )
 
@@ -81,7 +81,7 @@ class UserService:
         user = await User.get_user_by_token(self.db, refresh_token)
 
         if not await self.redis_client.check_value(
-            refresh_token, settings.TOKEN_ACTIVE
+            refresh_token, settings.token_active
         ):
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
@@ -102,7 +102,7 @@ class UserService:
         user = await User.get_user_by_token(self.db, token)
 
         if await self.redis_client.check_value(
-            token, settings.TOKEN_REVOKE
+            token, settings.token_revoke
         ):
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
@@ -122,7 +122,7 @@ class UserService:
 
     async def logout_user(self, access_token: str, refresh_token: str) -> None:
         if await self.redis_client.check_value(
-            access_token, settings.TOKEN_REVOKE
+            access_token, settings.token_revoke
         ):
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
@@ -136,7 +136,7 @@ class UserService:
 
         if access_payload == refresh_payload:
             if self.redis_client.check_value(
-                refresh_token, settings.TOKEN_ACTIVE
+                refresh_token, settings.token_active
             ):
                 await self.redis_client.revoke_token(access_token)
                 await self.redis_client.delete(refresh_token)
@@ -152,18 +152,18 @@ class UserService:
             detail="Incorrect refresh-token"
         )
 
-    async def get_login_history(self, token: str) -> list:
+    async def get_login_history(self, token: str, page_size: int, page_number: int) -> list:
         user = await User.get_user_by_token(self.db, token)
 
         if await self.redis_client.check_value(
-            token, settings.TOKEN_REVOKE
+            token, settings.token_revoke
         ):
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Token has revoked"
             )
 
-        return await user.get_login_history()
+        return await user.get_login_history(db=self.db, page_size=page_size, page_number=page_number)
 
 
 @lru_cache()

@@ -12,46 +12,37 @@ from typing import Any
 
 
 class Settings(BaseSettings):
-    # Общая конфигурация
-    PROJECT_NAME: str = Field("movies", env="PROJECT_NAME")
-
-    # Конфигурация Redis
-    REDIS_HOST: str = Field("redis", env="REDIS_HOST")
-    REDIS_PORT: int = Field(6379, env="REDIS_PORT")
-    REDIS_PASSWORD: str = Field("password", env="REDIS_PASSWORD")
-
-    # Конфигурация Elasticsearch
-    ELASTIC_HOST: str = Field("elasticsearch", env="ELASTIC_HOST")
-    ELASTIC_PORT: int = Field(9200, env="ELASTIC_PORT")
-    ELASTIC_SCHEME: str = Field("http", env="ELASTIC_SCHEME")
-    ELASTIC_NAME: str = Field(default="elastic", alias="ELASTIC_USERNAME")
-    ELASTIC_PASSWORD: str = Field(default="123qwe", alias="ELASTIC_PASSWORD")
-
-    # Конфигурация PostgreSQL
-    PG_USER: str = Field("user", env="PG_USER")
-    PG_PASSWORD: str = Field("password", env="PG_PASSWORD")
-    PG_HOST: str = Field("postgres", env="PG_HOST")
-    PG_PORT: int = Field(5432, env="PG_PORT")
-    PG_NAME: str = Field("name", env="PG_NAME")
-
-    # Директория проекта
+    project_name: str = Field("movies", env="PROJECT_NAME")
     BASE_DIR: str = Field(
         default_factory=lambda: os.path.dirname(
             os.path.dirname(os.path.abspath(__file__))
         )
     )
 
-    # Исключения
-    ELASTIC_EXCEPTIONS: Any = (ESApiError, ESTransportError)
-    REDIS_EXCEPTIONS: Any = (RedisError,)
-    PG_EXCEPTIONS: Any = (
+    redis_host: str = Field("redis", env="REDIS_HOST")
+    redis_port: int = Field(6379, env="REDIS_PORT")
+    redis_password: str = Field("password", env="REDIS_PASSWORD")
+
+    elastic_host: str = Field("elasticsearch", env="ELASTIC_HOST")
+    elastic_port: int = Field(9200, env="ELASTIC_PORT")
+    elastic_scheme: str = Field("http", env="ELASTIC_SCHEME")
+    elastic_name: str = Field(default="elastic", alias="ELASTIC_USERNAME")
+    elastic_password: str = Field(default="123qwe", alias="ELASTIC_PASSWORD")
+
+    pg_user: str = Field("user", env="PG_USER")
+    pg_password: str = Field("password", env="PG_PASSWORD")
+    pg_host: str = Field("postgres", env="PG_HOST")
+    pg_port: int = Field(5432, env="PG_PORT")
+    pg_name: str = Field("name", env="PG_NAME")
+
+    elastic_exceptions: Any = (ESApiError, ESTransportError)
+    redis_exceptions: Any = (RedisError,)
+    pg_exceptions: Any = (
         PostgresError, PGConnectionDoesNotExistError, PGSyntaxOrAccessError
     )
 
-    # Прочее
-    ELASTIC_RESPONSE_SIZE: int = 1000
-    CACHE_EXPIRE_IN_SECONDS: int = 300
+    elastic_response_size: int = 1000
+    cache_expire_in_seconds: int = 300
 
 
-# Инициализация настроек
 settings = Settings()

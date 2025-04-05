@@ -39,7 +39,7 @@ async def create_superuser() -> None:
             db.add(superuser)
             await db.commit()
 
-        except settings.SQL_EXCEPTIONS as e:
+        except settings.sql_exceptions as e:
             logger.error("Ошибка при добавлении суперпользователя: %s", e)
             await db.rollback()
             raise

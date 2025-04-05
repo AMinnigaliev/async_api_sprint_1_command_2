@@ -25,7 +25,7 @@ class AuthService:
         try:
             redis_value = await self.redis_client.get(token_key)
 
-        except settings.REDIS_EXCEPTIONS as e:
+        except settings.redis_exceptions as e:
             logger.error(
                 "Ошибка при проверке токена в Redis: "
                 "token_key=%s, check_value=%s, error=%s. %s",
@@ -59,7 +59,7 @@ class AuthService:
         try:
             await self.redis_client.set(token_key, value, ex=expire)
 
-        except settings.REDIS_EXCEPTIONS as e:
+        except settings.redis_exceptions as e:
             logger.error(
                 "Ошибка при добавлении токена в Redis: "
                 "token_key=%s, error=%s. %s",
@@ -79,7 +79,7 @@ class AuthService:
         try:
             await self.redis_client.delete(token)
 
-        except settings.REDIS_EXCEPTIONS as e:
+        except settings.redis_exceptions as e:
             logger.error(
                 "Ошибка при удалении токена: token=%s, error=%s. %s",
                 token, e, log_info
@@ -102,7 +102,7 @@ class AuthService:
             ttl = int(exp - datetime.now(UTC).timestamp())
 
             if ttl > 0:
-                await self.set(token, settings.TOKEN_REVOKE, ttl, log_info)
+                await self.set(token, settings.token_revoke, ttl, log_info)
 
     async def close(self):
         """Закрывает соединение с Redis."""
@@ -111,7 +111,7 @@ class AuthService:
             await self.redis_client.close()
             logger.info("Соединение с Redis (auth) успешно закрыто.")
 
-        except (settings.REDIS_EXCEPTIONS, RuntimeError) as e:
+        except (settings.redis_exceptions, RuntimeError) as e:
             logger.error(
                 "Ошибка при закрытии соединения с Redis (auth): %s", e
             )

@@ -99,7 +99,7 @@ class PersonService(BaseService):
                 },
             ],
             "minimum_should_match": 1,
-        }}, "size": settings.ELASTIC_RESPONSE_SIZE}
+        }}, "size": settings.elastic_response_size}
 
         return await self._base_get_with_cache(
             model, es_index, body, cache_key, log_info
