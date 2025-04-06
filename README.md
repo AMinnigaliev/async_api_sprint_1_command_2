@@ -1,14 +1,6 @@
 # Проектная работа Кинотеатра
 
-* * *
-
 **Цель работы** - реализация микросервисной архитектуры **"Кинотеатр"**.
-
-В рамках итерации будет реализованы следующие сервисы:
-- **ETL** сервис;
-- **REST-API** сервис Кинотеатра;
-- **AUTH** сервис;
-- **Тесты** сервисов;
 
 * * *
 
@@ -39,19 +31,35 @@ docker compose -f ./docker-compose-apps.yaml -f ./docker-compose-services.yaml -
 * * *
 
 ## Стек технологий
-- Python 3.10;
-- Контейнеризация: **Docker**(https://docs.docker.com/);
-- ASGI Web Server: **Uvicorn**(https://www.uvicorn.org/);
-- WebFramework: **Fast API**(https://fastapi.tiangolo.com/);
+- Python 3.12;
+- Контейнеризация:
+- - **Docker**(https://docs.docker.com/);
+- Web Servers:
+- - **Uvicorn**(https://www.uvicorn.org/);
+- - **Nginx**(https://nginx.org/en/docs/);
+- Rest-Frameworks:
+- - **Fast API**(https://fastapi.tiangolo.com/);
+- - **Django API**(https://www.djangoproject.com/);
 - SearchEngine / DataBase:
 - - **Elasticsearch**(https://www.elastic.co/guide/en/elasticsearch/client/python-api/current/index.html);
 - - **RedisCluster**(https://redis-py.readthedocs.io/en/stable/index.html);
 - - **PostgreSQL**(**SQLAlchemyORM**: https://docs.sqlalchemy.org/en/20/orm/);
-- DataModels: **Pydantic**(https://docs.pydantic.dev/latest/);
+- DataModels:
+- - **Pydantic**(https://docs.pydantic.dev/latest/);
+- Distributed Tracing:
+- - **Jaeger**(https://www.jaegertracing.io/docs/latest/);
 
 ## Архитектура проекта
+### Основные модули проекта:
+- Сервис кинотеатра (сервис выдачи контента);
+- ETL-сервис;
+- Панель администратора;
+- Auth-сервис;
+- Сервис распределенной трассировки (Jaeger);
+- Тесты;
+
 Ссылка на схему архитектуры проекта:
-- TODO:
+- https://drive.google.com/file/d/1wTGGXUpEM_81bsTcJUe0QtYLDVpGdYEv/view?usp=sharing
 
 Принцип взаимосвязи компонентов архитектуры на схеме:
 - связь "сплошная": прямая взаимосвязь объектов архитектуры.
@@ -63,7 +71,8 @@ docker compose -f ./docker-compose-apps.yaml -f ./docker-compose-services.yaml -
 - GenreFilmWork: связь Жанра с Фильмом;
 - Person: Персона;
 - PersonFilmWork: связь Персоны с Фильмом;
-- TODO: расширить
+- User: Пользователь;
+- LoginHistory: история авторизации пользователя;
 
 Ссылка на схему БД:
 - https://drive.google.com/file/d/1uhfVmdkwkYb973xCO4KKJH7z-H4QNRQM/view?usp=sharing
