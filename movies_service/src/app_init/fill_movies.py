@@ -2,13 +2,15 @@ import asyncio
 import logging
 import random
 from decimal import Decimal
+from uuid import uuid4
+
 from elasticsearch import AsyncElasticsearch
 from elasticsearch.helpers import async_bulk
 from faker import Faker
+
 from src.core.config import settings
 from src.models.models import Film, GenreBase, PersonBase
 from src.utils.elastic_service import ElasticService
-from uuid import uuid4
 
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"

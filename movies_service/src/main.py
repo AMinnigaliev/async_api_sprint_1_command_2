@@ -1,7 +1,9 @@
 import logging
+
 from fastapi import APIRouter, FastAPI
 from fastapi.responses import ORJSONResponse
 from sqlalchemy import text
+
 from src.api.v1 import films, genres, healthcheck, persons
 from src.core.config import settings
 from src.db.elastic import get_elastic
@@ -13,8 +15,8 @@ logging.basicConfig(level=logging.INFO)
 
 app = FastAPI(
     title=settings.project_name,
-    docs_url='/api/movies/openapi',
-    openapi_url='/api/movies/openapi.json',
+    docs_url='/api/v1/movies/openapi',
+    openapi_url='/api/v1/movies/openapi.json',
     default_response_class=ORJSONResponse,
 )
 api_router = APIRouter(prefix="/api/v1")

@@ -1,9 +1,14 @@
 import logging
 from datetime import timedelta
-from fastapi import Depends, HTTPException, status
 from functools import lru_cache
+from typing import Annotated
+
+from fastapi import Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
+from werkzeug.security import generate_password_hash
+
 from src.core.config import settings
+from src.core.exceptions import TokenRevokedException
 from src.core.security import (create_access_token, create_refresh_token,
                                verify_token)
 from src.db.postgres import get_session
@@ -12,8 +17,6 @@ from src.models.user import User
 from src.schemas.token import Token
 from src.schemas.user import UserCreate, UserUpdate
 from src.services.auth_service import AuthService
-from typing import Annotated
-from werkzeug.security import generate_password_hash
 
 logger = logging.getLogger(__name__)
 
@@ -85,7 +88,7 @@ class UserService:
         ):
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Token has revoked"
+                detail="Refresh-token has revoked"
             )
 
         access_token, new_refresh_token = await self._create_tokens_from_user(
@@ -104,10 +107,7 @@ class UserService:
         if await self.redis_client.check_value(
             token, settings.token_revoke
         ):
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Token has revoked"
-            )
+            raise TokenRevokedException()
 
         if user_update.first_name:
             user.first_name = user_update.first_name
@@ -124,10 +124,7 @@ class UserService:
         if await self.redis_client.check_value(
             access_token, settings.token_revoke
         ):
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Access-token has revoked"
-            )
+            raise TokenRevokedException()
 
         access_payload = verify_token(access_token)
         del access_payload["exp"]
@@ -152,18 +149,19 @@ class UserService:
             detail="Incorrect refresh-token"
         )
 
-    async def get_login_history(self, token: str, page_size: int, page_number: int) -> list:
+    async def get_login_history(
+        self, token: str, page_size: int, page_number: int
+    ) -> list:
         user = await User.get_user_by_token(self.db, token)
 
         if await self.redis_client.check_value(
             token, settings.token_revoke
         ):
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Token has revoked"
-            )
+            raise TokenRevokedException()
 
-        return await user.get_login_history(db=self.db, page_size=page_size, page_number=page_number)
+        return await user.get_login_history(
+            db=self.db, page_size=page_size, page_number=page_number
+        )
 
 
 @lru_cache()

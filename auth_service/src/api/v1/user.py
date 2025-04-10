@@ -1,5 +1,6 @@
-from fastapi import APIRouter, Depends, status, Query
+from fastapi import APIRouter, Depends, Query, status
 from fastapi.security import OAuth2PasswordRequestForm
+
 from src.dependencies.auth import oauth2_scheme
 from src.schemas.login_history import LoginHistory
 from src.schemas.token import Token

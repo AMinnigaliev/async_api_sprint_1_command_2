@@ -1,16 +1,23 @@
 import logging
-from fastapi import APIRouter, Depends, HTTPException, Query
 from http import HTTPStatus
+from uuid import UUID
+
+from fastapi import APIRouter, Depends, HTTPException, Query
+
+from src.dependencies.auth import role_dependency
 from src.models.models import Film, FilmBase
 from src.services.film_service import FilmService, get_film_service
-from uuid import UUID
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
 
-@router.get("/search", response_model=list[FilmBase])
+@router.get(
+    "/search",
+    response_model=list[FilmBase],
+    dependencies=[Depends(role_dependency(("superuser", "admin", "user")))],
+)
 async def search_films(
     query: str | None = Query(None, description="Поисковый запрос по фильмам"),
     page_size: int = Query(
@@ -86,7 +93,11 @@ async def get_films(
     return films
 
 
-@router.get("/{film_id}", response_model=Film)
+@router.get(
+    "/{film_id}",
+    response_model=Film,
+    dependencies=[Depends(role_dependency(("superuser", "admin", "user")))],
+)
 async def film_details(
     film_id: UUID,
     film_service: FilmService = Depends(get_film_service),

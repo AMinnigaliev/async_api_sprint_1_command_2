@@ -1,10 +1,12 @@
+from uuid import UUID
+
 from fastapi import APIRouter, Depends
+
 from src.dependencies.auth import role_dependency
 from src.models.user import User, UserRoleEnum
 from src.schemas.user import UserResponse
 from src.services.user_role_service import (UserRoleService,
                                             get_user_role_service)
-from uuid import UUID
 
 router = APIRouter(
     dependencies=[Depends(role_dependency(
@@ -33,7 +35,6 @@ async def assign_role(
 
 @router.get(
     "/{user_id}/role",
-    response_model=str,
     summary="Получение роли пользователя",
     description="Эндпоинт для получения роли конкретного пользователя.",
 )

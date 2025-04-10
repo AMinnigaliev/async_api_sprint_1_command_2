@@ -1,6 +1,7 @@
 import uuid
 from datetime import UTC, datetime
 from enum import Enum
+
 from fastapi import HTTPException, status
 from sqlalchemy import Boolean, Column, DateTime
 from sqlalchemy import Enum as SQLAEnum
@@ -9,10 +10,11 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.orm import relationship
+from werkzeug.security import check_password_hash, generate_password_hash
+
 from src.core.security import verify_token
 from src.db.postgres import Base
 from src.models.login_history import LoginHistory
-from werkzeug.security import check_password_hash, generate_password_hash
 
 
 class UserRoleEnum(str, Enum):

@@ -1,16 +1,23 @@
 import logging
-from fastapi import APIRouter, Depends, HTTPException, Query
 from http import HTTPStatus
+from uuid import UUID
+
+from fastapi import APIRouter, Depends, HTTPException, Query
+
+from src.dependencies.auth import role_dependency
 from src.models.models import GenreBase
 from src.services.genre_service import GenreService, get_genre_service
-from uuid import UUID
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
 
-@router.get("/search", response_model=list[GenreBase])
+@router.get(
+    "/search",
+    response_model=list[GenreBase],
+    dependencies=[Depends(role_dependency(("superuser", "admin", "user")))],
+)
 async def search_genres(
     query: str | None = Query(None, description="Поисковый запрос по жанрам"),
     genre_service: GenreService = Depends(get_genre_service),
@@ -45,7 +52,11 @@ async def get_genres(
     return genres
 
 
-@router.get("/{genre_id}", response_model=GenreBase)
+@router.get(
+    "/{genre_id}",
+    response_model=GenreBase,
+    dependencies=[Depends(role_dependency(("superuser", "admin", "user")))],
+)
 async def genre_details(
     genre_id: UUID,
     genre_service: GenreService = Depends(get_genre_service),

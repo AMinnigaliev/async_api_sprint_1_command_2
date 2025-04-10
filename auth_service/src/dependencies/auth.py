@@ -1,5 +1,6 @@
 from fastapi import Depends, HTTPException, Security, status
 from fastapi.security import OAuth2PasswordBearer
+
 from src.core.config import settings
 from src.core.security import verify_token
 from src.db.redis_client import get_redis_auth

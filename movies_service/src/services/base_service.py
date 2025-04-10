@@ -1,8 +1,11 @@
 import asyncio
 import logging
+from typing import Any, Type
+
 import orjson
 from elasticsearch import NotFoundError
 from pydantic import BaseModel, ValidationError
+
 from src.core.exceptions import (CacheServiceError, CheckCacheError,
                                  CreateObjectError, CreateObjectsError,
                                  ElasticParsingError, ElasticServiceError,
@@ -10,7 +13,6 @@ from src.core.exceptions import (CacheServiceError, CheckCacheError,
                                  ModelDumpJsonError)
 from src.utils.cache_service import CacheService
 from src.utils.elastic_service import ElasticService
-from typing import Any, Type
 
 logger = logging.getLogger(__name__)
 
@@ -232,7 +234,9 @@ class BaseService:
             json_represent = self._create_json_from_objects(
                 data, log_info
             )
-            await self.redis_client.set(cache_key, json_represent, log_info)
+            await self.redis_client.set(
+                cache_key, json_represent, log_info=log_info
+            )
 
         except (CacheServiceError, ModelDumpJsonError):
             pass
