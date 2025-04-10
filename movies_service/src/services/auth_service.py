@@ -8,9 +8,7 @@ from typing import Annotated
 import httpx
 from fastapi import Depends, HTTPException, status
 from jose import JWTError, jwt
-from pyexpat.errors import messages
 
-from src.app_init.fill_movies import elastic_service
 from src.core.config import settings
 from src.core.exceptions import CacheServiceError
 from src.db.redis_client import get_redis_cache

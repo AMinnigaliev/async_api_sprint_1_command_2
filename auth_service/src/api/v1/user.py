@@ -119,4 +119,6 @@ async def login_history(
     """
     Возвращает историю входов пользователя.
     """
-    return await user_service.get_login_history(token=token, page_size=page_size, page_number=page_number)
+    return await user_service.get_login_history(
+        token=token, page_size=page_size, page_number=page_number
+    )

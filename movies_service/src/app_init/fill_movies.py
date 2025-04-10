@@ -92,7 +92,9 @@ def generate_fake_film() -> Film:
     directors = [PersonBase(
         id=uuid4(), full_name=fake.name()
     ) for _ in range(random.randint(1, 2))]
-    logger.debug(f"Сгенерированы режиссёры: {[director.full_name for director in directors]}")
+    logger.debug(f"Сгенерированы режиссёры: {[
+        director.full_name for director in directors
+    ]}")
 
     # Создание объекта Film
     film = Film(

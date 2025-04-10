@@ -1,7 +1,6 @@
 from fastapi import Depends, HTTPException, Security, status
 from fastapi.security import OAuth2PasswordBearer
 
-from src.core.config import settings
 from src.services.auth_service import AuthService, get_auth_service
 
 oauth2_scheme = OAuth2PasswordBearer(

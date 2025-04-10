@@ -113,13 +113,17 @@ class User(Base):
         db.add(login_entry)
         await db.commit()
 
-    async def get_login_history(self, db: AsyncSession, page_size: int, page_number: int) -> list[LoginHistory]:
+    async def get_login_history(
+            self, db: AsyncSession, page_size: int, page_number: int
+    ) -> list[LoginHistory]:
         """
         Возвращает список истории входов пользователя.
         """
         offset = (page_number - 1) * page_size
 
-        stmt = select(LoginHistory).where(LoginHistory.user_id == self.id).limit(page_size).offset(offset)
+        stmt = select(LoginHistory).where(
+            LoginHistory.user_id == self.id
+        ).limit(page_size).offset(offset)
         result = await db.execute(stmt)
 
         return result.scalars().all()
