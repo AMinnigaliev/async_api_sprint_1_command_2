@@ -53,5 +53,34 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int = 15
     refresh_token_expire_days: int = 7
 
+    oauth: Dict[str, Dict[str, str]] = {
+        "google": {
+            "client_id": "your-google-client-id",
+            "client_secret": "your-google-secret",
+            "redirect_uri": "http://localhost:8000/auth/social/callback/google",
+            "authorize_url": "https://accounts.google.com/o/oauth2/v2/auth",
+            "token_url": "https://oauth2.googleapis.com/token",
+            "user_info_url": "https://www.googleapis.com/oauth2/v1/userinfo",
+            "scope": "email profile"
+        },
+        "yandex": {
+            "client_id": "your-yandex-client-id",
+            "client_secret": "your-yandex-secret",
+            "redirect_uri": "http://localhost:8000/auth/social/callback/yandex",
+            "authorize_url": "https://oauth.yandex.ru/authorize",
+            "token_url": "https://oauth.yandex.ru/token",
+            "user_info_url": "https://login.yandex.ru/info",
+            "scope": "login:email login:info"
+        },
+        "vk": {
+            "client_id": "your-vk-client-id",
+            "client_secret": "your-vk-secret",
+            "redirect_uri": "http://localhost:8000/auth/social/callback/vk",
+            "authorize_url": "https://oauth.vk.com/authorize",
+            "token_url": "https://oauth.vk.com/access_token",
+            "user_info_url": "https://api.vk.com/method/users.get?fields=uid,first_name,last_name,email&v=5.131",
+            "scope": "email"
+        },
+    }
 
 settings = Settings()

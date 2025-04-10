@@ -165,6 +165,17 @@ class UserService:
 
         return await user.get_login_history(db=self.db, page_size=page_size, page_number=page_number)
 
+    async def get_or_create_oauth_user(user_data: dict, provider: str):
+        email = user_data.get("email") or f"{provider}_{user_data['id']}@oauth.local"
+        user = await User.get_by_email(email)
+        if not user:
+            full_name = user_data.get("name") or user_data.get("first_name") or provider
+            user = await User.create(
+                email=email,
+                name=full_name,
+                oauth_provider=provider
+            )
+        return user
 
 @lru_cache()
 def get_user_service(
