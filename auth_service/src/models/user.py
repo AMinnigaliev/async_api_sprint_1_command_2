@@ -24,6 +24,7 @@ class UserRoleEnum(str, Enum):
 
 
 class User(Base):
+    __table_args__ = {"schema": "public"}
     __tablename__ = 'users'
 
     id = Column(

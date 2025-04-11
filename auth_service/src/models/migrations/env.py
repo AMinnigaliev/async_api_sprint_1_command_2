@@ -1,7 +1,7 @@
 from logging.config import fileConfig
 
 from alembic import context
-from sqlalchemy import engine_from_config, pool
+from sqlalchemy import engine_from_config, pool, event
 
 from src.db.postgres import Base, dsn
 from src.models import login_history, user  # noqa
@@ -12,6 +12,7 @@ if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
 config.set_main_option("sqlalchemy.url", dsn + "?async_fallback=True")
+print(dsn)
 
 target_metadata = Base.metadata
 
@@ -52,6 +53,13 @@ def run_migrations_online() -> None:
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
     )
+
+    # # Устанавливаем search_path для схемы public
+    # @event.listens_for(connectable, "public")
+    # def set_search_path(dbapi_connection, connection_record):
+    #     cursor = dbapi_connection.cursor()
+    #     cursor.execute('SET search_path TO content')
+    #     cursor.close()
 
     with connectable.connect() as connection:
         context.configure(

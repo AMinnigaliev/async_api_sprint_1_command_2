@@ -1,12 +1,33 @@
 services:
   nginx:
-    build: ./nginx
+    image: nginx:1.25.3-alpine
     container_name: nginx_proxy
+    restart: unless-stopped
     ports:
       - "${NGINX_PORT}:8000"
+    volumes:
+      - static_media_volume:/data
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/configs:/etc/nginx/conf.d:ro
+      - ./nginx/data/static.html:/data/static.html
     depends_on:
       - auth_service
       - movies_service
+
+  admin_service:
+    build: ./admin_service
+    container_name: admin_service
+    restart: unless-stopped
+    expose:
+      - "8000"
+    volumes:
+      - static_media_volume:/var/www/
+    env_file: .env
+    depends_on:
+      auth_service:
+        condition: service_started
+      postgres:
+        condition: service_healthy
 
   auth_service:
     build: ./auth_service
@@ -85,7 +106,7 @@ services:
       POSTGRES_DB: ${PG_NAME}
       POSTGRES_USER: ${PG_USER}
       POSTGRES_PASSWORD: ${PG_PASSWORD}
-      PGPORT: ${PG_PORT}
+    command: ["postgres", "-c", "listen_addresses=*", "-c", "port=${PG_PORT}"]
     expose:
       - ${PG_PORT}
     healthcheck:
@@ -99,3 +120,4 @@ services:
 volumes:
   es_data:
   pg_data:
+  static_media_volume:

@@ -9,6 +9,7 @@ from src.db.postgres import Base
 
 
 class LoginHistory(Base):
+    __table_args__ = {"schema": "public"}
     __tablename__ = "login_history"
 
     id = Column(
@@ -20,7 +21,7 @@ class LoginHistory(Base):
     )
     user_id = Column(
         UUID(as_uuid=True),
-        ForeignKey("users.id", ondelete="CASCADE"),
+        ForeignKey("public.users.id", ondelete="CASCADE"),
         nullable=False,
     )
     login_time = Column(
