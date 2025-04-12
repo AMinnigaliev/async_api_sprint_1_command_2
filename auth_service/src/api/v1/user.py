@@ -119,3 +119,42 @@ async def login_history(
     Возвращает историю входов пользователя.
     """
     return await user_service.get_login_history(token=token, page_size=page_size, page_number=page_number)
+
+
+from fastapi import Request, Depends
+from fastapi.responses import RedirectResponse
+from src.services.oauth_service import YandexOAuthService
+from src.services.user_service import UserService
+from src.services.auth_service import AuthService
+from src.core.config import settings
+
+oauth_service = YandexOAuthService()
+
+@router.get("/social/login/yandex")
+async def login_yandex():
+    url = (
+        "https://oauth.yandex.ru/authorize"
+        f"?response_type=code"
+        f"&client_id={settings.yandex_client_id}"
+        f"&redirect_uri={settings.yandex_redirect_uri}"
+    )
+    return RedirectResponse(url)
+
+@router.get("/social/callback/yandex", response_model=Token)
+async def callback_yandex(
+    request: Request,
+    user_service: UserService = Depends(get_user_service),
+):
+    code = request.query_params.get("code")
+    if not code:
+        raise HTTPException(status_code=400, detail="Missing code")
+
+    token = await oauth_service.get_access_token(code)
+    user_info = await oauth_service.get_user_info(token)
+
+    email = user_info.get("default_email")
+    yandex_id = user_info.get("id")
+    username = user_info.get("login") or f"user_{yandex_id}"
+
+    user = await user_service.get_or_create_oauth_user(email=email, oauth_id=yandex_id, username=username)
+    return await user_service.login_user_oauth(user)

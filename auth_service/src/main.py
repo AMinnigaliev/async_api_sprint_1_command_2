@@ -4,7 +4,7 @@ from fastapi import FastAPI, APIRouter
 from fastapi.responses import ORJSONResponse
 from sqlalchemy import text
 
-from src.api.v1 import healthcheck, user, user_role, social_auth
+from src.api.v1 import healthcheck, user, user_role
 from src.core.config import settings
 from src.db.postgres import async_session
 from src.db.redis_client import get_redis_auth
@@ -90,9 +90,6 @@ api_router.include_router(
 )
 api_router.include_router(
     healthcheck.router, prefix="/auth", tags=["healthcheck"]
-)
-api_router.include_router(
-    social_auth.router, prefix="/auth/social", tags=["OAuth"]
 )
 
 app.include_router(api_router)
