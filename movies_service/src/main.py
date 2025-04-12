@@ -1,12 +1,16 @@
 import logging
-from fastapi import APIRouter, FastAPI
-from fastapi.responses import ORJSONResponse
+
 from sqlalchemy import text
+from fastapi import APIRouter, FastAPI, Depends
+from fastapi.responses import ORJSONResponse
+from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
+
 from src.api.v1 import films, genres, healthcheck, persons
 from src.core.config import settings
 from src.db.elastic import get_elastic
 from src.db.postgres import async_session
 from src.db.redis_client import get_redis_cache
+from src.dependencies import check_request_id
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -16,7 +20,11 @@ app = FastAPI(
     docs_url='/api/movies/openapi',
     openapi_url='/api/movies/openapi.json',
     default_response_class=ORJSONResponse,
+    dependencies=[
+        Depends(check_request_id),
+    ]
 )
+FastAPIInstrumentor.instrument_app(app)
 api_router = APIRouter(prefix="/api/v1")
 
 
