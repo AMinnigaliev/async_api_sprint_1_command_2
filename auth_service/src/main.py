@@ -1,13 +1,15 @@
 import logging
 
-from fastapi import FastAPI, APIRouter
-from fastapi.responses import ORJSONResponse
 from sqlalchemy import text
+from fastapi import FastAPI, APIRouter, Depends
+from fastapi.responses import ORJSONResponse
+from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 
 from src.api.v1 import healthcheck, user, user_role
 from src.core.config import settings
 from src.db.postgres import async_session
 from src.db.redis_client import get_redis_auth
+from src.dependencies import check_request_id
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -17,7 +19,11 @@ app = FastAPI(
     docs_url='/api/auth/openapi',
     openapi_url='/api/auth/openapi.json',
     default_response_class=ORJSONResponse,
+    dependencies=[
+        Depends(check_request_id),
+    ]
 )
+FastAPIInstrumentor.instrument_app(app)
 api_router = APIRouter(prefix="/api/v1")
 
 

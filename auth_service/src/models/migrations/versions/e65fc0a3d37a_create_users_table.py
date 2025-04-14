@@ -9,6 +9,7 @@ from typing import Sequence, Union
 
 from alembic import op
 import sqlalchemy as sa
+from sqlalchemy.dialects import postgresql
 
 
 # revision identifiers, used by Alembic.
@@ -28,7 +29,7 @@ def upgrade() -> None:
     sa.Column('first_name', sa.String(length=100), nullable=True),
     sa.Column('last_name', sa.String(length=100), nullable=True),
     sa.Column('created_at', sa.DateTime(timezone=True), nullable=False),
-    sa.Column('role', sa.Enum('SUPERUSER', 'ADMIN', 'USER', name='userroleenum'), nullable=False),
+    sa.Column('role', postgresql.ENUM('SUPERUSER', 'ADMIN', 'USER', name='userroleenum', create_type=False,), nullable=False),
     sa.Column('is_active', sa.Boolean(), nullable=False),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('login')
@@ -52,4 +53,5 @@ def downgrade() -> None:
     op.drop_table('login_history')
     op.drop_index(op.f('ix_users_id'), table_name='users')
     op.drop_table('users')
+    op.execute("DROP TYPE userroleenum")
     # ### end Alembic commands ###

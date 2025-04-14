@@ -7,6 +7,8 @@ services:
     depends_on:
       - auth_service
       - movies_service
+    networks:
+      - sec_network
 
   auth_service:
     build: ./auth_service
@@ -23,6 +25,8 @@ services:
         condition: service_healthy
     env_file:
       - .env
+    networks:
+      - sec_network
 
   movies_service:
     build: movies_service
@@ -39,6 +43,8 @@ services:
         condition: service_healthy
     env_file:
       - .env
+    networks:
+      - sec_network
 
   redis:
     image: redis:6.2
@@ -53,6 +59,8 @@ services:
       retries: 5
       start_period: 30s
       timeout: 10s
+    networks:
+      - sec_network
 
   elasticsearch:
     image: elasticsearch:8.6.2
@@ -76,6 +84,8 @@ services:
       timeout: 10s
     volumes:
       - es_data:/usr/share/elasticsearch/data
+    networks:
+      - sec_network
 
   postgres:
     image: postgres:16-alpine
@@ -95,6 +105,31 @@ services:
       timeout: 10s
     volumes:
       - pg_data:/var/lib/postgresql/data
+    networks:
+      - sec_network
+
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: jaeger
+    environment:
+      - COLLECTOR_ZIPKIN_HTTP_PORT=9411
+      - SPAN_STORAGE_TYPE=$ELASTIC_HOST
+      - ES_SERVER_URLS=http://$ELASTIC_HOST:$ELASTIC_PORT
+      - ES_USERNAME=$ELASTIC_USERNAME
+      - ES_PASSWORD=$ELASTIC_PASSWORD
+      # Отключаем верификацию SSL (если self-signed)
+      - ES_TLS_SKIP_VERIFY=true
+      # Определяем префикс индекса, чтобы не возникало конфликтов с другими сервисами, использующие Elasticsearch
+      - ES_INDEX_PREFIX=jaegertracing
+    restart: unless-stopped
+    depends_on:
+      - elasticsearch
+    networks:
+      - sec_network
+
+networks:
+  sec_network:
+    driver: bridge
 
 volumes:
   es_data:

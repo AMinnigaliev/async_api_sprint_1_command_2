@@ -1,7 +1,7 @@
 import os
 from typing import Any, ClassVar
 
-from pydantic import Field
+from pydantic import Field, computed_field
 from pydantic_settings import BaseSettings
 from redis.exceptions import RedisError
 from asyncpg.exceptions import PostgresError
@@ -14,11 +14,26 @@ from sqlalchemy.exc import OperationalError as SQLOperationalError
 
 class Settings(BaseSettings):
     project_name: str = Field(default="movies", env="PROJECT_NAME")
+    service_name: str = Field("auth_service", env="AUTH_SERVICE_NAME")
+    env_type: str = Field("prod", env="ENV_TYPE")
     base_dir: str = Field(
         default_factory=lambda: os.path.dirname(
             os.path.dirname(os.path.abspath(__file__))
         )
     )
+
+    @computed_field
+    @property
+    def is_prod_env(self) -> bool:
+        """
+        Флаг, указывает какое используется окружение.
+        - prod:
+        - develop: устанавливается при разработке.
+
+        @rtype: bool
+        @return:
+        """
+        return self.env_type == "prod"
 
     redis_host: str = Field("redis", env="REDIS_HOST")
     redis_port: int = Field(6379, env="REDIS_PORT")
@@ -35,6 +50,14 @@ class Settings(BaseSettings):
     pg_host: str = Field("postgres", env="PG_HOST")
     pg_port: int = Field(5432, env="PG_PORT")
     pg_name: str = Field("name", env="PG_NAME")
+
+    jaeger_host: str = Field("jaeger", env="JAEGER_HOST")
+    jaeger_port: int = Field(4318, env="JAEGER_PORT")
+
+    @computed_field
+    @property
+    def jaeger_http_endpoint(self) -> str:
+        return f"http://{self.jaeger_host}:{self.jaeger_port}/v1/traces"
 
     # Exceptions
     redis_exceptions: Any = (RedisError,)
