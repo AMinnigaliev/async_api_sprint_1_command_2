@@ -67,5 +67,8 @@ class Settings(BaseSettings):
     elastic_response_size: int = 1000
     cache_expire_in_seconds: int = 300
 
+    rate_limit: int = Field(5, env="RATE_LIMIT")
+    rate_limit_window: int = Field(60, env="RATE_LIMIT_WINDOW")
+
 
 settings = Settings()
