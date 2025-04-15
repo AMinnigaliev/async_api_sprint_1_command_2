@@ -1,12 +1,15 @@
 import uuid
 from datetime import UTC, datetime
+
 from sqlalchemy import Column, DateTime, ForeignKey, String
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
+
 from src.db.postgres import Base
 
 
 class LoginHistory(Base):
+    __table_args__ = {"schema": "auth"}
     __tablename__ = "login_history"
 
     id = Column(
@@ -18,7 +21,7 @@ class LoginHistory(Base):
     )
     user_id = Column(
         UUID(as_uuid=True),
-        ForeignKey("users.id", ondelete="CASCADE"),
+        ForeignKey("auth.users.id", ondelete="CASCADE"),
         nullable=False,
     )
     login_time = Column(

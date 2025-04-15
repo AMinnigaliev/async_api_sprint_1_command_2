@@ -1,5 +1,6 @@
-from fastapi import APIRouter, Depends, status, Query
+from fastapi import APIRouter, Depends, Query, Request, status
 from fastapi.security import OAuth2PasswordRequestForm
+
 from src.dependencies.auth import oauth2_scheme
 from src.schemas.login_history import LoginHistory
 from src.schemas.token import Token
@@ -34,14 +35,17 @@ async def register_user(
     description="Проверяет логин и пароль. Возвращает access и refresh токены."
 )
 async def login(
+    request: Request,
     form_data: OAuth2PasswordRequestForm = Depends(),
     user_service: UserService = Depends(get_user_service),
 ) -> Token:
     """
     Аутентифицирует пользователя и возвращает JWT токены.
     """
+    user_agent = request.headers.get("user-agent", "unknown")
+    source_service = request.headers.get("X-Source-Service", "undefined")
     return await user_service.login_user(
-        form_data.username, form_data.password
+        form_data.username, form_data.password, user_agent, source_service
     )
 
 
@@ -118,4 +122,6 @@ async def login_history(
     """
     Возвращает историю входов пользователя.
     """
-    return await user_service.get_login_history(token=token, page_size=page_size, page_number=page_number)
+    return await user_service.get_login_history(
+        token=token, page_size=page_size, page_number=page_number
+    )

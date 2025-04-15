@@ -2,14 +2,14 @@
 
 set -e
 
-# Проверяем, выполнена ли инициализация
 if [ ! -f /app/.init_done ]; then
+    echo "Создание схемы auth в postgres."
+    python3 /app/src/app_init/create_schemas.py || { echo "Ошибка при выполнении create_schemas.py"; exit 1; }
     echo "Применение миграций."
     alembic upgrade head
     echo "Запуск предварительных скриптов..."
     python3 /app/src/app_init/create_superuser.py || { echo "Ошибка при выполнении create_superuser.py"; exit 1; }
     touch /app/.init_done
-
     echo "Предварительные скрипты успешно выполнены."
 fi
 
