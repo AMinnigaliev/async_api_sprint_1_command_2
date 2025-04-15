@@ -38,6 +38,7 @@ class Settings(BaseSettings):
     redis_host: str = Field("redis", env="REDIS_HOST")
     redis_port: int = Field(6379, env="REDIS_PORT")
     redis_password: str = Field("password", env="REDIS_PASSWORD")
+    redis_rate_limit_db: int = Field(1, env="REDIS_RATE_LIMIT_DB")
 
     elastic_host: str = Field("elasticsearch", env="ELASTIC_HOST")
     elastic_port: int = Field(9200, env="ELASTIC_PORT")
@@ -78,6 +79,11 @@ class Settings(BaseSettings):
 
     rate_limit: int = Field(5, env="RATE_LIMIT")
     rate_limit_window: int = Field(60, env="RATE_LIMIT_WINDOW")
+
+    @computed_field
+    @property
+    def redis_rate_limit_url(self) -> str:
+        return f"redis://:{self.redis_password}@{self.redis_host}:{self.redis_port}/{self.redis_rate_limit_db}"
 
 
 settings = Settings()

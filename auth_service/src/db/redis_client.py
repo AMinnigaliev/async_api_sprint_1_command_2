@@ -1,5 +1,9 @@
 import logging
+from contextlib import asynccontextmanager
+from typing import Any, AsyncGenerator
+
 from redis.asyncio import Redis
+
 from src.core.config import settings
 from src.services.auth_service import AuthService
 
@@ -36,3 +40,23 @@ async def get_redis_auth() -> AuthService:
             raise
 
     return redis_auth
+
+
+@asynccontextmanager
+async def redis_client_by_rate_limit() -> AsyncGenerator[Redis | None | Redis[bytes], Any]:
+    """
+    Асинхронный контекстный менеджер Redis для RateLimit.
+
+    @rtype: AsyncGenerator[Redis | None | Redis[bytes], Any]
+    @return: redis_client
+    """
+    redis_client = Redis.from_url(url=settings.redis_rate_limit_url)
+
+    try:
+        if not await redis_client.ping():
+            raise ConnectionError("Redis недоступен!")
+
+        yield redis_client
+
+    finally:
+        await redis_client.close()
