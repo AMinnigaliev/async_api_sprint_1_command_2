@@ -1,7 +1,5 @@
 import logging
 
-from fastapi import APIRouter, FastAPI
-from fastapi.responses import ORJSONResponse
 from sqlalchemy import text
 from fastapi import FastAPI, APIRouter, Depends
 from fastapi.responses import ORJSONResponse

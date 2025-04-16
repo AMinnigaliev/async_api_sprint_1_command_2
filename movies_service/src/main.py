@@ -3,7 +3,6 @@ import logging
 from fastapi import APIRouter, Depends, FastAPI
 from fastapi.responses import ORJSONResponse
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
-from sqlalchemy import text
 
 from src.api.v1 import films, genres, healthcheck, persons
 from src.core.config import settings

@@ -6,8 +6,7 @@ if [ ! -f /app/.init_done ]; then
     echo "Создание схемы auth в postgres."
     python3 /app/src/app_init/create_schemas.py || { echo "Ошибка при выполнении create_schemas.py"; exit 1; }
     echo "Применение миграций."
-    # TODO: Дубль выполнения миграций (миграции так же выполняются в auth_service/src/db/init_postgres.py и movies_service/src/db/init_postgres.py)
-#    alembic upgrade head
+    alembic upgrade head
     echo "Запуск предварительных скриптов..."
     python3 /app/src/app_init/create_superuser.py || { echo "Ошибка при выполнении create_superuser.py"; exit 1; }
     touch /app/.init_done
