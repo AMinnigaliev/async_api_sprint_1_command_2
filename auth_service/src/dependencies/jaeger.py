@@ -1,7 +1,7 @@
-from fastapi import Request, status, HTTPException
+from fastapi import HTTPException, Request, status
 
-from src.utils.jaeger_worker import JaegerWorker
 from src.core.config import settings
+from src.utils.jaeger_worker import JaegerWorker
 
 
 def check_request_id(request: Request) -> None:
