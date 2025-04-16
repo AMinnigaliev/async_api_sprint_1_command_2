@@ -14,4 +14,4 @@ if [ ! -f /app/.init_done ]; then
 fi
 
 echo "Запуск приложения..."
-exec uvicorn src.main:app --host 0.0.0.0 --port 8000
+exec uvicorn src.main:app --host 0.0.0.0 --port "$AUTH_SERVICE_PORT"

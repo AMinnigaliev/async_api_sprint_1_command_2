@@ -1,4 +1,5 @@
 import os
+from functools import cached_property
 from typing import Any
 
 from asyncpg.exceptions import \
@@ -19,6 +20,9 @@ class Settings(BaseSettings):
             os.path.dirname(os.path.abspath(__file__))
         )
     )
+
+    auth_service_host: str = Field(alias="AUTH_SERVICE_HOST")
+    auth_service_port: int = Field(alias="AUTH_SERVICE_PORT")
 
     redis_host: str = Field(default="redis", alias="REDIS_HOST")
     redis_port: int = Field(default=6379, alias="REDIS_PORT")
@@ -43,12 +47,19 @@ class Settings(BaseSettings):
     )
 
     # Безопасность
-    auth_service_url: str = "http://auth_service:8000/api/v1/auth"
+    login_url: str = "/api/v1/auth/users/login"
     secret_key: str = Field(default="practix", alias="SECRET_KEY")
     algorithm: str = "HS256"
 
     elastic_response_size: int = 1000
     cache_expire_in_seconds: int = 300
+
+    @cached_property
+    def auth_service_url(self) -> str:
+        return (
+            f"http://{self.auth_service_host}:{self.auth_service_port}"
+            f"/api/v1/auth"
+        )
 
 
 settings = Settings()

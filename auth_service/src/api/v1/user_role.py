@@ -9,9 +9,7 @@ from src.services.user_role_service import (UserRoleService,
                                             get_user_role_service)
 
 router = APIRouter(
-    dependencies=[Depends(role_dependency(
-        (UserRoleEnum.SUPERUSER, UserRoleEnum.ADMIN,)
-    ))]
+    dependencies=[Depends(role_dependency(UserRoleEnum.get_is_staff_roles()))]
 )
 
 

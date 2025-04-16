@@ -22,6 +22,20 @@ class UserRoleEnum(str, Enum):
     ADMIN = "admin"
     USER = "user"
 
+    @classmethod
+    def get_is_staff_roles(cls) -> list[str]:
+        """
+        Возвращает список всех значений ролей, относящиеся к персоналу.
+        """
+        return UserRoleEnum.SUPERUSER, UserRoleEnum.ADMIN
+
+    @classmethod
+    def get_all_roles(cls) -> list[str]:
+        """
+        Возвращает список всех значений ролей, определённых в перечислении.
+        """
+        return [role.strip() for role in cls]
+
 
 class User(Base):
     __table_args__ = {"schema": "auth"}

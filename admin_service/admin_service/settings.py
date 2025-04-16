@@ -86,7 +86,11 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-AUTH_API_LOGIN_URL = "http://auth_service:8000/api/v1/auth/users/login"
+AUTH_SERVICE_HOST = os.getenv('AUTH_SERVICE_HOST')
+AUTH_SERVICE_PORT = os.getenv('AUTH_SERVICE_PORT')
+AUTH_API_LOGIN_URL = (
+    f"http://{AUTH_SERVICE_HOST}:{AUTH_SERVICE_PORT}/api/v1/auth/users/login"
+)
 AUTH_USER_MODEL = "users.AdminUser"
 AUTHENTICATION_BACKENDS = [
     'users.backends.AdminBackend',

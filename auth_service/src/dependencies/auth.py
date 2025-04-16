@@ -7,7 +7,7 @@ from src.db.redis_client import get_redis_auth
 from src.models.user import UserRoleEnum
 from src.services.auth_service import AuthService
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/users/login")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl=settings.login_url)
 
 
 def role_dependency(required_roles: tuple[UserRoleEnum]):

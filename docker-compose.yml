@@ -8,18 +8,19 @@ services:
     volumes:
       - static_media_volume:/data
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./nginx/configs:/etc/nginx/conf.d:ro
+      - ./nginx/configs:/etc/nginx/templates:ro
       - ./nginx/data/static.html:/data/static.html
+    env_file: .env
     depends_on:
       - auth_service
       - movies_service
 
   admin_service:
     build: ./admin_service
-    container_name: admin_service
+    container_name: ${ADMIN_SERVICE_HOST}
     restart: unless-stopped
     expose:
-      - "8000"
+      - "${ADMIN_SERVICE_PORT}"
     volumes:
       - static_media_volume:/var/www/
     env_file: .env
@@ -31,10 +32,10 @@ services:
 
   auth_service:
     build: ./auth_service
-    container_name: auth_service
+    container_name: ${AUTH_SERVICE_HOST}
     restart: unless-stopped
     expose:
-      - "8000"
+      - "${AUTH_SERVICE_PORT}"
     depends_on:
       redis:
         condition: service_healthy
@@ -47,10 +48,10 @@ services:
 
   movies_service:
     build: movies_service
-    container_name: movies_service
+    container_name: ${MOVIES_SERVICE_HOST}
     restart: unless-stopped
     expose:
-      - "8000"
+      - "${MOVIES_SERVICE_PORT}"
     depends_on:
       redis:
         condition: service_healthy

@@ -47,6 +47,7 @@ class Settings(BaseSettings):
     )
 
     # Безопасность
+    login_url: str = "/api/v1/auth/users/login"
     token_revoke: ClassVar[bytes] = b"revoked"
     token_active: ClassVar[bytes] = b"active"
     secret_key: str = Field(default="practix", alias="SECRET_KEY")
