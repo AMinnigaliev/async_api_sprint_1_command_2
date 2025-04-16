@@ -1,6 +1,7 @@
 import uuid
 from datetime import UTC, datetime
 from enum import Enum
+
 from fastapi import HTTPException, status
 from sqlalchemy import Boolean, Column, DateTime
 from sqlalchemy import Enum as SQLAEnum
@@ -9,10 +10,11 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.orm import relationship
+from werkzeug.security import check_password_hash, generate_password_hash
+
 from src.core.security import verify_token
 from src.db.postgres import Base
 from src.models.login_history import LoginHistory
-from werkzeug.security import check_password_hash, generate_password_hash
 
 
 class UserRoleEnum(str, Enum):
@@ -20,8 +22,23 @@ class UserRoleEnum(str, Enum):
     ADMIN = "admin"
     USER = "user"
 
+    @classmethod
+    def get_is_staff_roles(cls) -> list[str]:
+        """
+        Возвращает список всех значений ролей, относящиеся к персоналу.
+        """
+        return UserRoleEnum.SUPERUSER, UserRoleEnum.ADMIN
+
+    @classmethod
+    def get_all_roles(cls) -> list[str]:
+        """
+        Возвращает список всех значений ролей, определённых в перечислении.
+        """
+        return [role.strip() for role in cls]
+
 
 class User(Base):
+    __table_args__ = {"schema": "auth"}
     __tablename__ = 'users'
 
     id = Column(
@@ -111,13 +128,17 @@ class User(Base):
         db.add(login_entry)
         await db.commit()
 
-    async def get_login_history(self, db: AsyncSession, page_size: int, page_number: int) -> list[LoginHistory]:
+    async def get_login_history(
+            self, db: AsyncSession, page_size: int, page_number: int
+    ) -> list[LoginHistory]:
         """
         Возвращает список истории входов пользователя.
         """
         offset = (page_number - 1) * page_size
 
-        stmt = select(LoginHistory).where(LoginHistory.user_id == self.id).limit(page_size).offset(offset)
+        stmt = select(LoginHistory).where(
+            LoginHistory.user_id == self.id
+        ).limit(page_size).offset(offset)
         result = await db.execute(stmt)
 
         return result.scalars().all()

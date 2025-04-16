@@ -1,6 +1,10 @@
 import logging
+
 from redis.asyncio import Redis
+from redis.exceptions import ConnectionError
+
 from src.core.config import settings
+from src.core.exceptions import RedisUnavailable
 from src.services.auth_service import AuthService
 
 logger = logging.getLogger(__name__)
@@ -15,9 +19,10 @@ async def get_redis_auth() -> AuthService:
     """
     global redis_auth
 
-    if not redis_auth or not await redis_auth.redis_client.ping():
-        logger.info("Создание клиента Redis для auth...")
-        try:
+    try:
+        if not redis_auth or not await redis_auth.redis_client.ping():
+            logger.info("Создание клиента Redis для auth...")
+
             redis_client = Redis(
                 host=settings.redis_host,
                 port=settings.redis_port,
@@ -31,8 +36,8 @@ async def get_redis_auth() -> AuthService:
 
             logger.info("Клиент Redis для auth успешно создан.")
 
-        except Exception as e:
-            logger.error(f"Ошибка при создании клиента Redis для auth: {e}")
-            raise
+    except settings.redis_exceptions as e:
+        logger.error(f"Ошибка при создании клиента Redis для auth: {e}")
+        raise RedisUnavailable()
 
     return redis_auth

@@ -1,14 +1,16 @@
 import logging
-from fastapi import Depends
 from functools import lru_cache
+from typing import Annotated
+
+from fastapi import Depends
 from pydantic import BaseModel
+
 from src.db.elastic import get_elastic, settings
 from src.db.redis_client import get_redis_cache
 from src.models.models import GenreBase
 from src.services.base_service import BaseService
 from src.utils.cache_service import CacheService
 from src.utils.elastic_service import ElasticService
-from typing import Annotated
 
 logger = logging.getLogger(__name__)
 

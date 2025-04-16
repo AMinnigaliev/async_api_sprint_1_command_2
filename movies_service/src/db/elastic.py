@@ -1,5 +1,7 @@
 import logging
+
 from elasticsearch import ApiError, AsyncElasticsearch, ConnectionError
+
 from src.core.config import settings
 from src.utils.elastic_service import ElasticService
 
