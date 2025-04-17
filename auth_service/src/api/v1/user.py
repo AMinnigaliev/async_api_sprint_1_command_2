@@ -11,6 +11,7 @@ from src.services.user_service import UserService, get_user_service
 from src.services.oauth_service import YandexOAuthService
 from src.services.auth_service import AuthService
 from src.core.config import settings
+from src.db.redis_client import get_redis_auth
 
 router = APIRouter()
 
@@ -152,25 +153,31 @@ async def login_yandex():
     return RedirectResponse(redirect_url)
 
 
-@router.get(
-    "/social/callback/yandex",
-    response_model=Token,
-    summary="Колбэк от Yandex OAuth"
-)
+@router.get("/social/callback/yandex", response_model=Token, summary="Колбэк от Yandex OAuth")
 async def callback_yandex(
     request: Request,
     user_service: UserService = Depends(get_user_service),
     oauth_service: YandexOAuthService = Depends(get_oauth_service),
+    auth_service: AuthService = Depends(get_redis_auth),
 ) -> Token:
-    """
-    Обработка колбэка от Yandex: получение токена, инфо о пользователе и выдача JWT.
-    """
     code = request.query_params.get("code")
     if not code:
-        raise HTTPException(status_code=400, detail="Missing code")
+        raise HTTPException(400, "Missing code")
 
-    token = await oauth_service.get_access_token(code)
-    user_info = await oauth_service.get_user_info(token)
+    cache_key = f"yandex_code:{code}"
+    if cached := await auth_service.redis_client.get(cache_key):
+        return Token.parse_raw(cached)
+
+    try:
+        token_value = await oauth_service.get_access_token(code)
+    except HTTPException as exc:
+        # если первый запрос уже успел обменять code и сохранить результат – берём из кэша
+        if "Code has expired" in str(exc.detail):
+            if cached := await auth_service.redis_client.get(cache_key):
+                return Token.parse_raw(cached)
+        raise
+
+    user_info = await oauth_service.get_user_info(token_value)
 
     email = user_info.get("default_email")
     yandex_id = user_info.get("id")
@@ -179,4 +186,7 @@ async def callback_yandex(
     user = await user_service.get_or_create_oauth_user(
         email=email, oauth_id=yandex_id, username=username
     )
-    return await user_service.login_user_oauth(user)
+    result = await user_service.login_user_oauth(user)
+
+    await auth_service.redis_client.set(cache_key, result.json(), ex=600)
+    return result
