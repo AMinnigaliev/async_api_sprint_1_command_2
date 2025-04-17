@@ -114,7 +114,7 @@ class AuthService:
 
         else:
             exp = payload.get("exp")
-            ttl = int(exp - datetime.now(UTC).timestamp())
+            ttl = int(exp.timestamp() - datetime.now(UTC).timestamp())
 
             expire = ttl if ttl > 1 else None
 

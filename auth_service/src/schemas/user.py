@@ -11,6 +11,9 @@ class BaseUser(BaseModel):
     last_name: str | None = Field(
         None, min_length=1, max_length=100, description="Фамилия пользователя"
     )
+    country: str = Field(
+        ..., min_length=1, max_length=100, description="Страна пользователя"
+    )
 
 
 class UserCreate(BaseUser):
@@ -27,6 +30,9 @@ class UserUpdate(BaseUser):
     """Модель для обновления данных пользователя."""
     password: str | None = Field(
         None, min_length=8, max_length=150, description="Пароль пользователя"
+    )
+    country: str | None = Field(
+        None, min_length=1, max_length=100, description="Страна пользователя"
     )
 
 

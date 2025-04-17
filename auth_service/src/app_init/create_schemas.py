@@ -12,8 +12,12 @@ logger = logging.getLogger(__name__)
 
 async def create_auth_schema() -> None:
     """Функция создания схемы auth в postgres."""
+    logger.info("Начало работы скрипта по созданию схемы auth.")
+
     async with engine.begin() as conn:
         await conn.execute(text("CREATE SCHEMA IF NOT EXISTS auth;"))
+
+    logger.info("Схема создана.")
 
 
 async def main():
