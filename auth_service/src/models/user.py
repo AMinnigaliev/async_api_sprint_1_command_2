@@ -34,7 +34,7 @@ class User(Base):
     )
     login = Column(String(100), unique=True, nullable=False)
     password = Column(String(255), nullable=False)
-    email = Column(String, unique=True, nullable=True)
+    email = Column(String(255), unique=True, nullable=True)
     oauth_id = Column(String(255), unique=True, nullable=True)
     first_name = Column(String(100), nullable=True)
     last_name = Column(String(100), nullable=True)

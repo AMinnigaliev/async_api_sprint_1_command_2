@@ -20,7 +20,6 @@ logger = logging.getLogger(__name__)
 
 
 class UserService:
-
     """Сервис для работы с пользователями."""
 
     def __init__(self, db: AsyncSession, redis_client: AuthService):
@@ -197,6 +196,14 @@ def get_user_service(
 ) -> UserService:
     """
     Провайдер для получения экземпляра UserService.
+
+    Функция создаёт синглтон экземпляр UserService, используя
+    Postgres и Redis, которые передаётся через Depends (зависимости FastAPI).
+
+    :param db: Сессия Postgres, предоставленный через Depends.
+    :param redis: Экземпляр клиента Redis, предоставленный через Depends.
+    :return: Экземпляр UserService, который используется для
+    работы с пользователями.
     """
     logger.info(
         "Создаётся экземпляр UserService с использованием "

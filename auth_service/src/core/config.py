@@ -49,6 +49,7 @@ class Settings(BaseSettings):
     yandex_client_id: str = Field(..., env="YANDEX_CLIENT_ID")
     yandex_client_secret: str = Field(..., env="YANDEX_CLIENT_SECRET")
     yandex_redirect_uri: str = Field(..., env="YANDEX_REDIRECT_URI")
+    yandex_auth_url: str = "https://oauth.yandex.ru/authorize"
 
     # Безопасность
     token_revoke: ClassVar[bytes] = b"revoked"

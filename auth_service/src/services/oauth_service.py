@@ -17,14 +17,47 @@ class YandexOAuthService:
 
         async with httpx.AsyncClient() as client:
             response = await client.post(self.TOKEN_URL, data=data)
+
         if response.status_code != 200:
-            raise HTTPException(status_code=400, detail="Failed to get Yandex token")
+            # пытаемся вытащить собственное описание ошибки от Яндекса
+            try:
+                err = response.json()
+                error_detail = (
+                    err.get("error_description")
+                    or err.get("error")
+                    or response.text
+                )
+            except ValueError:
+                error_detail = response.text
+
+            raise HTTPException(
+                status_code=400,
+                detail=f"Не удалось получить токен Яндекса: {error_detail}"
+            )
+
         return response.json().get("access_token")
 
     async def get_user_info(self, token: str) -> dict:
         headers = {"Authorization": f"OAuth {token}"}
         async with httpx.AsyncClient() as client:
             response = await client.get(self.USER_INFO_URL, headers=headers)
+
         if response.status_code != 200:
-            raise HTTPException(status_code=400, detail="Failed to get Yandex user info")
+            # извлекаем сообщение об ошибке от Яндекса или возвращаем сырой текст
+            try:
+                err = response.json()
+                error_detail = (
+                    err.get("error_description")
+                    or err.get("error")
+                    or err.get("message")
+                    or response.text
+                )
+            except ValueError:
+                error_detail = response.text
+
+            raise HTTPException(
+                status_code=400,
+                detail=f"Не удалось получить информацию о пользователе Яндекса: {error_detail}"
+            )
+
         return response.json()

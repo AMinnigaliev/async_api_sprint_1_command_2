@@ -1,12 +1,26 @@
-from fastapi import APIRouter, Depends, status, Query
+from fastapi import APIRouter, Depends, status, Query, HTTPException, Request
 from fastapi.security import OAuth2PasswordRequestForm
+from functools import lru_cache
+from fastapi.responses import RedirectResponse
+
 from src.dependencies.auth import oauth2_scheme
 from src.schemas.login_history import LoginHistory
 from src.schemas.token import Token
 from src.schemas.user import UserCreate, UserResponse, UserUpdate
 from src.services.user_service import UserService, get_user_service
+from src.services.oauth_service import YandexOAuthService
+from src.services.auth_service import AuthService
+from src.core.config import settings
 
 router = APIRouter()
+
+
+@lru_cache()
+def get_oauth_service() -> YandexOAuthService:
+    """
+    Провайдер для YandexOAuthService.
+    """
+    return YandexOAuthService()
 
 
 @router.post(
@@ -14,8 +28,7 @@ router = APIRouter()
     response_model=UserResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Регистрация нового пользователя",
-    description="Создание нового пользователя с логином, паролем и профилем. "
-                "Возвращает объект пользователя."
+    description="Создание нового пользователя с логином, паролем и профилем. Возвращает объект пользователя."
 )
 async def register_user(
     user_create: UserCreate,
@@ -49,8 +62,7 @@ async def login(
     "/refresh",
     response_model=Token,
     summary="Обновление access-токена",
-    description="Обновляет access-токен при валидном refresh-токене. "
-                "Возвращает новые токены."
+    description="Обновляет access-токен при валидном refresh-токене. Возвращает новые токены."
 )
 async def refresh_token(
     refresh_token: str,
@@ -66,8 +78,7 @@ async def refresh_token(
     "/update",
     response_model=UserResponse,
     summary="Обновление данных пользователя",
-    description="Позволяет пользователю изменить логин и/или пароль без "
-                "подтверждения email."
+    description="Позволяет пользователю изменить логин и/или пароль без подтверждения email."
 )
 async def update_user(
     user_update: UserUpdate,
@@ -121,30 +132,39 @@ async def login_history(
     return await user_service.get_login_history(token=token, page_size=page_size, page_number=page_number)
 
 
-from fastapi import Request, Depends
-from fastapi.responses import RedirectResponse
-from src.services.oauth_service import YandexOAuthService
-from src.services.user_service import UserService
-from src.services.auth_service import AuthService
-from src.core.config import settings
-
-oauth_service = YandexOAuthService()
-
-@router.get("/social/login/yandex")
+@router.get(
+    "/social/login/yandex",
+    summary="Перенаправляет на Yandex OAuth"
+)
 async def login_yandex():
-    url = (
-        "https://oauth.yandex.ru/authorize"
+    """
+    Формирует URL авторизации Yandex и перенаправляет на него.
+    """
+    # Базовый URL теперь в настройках
+    base_auth_url = settings.yandex_auth_url
+    # Собираем query-параметры
+    params = (
         f"?response_type=code"
         f"&client_id={settings.yandex_client_id}"
         f"&redirect_uri={settings.yandex_redirect_uri}"
     )
-    return RedirectResponse(url)
+    redirect_url = base_auth_url + params
+    return RedirectResponse(redirect_url)
 
-@router.get("/social/callback/yandex", response_model=Token)
+
+@router.get(
+    "/social/callback/yandex",
+    response_model=Token,
+    summary="Колбэк от Yandex OAuth"
+)
 async def callback_yandex(
     request: Request,
     user_service: UserService = Depends(get_user_service),
-):
+    oauth_service: YandexOAuthService = Depends(get_oauth_service),
+) -> Token:
+    """
+    Обработка колбэка от Yandex: получение токена, инфо о пользователе и выдача JWT.
+    """
     code = request.query_params.get("code")
     if not code:
         raise HTTPException(status_code=400, detail="Missing code")
@@ -156,5 +176,7 @@ async def callback_yandex(
     yandex_id = user_info.get("id")
     username = user_info.get("login") or f"user_{yandex_id}"
 
-    user = await user_service.get_or_create_oauth_user(email=email, oauth_id=yandex_id, username=username)
+    user = await user_service.get_or_create_oauth_user(
+        email=email, oauth_id=yandex_id, username=username
+    )
     return await user_service.login_user_oauth(user)
