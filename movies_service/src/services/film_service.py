@@ -1,9 +1,9 @@
 import logging
-from uuid import UUID
+from functools import lru_cache
 from typing import Annotated
+from uuid import UUID
 
 from fastapi import Depends
-from functools import lru_cache
 from pydantic import BaseModel
 
 from src.db.elastic import get_elastic

@@ -1,19 +1,18 @@
 import asyncio
-import logging
+import logging.config
 import os
 
 from dotenv import load_dotenv
 from sqlalchemy import select
 
 from src.core.config import settings
+from src.core.logger import LOGGING
 from src.db.postgres import async_session
 from src.models.user import User, UserRoleEnum
 
 load_dotenv()
 
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
-)
+logging.config.dictConfig(LOGGING)
 logger = logging.getLogger(__name__)
 
 
@@ -33,6 +32,8 @@ async def create_superuser() -> None:
             login=os.getenv("SUPERUSER_NAME"),
             password=os.getenv("SUPERUSER_PASSWORD"),
             role=UserRoleEnum.SUPERUSER,
+            country="unknown",
+            partition_country="unknown",
         )
 
         try:

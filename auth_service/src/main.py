@@ -1,11 +1,11 @@
 import logging
 
-from sqlalchemy import text
-from fastapi import FastAPI, APIRouter, Depends
+from fastapi import APIRouter, Depends, FastAPI
 from fastapi.responses import ORJSONResponse
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
+from sqlalchemy import text
 
-from src.api.v1 import healthcheck, user, user_role
+from src.api.v1 import healthcheck, user, user_role, validate
 from src.core.config import settings
 from src.db.postgres import async_session
 from src.db.redis_client import get_redis_auth
@@ -17,8 +17,8 @@ logging.basicConfig(level=logging.INFO)
 
 app = FastAPI(
     title=settings.project_name,
-    docs_url='/api/auth/openapi',
-    openapi_url='/api/auth/openapi.json',
+    docs_url='/api/v1/auth/openapi',
+    openapi_url='/api/v1/auth/openapi.json',
     default_response_class=ORJSONResponse,
     dependencies=[
         Depends(check_request_id),
@@ -89,6 +89,9 @@ async def shutdown():
 
 
 # Подключение роутеров
+api_router.include_router(
+    validate.router, prefix="/auth/validate", tags=["Validate"]
+)
 api_router.include_router(
     user.router, prefix="/auth/users", tags=["Users"]
 )

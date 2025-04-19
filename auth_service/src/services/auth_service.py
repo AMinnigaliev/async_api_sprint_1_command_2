@@ -1,8 +1,10 @@
 import logging
 from datetime import UTC, datetime
+
 from redis.asyncio import Redis
+
 from src.core.config import settings
-from src.core.exceptions import TokenServiceError
+from src.core.exceptions import RedisUnavailable
 from src.core.security import verify_token
 from src.utils.decorators import with_retry
 
@@ -31,7 +33,7 @@ class AuthService:
                 "token_key=%s, check_value=%s, error=%s. %s",
                 token_key, value, e, log_info
             )
-            raise TokenServiceError(e)
+            raise RedisUnavailable()
 
         if redis_value == value:
             logger.info(
@@ -65,7 +67,7 @@ class AuthService:
                 "token_key=%s, error=%s. %s",
                 token_key, e, log_info
             )
-            raise TokenServiceError(e)
+            raise RedisUnavailable()
 
         logger.info(
             "Токен добавлен в Redis: token_key=%s, expire=%d сек. %s",
@@ -84,12 +86,9 @@ class AuthService:
                 "Ошибка при удалении токена: token=%s, error=%s. %s",
                 token, e, log_info
             )
-            raise TokenServiceError(e)
+            raise RedisUnavailable()
 
-        logger.info(
-            "Токен удалён: token=%s. %s",
-            token, log_info
-        )
+        logger.info("Токен удалён: token=%s. %s", token, log_info)
 
     async def revoke_token(self, token: str, log_info: str = "") -> None:
         """
@@ -99,7 +98,7 @@ class AuthService:
         payload = verify_token(token)
 
         if exp := payload.get("exp"):
-            ttl = int(exp - datetime.now(UTC).timestamp())
+            ttl = int(exp.timestamp() - datetime.now(UTC).timestamp())
 
             if ttl > 0:
                 await self.set(token, settings.token_revoke, ttl, log_info)
@@ -115,4 +114,3 @@ class AuthService:
             logger.error(
                 "Ошибка при закрытии соединения с Redis (auth): %s", e
             )
-            raise TokenServiceError(e)

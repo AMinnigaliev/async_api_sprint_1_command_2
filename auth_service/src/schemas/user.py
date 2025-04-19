@@ -1,6 +1,17 @@
-from pydantic import BaseModel, Field
 from uuid import UUID
+from datetime import datetime
 
+from pydantic import BaseModel, Field, EmailStr
+
+
+
+class UserCreate(BaseModel):
+    login: str = Field(..., description="Логин пользователя")
+    password: str | None = Field(None, description="Пароль пользователя")
+    email: EmailStr | None = Field(None, description="Email пользователя")
+    oauth_id: str | None = Field(None, description="OAuth‑ID (например, от Яндекса)")
+    first_name: str | None = Field(None, description="Имя пользователя")
+    last_name: str | None = Field(None, description="Фамилия пользователя")
 
 class BaseUser(BaseModel):
     """Базовая модель пользователя с основными данными."""
@@ -10,31 +21,38 @@ class BaseUser(BaseModel):
     last_name: str | None = Field(
         None, min_length=1, max_length=100, description="Фамилия пользователя"
     )
-
-
-class UserCreate(BaseUser):
-    """Модель для создания нового пользователя."""
-    login: str = Field(
-        ..., min_length=1, max_length=100, description="Логин пользователя"
-    )
-    password: str = Field(
-        ..., min_length=8, max_length=150, description="Пароль пользователя"
+    country: str = Field(
+        ..., min_length=1, max_length=100, description="Страна пользователя"
     )
 
+    class Config:
+        orm_mode = True
 
+
+class UserUpdate(BaseModel):
+    email: str | None = Field(None, description="Новый email пользователя")
+    username: str | None = Field(None, description="Новый логин пользователя")
+    password: str | None = Field(None, description="Новый пароль пользователя")
+
+    class Config:
+        orm_mode = True
+
+        
 class UserUpdate(BaseUser):
     """Модель для обновления данных пользователя."""
     password: str | None = Field(
         None, min_length=8, max_length=150, description="Пароль пользователя"
     )
-
-
-class UserResponse(BaseUser):
-    """Модель для представления информации о пользователе."""
-    id: UUID = Field(..., description="Уникальный идентификатор пользователя")
-    login: str = Field(
-        ..., min_length=1, max_length=100, description="Логин пользователя"
+    country: str | None = Field(
+        None, min_length=1, max_length=100, description="Страна пользователя"
     )
-    role: str = Field(..., description="Роль пользователя")
 
-    model_config = {"from_attributes": True}
+
+class UserResponse(BaseModel):
+    id: UUID = Field(..., description="Уникальный идентификатор пользователя")
+    email: EmailStr = Field(..., description="Email пользователя")
+    username: str = Field(..., description="Логин пользователя")
+    created_at: datetime = Field(..., description="Дата и время создания аккаунта")
+
+    class Config:
+        orm_mode = True

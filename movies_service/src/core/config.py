@@ -1,4 +1,7 @@
 import os
+from functools import cached_property
+from typing import Any
+
 from asyncpg.exceptions import \
     ConnectionDoesNotExistError as PGConnectionDoesNotExistError
 from asyncpg.exceptions import PostgresError
@@ -8,13 +11,12 @@ from elasticsearch import ApiError as ESApiError
 from pydantic import Field, computed_field
 from pydantic_settings import BaseSettings
 from redis.exceptions import RedisError
-from typing import Any
 
 
 class Settings(BaseSettings):
-    project_name: str = Field("movies", env="PROJECT_NAME")
-    service_name: str = Field("movies_service", env="MOVIES_SERVICE_NAME")
-    env_type: str = Field("prod", env="ENV_TYPE")
+    project_name: str = Field("movies", alias="PROJECT_NAME")
+    service_name: str = Field("movies_service", alias="MOVIES_SERVICE_NAME")
+    env_type: str = Field("prod", alias="ENV_TYPE")
     base_dir: str = Field(
         default_factory=lambda: os.path.dirname(
             os.path.dirname(os.path.abspath(__file__))
@@ -34,25 +36,28 @@ class Settings(BaseSettings):
         """
         return self.env_type == "prod"
 
-    redis_host: str = Field("redis", env="REDIS_HOST")
-    redis_port: int = Field(6379, env="REDIS_PORT")
-    redis_password: str = Field("password", env="REDIS_PASSWORD")
-    redis_rate_limit_db: int = Field(1, env="REDIS_RATE_LIMIT_DB")
+    auth_service_host: str = Field(alias="AUTH_SERVICE_HOST")
+    auth_service_port: int = Field(alias="AUTH_SERVICE_PORT")
 
-    elastic_host: str = Field("elasticsearch", env="ELASTIC_HOST")
-    elastic_port: int = Field(9200, env="ELASTIC_PORT")
-    elastic_scheme: str = Field("http", env="ELASTIC_SCHEME")
+    redis_host: str = Field("redis", alias="REDIS_HOST")
+    redis_port: int = Field(6379, alias="REDIS_PORT")
+    redis_password: str = Field("password", alias="REDIS_PASSWORD")
+    redis_rate_limit_db: int = Field(1, alias="REDIS_RATE_LIMIT_DB")
+
+    elastic_host: str = Field(default="elasticsearch", alias="ELASTIC_HOST")
+    elastic_port: int = Field(default=9200, alias="ELASTIC_PORT")
+    elastic_scheme: str = Field(default="http", alias="ELASTIC_SCHEME")
     elastic_name: str = Field(default="elastic", alias="ELASTIC_USERNAME")
     elastic_password: str = Field(default="123qwe", alias="ELASTIC_PASSWORD")
 
-    pg_user: str = Field("user", env="PG_USER")
-    pg_password: str = Field("password", env="PG_PASSWORD")
-    pg_host: str = Field("postgres", env="PG_HOST")
-    pg_port: int = Field(5432, env="PG_PORT")
-    pg_name: str = Field("name", env="PG_NAME")
+    pg_user: str = Field(default="user", alias="PG_USER")
+    pg_password: str = Field(default="password", alias="PG_PASSWORD")
+    pg_host: str = Field(default="postgres", alias="PG_HOST")
+    pg_port: int = Field(default=5432, alias="PG_PORT")
+    pg_name: str = Field(default="name", alias="PG_NAME")
 
-    jaeger_host: str = Field("jaeger", env="JAEGER_HOST")
-    jaeger_port: int = Field(4318, env="JAEGER_PORT")
+    jaeger_host: str = Field("jaeger", alias="JAEGER_HOST")
+    jaeger_port: int = Field(4318, alias="JAEGER_PORT")
 
     @computed_field
     @property
@@ -65,16 +70,28 @@ class Settings(BaseSettings):
         PostgresError, PGConnectionDoesNotExistError, PGSyntaxOrAccessError
     )
 
+    # Безопасность
+    login_url: str = "/api/v1/auth/users/login"
+    secret_key: str = Field(default="practix", alias="SECRET_KEY")
+    algorithm: str = "HS256"
+
     elastic_response_size: int = 1000
     cache_expire_in_seconds: int = 300
 
-    rate_limit: int = Field(5, env="RATE_LIMIT")
-    rate_limit_window: int = Field(60, env="RATE_LIMIT_WINDOW")
+    rate_limit: int = Field(5, alias="RATE_LIMIT")
+    rate_limit_window: int = Field(60, alias="RATE_LIMIT_WINDOW")
 
     @computed_field
     @property
     def redis_rate_limit_url(self) -> str:
         return f"redis://:{self.redis_password}@{self.redis_host}:{self.redis_port}/{self.redis_rate_limit_db}"
+
+    @cached_property
+    def auth_service_url(self) -> str:
+        return (
+            f"http://{self.auth_service_host}:{self.auth_service_port}"
+            f"/api/v1/auth"
+        )
 
 
 settings = Settings()
