@@ -1,5 +1,7 @@
 import logging
+
 from redis.asyncio import Redis
+
 from src.core.config import settings
 from src.core.exceptions import CacheServiceError
 from src.utils.decorators import with_retry
@@ -11,10 +13,8 @@ class CacheService:
     def __init__(
         self,
         redis_client: Redis,
-        cache_expire: int = settings.cache_expire_in_seconds,
     ):
         self.redis_client = redis_client
-        self.cache_expire = cache_expire
 
     @with_retry()
     async def get(self, key: str, log_info: str = "") -> bytes | None:
@@ -44,27 +44,33 @@ class CacheService:
             return None
 
     @with_retry()
-    async def set(self, key: str, value: bytes, log_info: str = "") -> None:
+    async def set(
+            self,
+            key: str,
+            value: bytes,
+            expire: int = settings.cache_expire_in_seconds,
+            log_info: str = "",
+    ) -> None:
         logger.debug(
             "Попытка сохранить значение в кеш: "
             "key=%s, value=%s, expire=%d. %s",
-            key, value, self.cache_expire, log_info
+            key, value, expire, log_info
         )
         try:
-            await self.redis_client.set(key, value, ex=self.cache_expire)
+            await self.redis_client.set(key, value, ex=expire)
 
         except settings.redis_exceptions as e:
             logger.error(
                 "Ошибка при сохранении значения в кеш:"
-                " key=%s, value=%s, error=%s. %s",
-                key, value, e, log_info
+                " key=%s, expire=%s, error=%s. %s",
+                key, expire, e, log_info
             )
             raise CacheServiceError(e)
 
         else:
             logger.info(
                 "Значение успешно сохранено в кеше: key=%s, expire=%d. %s",
-                key, self.cache_expire, log_info
+                key, expire, log_info
             )
 
     async def close(self):

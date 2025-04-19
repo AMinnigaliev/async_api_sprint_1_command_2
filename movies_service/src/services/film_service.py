@@ -1,15 +1,18 @@
 import logging
-from fastapi import Depends
 from functools import lru_cache
+from typing import Annotated
+from uuid import UUID
+
+from fastapi import Depends
 from pydantic import BaseModel
+
 from src.db.elastic import get_elastic
 from src.db.redis_client import get_redis_cache
 from src.models.models import Film, FilmBase
 from src.services.base_service import BaseService
 from src.utils.cache_service import CacheService
 from src.utils.elastic_service import ElasticService
-from typing import Annotated
-from uuid import UUID
+from src.utils.jaeger_worker import JaegerWorker
 
 logger = logging.getLogger(__name__)
 
@@ -104,6 +107,7 @@ class FilmService(BaseService):
             model, es_index, body, cache_key, log_info
         )
 
+    @JaegerWorker.start_span()
     async def search_films(
         self,
         query: str | None = None,

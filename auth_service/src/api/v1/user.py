@@ -48,14 +48,17 @@ async def register_user(
     description="Проверяет логин и пароль. Возвращает access и refresh токены."
 )
 async def login(
+    request: Request,
     form_data: OAuth2PasswordRequestForm = Depends(),
     user_service: UserService = Depends(get_user_service),
 ) -> Token:
     """
     Аутентифицирует пользователя и возвращает JWT токены.
     """
+    user_agent = request.headers.get("user-agent", "unknown")
+    source_service = request.headers.get("X-Source-Service", "undefined")
     return await user_service.login_user(
-        form_data.username, form_data.password
+        form_data.username, form_data.password, user_agent, source_service
     )
 
 

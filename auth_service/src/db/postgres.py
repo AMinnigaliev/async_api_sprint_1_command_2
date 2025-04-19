@@ -1,6 +1,7 @@
 # src/db/postgres.py
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
+
 from src.core.config import settings
 
 Base = declarative_base()
@@ -10,7 +11,9 @@ dsn = (
     f"{settings.pg_host}:{settings.pg_port}/{settings.pg_name}"
 )
 engine = create_async_engine(dsn, echo=True, future=True)
-async_session = sessionmaker(bind=engine, class_=AsyncSession, expire_on_commit=False)
+async_session = sessionmaker(
+    bind=engine, class_=AsyncSession, expire_on_commit=False
+)
 
 
 async def get_session() -> AsyncSession:
@@ -20,5 +23,3 @@ async def get_session() -> AsyncSession:
         except Exception:
             await session.rollback()
             raise
-        finally:
-            await session.close()

@@ -1,20 +1,26 @@
 import logging
 from datetime import timedelta
-from fastapi import Depends, HTTPException, status
 from functools import lru_cache
+from typing import Annotated
+
+import user_agents
+from fastapi import Depends, HTTPException, status
+from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
+from werkzeug.security import generate_password_hash
+
 from src.core.config import settings
+from src.core.exceptions import TokenRevokedException
 from src.core.security import (create_access_token, create_refresh_token,
                                verify_token)
 from src.db.postgres import get_session
 from src.db.redis_client import get_redis_auth
-from src.models.user import User
+from src.models.user import LoginHistory, User
 from src.schemas.token import Token
 from src.schemas.user import UserCreate, UserUpdate
 from src.services.auth_service import AuthService
-from typing import Annotated
-from werkzeug.security import generate_password_hash
-from src.schemas.token import Token
+from src.utils.normalize_country import normalize_country
+
 
 logger = logging.getLogger(__name__)
 
@@ -26,7 +32,45 @@ class UserService:
         self.db = db
         self.redis_client = redis_client
 
-    async def _create_tokens_from_user(self, user: User) -> tuple[str, str]:
+    @staticmethod
+    def _get_device_type(user_agent_str: str) -> str:
+        ua = user_agents.parse(user_agent_str)
+        if ua.is_mobile or ua.is_tablet:
+            return "mobile"
+
+        elif ua.is_pc:
+            return "web"
+
+        elif "smart" in user_agent_str.lower():
+            return "smart"
+
+        else:
+            return "unknown"
+
+    @staticmethod
+    def _get_normalize_country(value: str) -> tuple[str, str]:
+        try:
+            norm_country = normalize_country(value)
+
+        except ValueError:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=f"Unknown country: {value}"
+            )
+
+        else:
+            if norm_country == "Russian Federation":
+                partition_country = "RUS"
+
+            else:
+                partition_country = "Abroad"
+
+            return norm_country, partition_country
+
+
+    async def _create_tokens_from_user(
+        self, user: User, source_service: str = 'undefined'
+    ) -> tuple[str, str]:
         """
         Вспомогательный метод для создания access и refresh токенов и
         добавления refresh токена в Redis.
@@ -36,35 +80,46 @@ class UserService:
         access_token = create_access_token(user.id, role)
         refresh_token = create_refresh_token(user.id, role)
 
-        await self.redis_client.set(
-            refresh_token,
-            settings.token_active,
-            expire=int(timedelta(
-                days=settings.refresh_token_expire_days).total_seconds()
-            ),
-        )
+        if source_service != "admin_service":
+            await self.redis_client.set(
+                refresh_token,
+                settings.token_active,
+                expire=int(timedelta(
+                    days=settings.refresh_token_expire_days).total_seconds()
+                ),
+            )
 
         return access_token, refresh_token
 
     async def create_user(self, user_data: UserCreate) -> User:
-        if await User.get_user_by_login(self.db, user_data.login):
+        lock_sql = text("SELECT pg_advisory_xact_lock(hashtext(:login))")
+        await self.db.execute(lock_sql, {"login": user_data.login})
+
+        stmt = select(User.id).where(User.login == user_data.login).limit(1)
+        existing = await self.db.scalar(stmt)
+        if existing:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Login already registered",
             )
 
+        norm_country, partition_country = self._get_normalize_country(
+            user_data.country
+        )
         new_user = User(
             login=user_data.login,
             password=user_data.password,
-            first_name=user_data.first_name,
-            last_name=user_data.last_name,
+            country=norm_country,
+            partition_country=partition_country
         )
         self.db.add(new_user)
         await self.db.commit()
         await self.db.refresh(new_user)
         return new_user
 
-    async def login_user(self, login: str, password: str) -> Token:
+    async def login_user(
+        self, login: str, password: str, user_agent: str, source_service: str
+    ) -> Token:
         user = await User.get_user_by_login(self.db, login)
         if not user or not user.check_password(password):
             raise HTTPException(
@@ -72,8 +127,13 @@ class UserService:
                 detail="Incorrect login or password",
             )
 
-        access_token, refresh_token = await self._create_tokens_from_user(user)
-        await user.add_login_history(self.db)
+
+        access_token, refresh_token = await self._create_tokens_from_user(
+            user, source_service
+        )
+
+        user_device_type = self._get_device_type(user_agent)
+        await user.add_login_history(self.db, user_agent, user_device_type)
 
         return Token(access_token=access_token, refresh_token=refresh_token)
 
@@ -93,7 +153,7 @@ class UserService:
         ):
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Token has revoked"
+                detail="Refresh-token has revoked"
             )
 
         access_token, new_refresh_token = await self._create_tokens_from_user(
@@ -112,17 +172,21 @@ class UserService:
         if await self.redis_client.check_value(
             token, settings.token_revoke
         ):
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Token has revoked"
-            )
+            raise TokenRevokedException()
 
-        if user_update.first_name:
-            user.first_name = user_update.first_name
-        if user_update.last_name:
-            user.last_name = user_update.last_name
-        if user_update.password:
-            user.password = generate_password_hash(user_update.password)
+        if first_name := user_update.first_name:
+            user.first_name = first_name
+
+        if last_name := user_update.last_name:
+            user.last_name = last_name
+
+        if password := user_update.password:
+            user.password = generate_password_hash(password)
+
+        if country := user_update.country:
+            user.country, user.partition_country = self._get_normalize_country(
+                country
+            )
 
         await self.db.commit()
         await self.db.refresh(user)
@@ -132,10 +196,7 @@ class UserService:
         if await self.redis_client.check_value(
             access_token, settings.token_revoke
         ):
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Access-token has revoked"
-            )
+            raise TokenRevokedException()
 
         access_payload = verify_token(access_token)
         del access_payload["exp"]
@@ -160,18 +221,19 @@ class UserService:
             detail="Incorrect refresh-token"
         )
 
-    async def get_login_history(self, token: str, page_size: int, page_number: int) -> list:
+    async def get_login_history(
+        self, token: str, page_size: int, page_number: int
+    ) -> list[LoginHistory]:
         user = await User.get_user_by_token(self.db, token)
 
         if await self.redis_client.check_value(
             token, settings.token_revoke
         ):
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Token has revoked"
-            )
+            raise TokenRevokedException()
 
-        return await user.get_login_history(db=self.db, page_size=page_size, page_number=page_number)
+        return await user.get_login_history(
+            db=self.db, page_size=page_size, page_number=page_number
+        )
 
     async def get_or_create_oauth_user(self, email: str, oauth_id: str, username: str) -> User:
         user = await User.get_user_by_email(self.db, email)
