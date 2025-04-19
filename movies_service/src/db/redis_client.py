@@ -1,4 +1,6 @@
 import logging
+from contextlib import asynccontextmanager
+from typing import AsyncGenerator, Any
 
 from redis.asyncio import Redis
 from redis.exceptions import ConnectionError
@@ -39,3 +41,23 @@ async def get_redis_cache() -> CacheService:
         raise
 
     return redis_cache
+
+
+@asynccontextmanager
+async def redis_client_by_rate_limit() -> AsyncGenerator[Redis | None | Redis[bytes], Any]:
+    """
+    Асинхронный контекстный менеджер Redis для RateLimit.
+
+    @rtype: AsyncGenerator[Redis | None | Redis[bytes], Any]
+    @return: redis_client
+    """
+    redis_client = Redis.from_url(url=settings.redis_rate_limit_url)
+
+    try:
+        if not await redis_client.ping():
+            raise ConnectionError("Redis недоступен!")
+
+        yield redis_client
+
+    finally:
+        await redis_client.close()

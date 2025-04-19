@@ -39,9 +39,10 @@ class Settings(BaseSettings):
     auth_service_host: str = Field(alias="AUTH_SERVICE_HOST")
     auth_service_port: int = Field(alias="AUTH_SERVICE_PORT")
 
-    redis_host: str = Field(default="redis", alias="REDIS_HOST")
-    redis_port: int = Field(default=6379, alias="REDIS_PORT")
-    redis_password: str = Field(default="password", alias="REDIS_PASSWORD")
+    redis_host: str = Field("redis", alias="REDIS_HOST")
+    redis_port: int = Field(6379, alias="REDIS_PORT")
+    redis_password: str = Field("password", alias="REDIS_PASSWORD")
+    redis_rate_limit_db: int = Field(1, alias="REDIS_RATE_LIMIT_DB")
 
     elastic_host: str = Field(default="elasticsearch", alias="ELASTIC_HOST")
     elastic_port: int = Field(default=9200, alias="ELASTIC_PORT")
@@ -76,6 +77,14 @@ class Settings(BaseSettings):
 
     elastic_response_size: int = 1000
     cache_expire_in_seconds: int = 300
+
+    rate_limit: int = Field(5, alias="RATE_LIMIT")
+    rate_limit_window: int = Field(60, alias="RATE_LIMIT_WINDOW")
+
+    @computed_field
+    @property
+    def redis_rate_limit_url(self) -> str:
+        return f"redis://:{self.redis_password}@{self.redis_host}:{self.redis_port}/{self.redis_rate_limit_db}"
 
     @cached_property
     def auth_service_url(self) -> str:

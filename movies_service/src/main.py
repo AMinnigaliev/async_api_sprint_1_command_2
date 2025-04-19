@@ -9,6 +9,7 @@ from src.core.config import settings
 from src.db.elastic import get_elastic
 from src.db.redis_client import get_redis_cache
 from src.dependencies import check_request_id
+from src.middleware import AsyncRateLimitMiddleware
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -106,3 +107,6 @@ api_router.include_router(
 )
 
 app.include_router(api_router)
+
+# Middleware:
+app.add_middleware(AsyncRateLimitMiddleware)
