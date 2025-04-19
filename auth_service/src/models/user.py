@@ -83,12 +83,13 @@ class User(Base):
     def __init__(
         self,
         login: str,
-
         password: str = "",
         email: str | None = None,
         oauth_id: str | None = None,
         first_name: str | None = None,
         last_name: str | None = None,
+        country: str | None = None,
+        partition_country: str | None = None,
         role: UserRoleEnum = UserRoleEnum.USER,
     ) -> None:
         self.login = login

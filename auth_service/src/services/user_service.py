@@ -67,7 +67,6 @@ class UserService:
 
             return norm_country, partition_country
 
-
     async def _create_tokens_from_user(
         self, user: User, source_service: str = 'undefined'
     ) -> tuple[str, str]:
@@ -107,6 +106,8 @@ class UserService:
             user_data.country
         )
         new_user = User(
+            first_name=user_data.first_name,
+            last_name=user_data.last_name,
             login=user_data.login,
             password=user_data.password,
             country=norm_country,
@@ -126,7 +127,6 @@ class UserService:
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Incorrect login or password",
             )
-
 
         access_token, refresh_token = await self._create_tokens_from_user(
             user, source_service
@@ -250,6 +250,7 @@ class UserService:
         await self.db.commit()
         await self.db.refresh(new_user)
         return new_user
+
 
 @lru_cache()
 def get_user_service(

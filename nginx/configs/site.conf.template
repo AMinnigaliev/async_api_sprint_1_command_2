@@ -16,6 +16,24 @@ server {
 
     root /data;
 
+    # Проксируем весь трафик на /auth (включая /auth/social/login/yandex)
+    location /auth/ {
+        proxy_pass http://backend_auth/auth/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    # Проксируем запросы для oauth Yandex
+    location /auth/social/login/yandex {
+        proxy_pass http://backend_auth/auth/social/login/yandex;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
     location /admin/ {
         proxy_pass http://backend_admin/admin/;
         proxy_set_header Host $host;
