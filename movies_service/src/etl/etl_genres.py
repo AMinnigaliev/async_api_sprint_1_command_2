@@ -1,4 +1,5 @@
 import logging
+
 from elasticsearch import AsyncElasticsearch, helpers
 from elasticsearch.exceptions import ConnectionError, RequestError
 from tenacity import (retry, retry_if_exception_type, stop_after_attempt,

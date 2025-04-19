@@ -1,5 +1,9 @@
 import logging
+from contextlib import asynccontextmanager
+
 from redis.asyncio import Redis
+from redis.exceptions import ConnectionError
+
 from src.core.config import settings
 from src.utils.cache_service import CacheService
 
@@ -15,9 +19,9 @@ async def get_redis_cache() -> CacheService:
     """
     global redis_cache
 
-    if not redis_cache or not await redis_cache.redis_client.ping():
-        logger.info("Создание клиента Redis для кеша...")
-        try:
+    try:
+        if not redis_cache or not await redis_cache.redis_client.ping():
+            logger.info("Создание клиента Redis для кеша...")
             redis_client = Redis(
                 host=settings.redis_host,
                 port=settings.redis_port,
@@ -31,8 +35,28 @@ async def get_redis_cache() -> CacheService:
 
             logger.info("Клиент Redis для кеша успешно создан.")
 
-        except Exception as e:
-            logger.error(f"Ошибка при создании клиента Redis для кеша: {e}")
-            raise
+    except Exception as e:
+        logger.error(f"Ошибка при создании клиента Redis для кеша: {e}")
+        raise
 
     return redis_cache
+
+
+@asynccontextmanager
+async def redis_client_by_rate_limit():
+    """
+    Асинхронный контекстный менеджер Redis для RateLimit.
+
+    @rtype: AsyncGenerator[Redis | None | Redis[bytes], Any]
+    @return: redis_client
+    """
+    redis_client = Redis.from_url(url=settings.redis_rate_limit_url)
+
+    try:
+        if not await redis_client.ping():
+            raise ConnectionError("Redis недоступен!")
+
+        yield redis_client
+
+    finally:
+        await redis_client.close()

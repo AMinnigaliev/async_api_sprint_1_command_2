@@ -47,6 +47,7 @@ docker compose -f ./docker-compose-apps.yaml -f ./docker-compose-services.yaml -
 - DataModels:
 - - **Pydantic**(https://docs.pydantic.dev/latest/);
 - Distributed Tracing:
+- - **OpenTelemetry**(https://opentelemetry.io/docs/languages/python/);
 - - **Jaeger**(https://www.jaegertracing.io/docs/latest/);
 
 ## Архитектура проекта
@@ -79,6 +80,34 @@ docker compose -f ./docker-compose-apps.yaml -f ./docker-compose-services.yaml -
 
 ## Схемы индексов Elasticsearch
 - TODO: добавить
+
+## Работа с Jaeger(OpenTelemetry):
+### Сервисы, использующие распределённую трассировку:
+- **movies_service**;
+- **auth_service**;
+
+### Методы работы с Jaeger (JaegerWorker):
+Если в рамках текущего **trace** нужно добавить новый **span**, требуется установить декоратор
+на требуемый метод/функцию (example_1):
+
+![example_1](docs/jaeger/example_1.png)
+
+
+Если в рамках текущего **trace** нужно добавить наследуемую цепочку **span**, требуется установить декораторы
+на методы/функции в соответствующем порядке (example_2):
+
+![example_2](docs/jaeger/example_2.png)
+
+
+Если в рамках текущего **trace** нужно добавить новый **span**, и в нем указать атрибут, требуется установить декоратор
+на метод/функцию и указать в нужном месте добавление атрибута (example_3):
+
+![example_3](docs/jaeger/example_3.png)
+
+
+Если в рамках текущего **trace** нужно добавить новый **span** в обход обработчика **JaegerWorker** (example_4):
+
+![example_4](docs/jaeger/example_4.png)
 
 * * *
 
