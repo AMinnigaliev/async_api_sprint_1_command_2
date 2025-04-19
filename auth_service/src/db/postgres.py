@@ -1,3 +1,4 @@
+# src/db/postgres.py
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
 
@@ -19,7 +20,6 @@ async def get_session() -> AsyncSession:
     async with async_session() as session:
         try:
             yield session
-
         except Exception:
             await session.rollback()
             raise

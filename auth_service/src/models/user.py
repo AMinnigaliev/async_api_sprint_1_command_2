@@ -56,6 +56,8 @@ class User(Base):
     )
     login = Column(String(100), nullable=False)
     password = Column(String(255), nullable=False)
+    email = Column(String(255), unique=True, nullable=True)
+    oauth_id = Column(String(255), unique=True, nullable=True)
     first_name = Column(String(100), nullable=True)
     last_name = Column(String(100), nullable=True)
     created_at = Column(
@@ -81,15 +83,18 @@ class User(Base):
     def __init__(
         self,
         login: str,
-        password: str,
-        country: str,
-        partition_country: str,
+
+        password: str = "",
+        email: str | None = None,
+        oauth_id: str | None = None,
         first_name: str | None = None,
         last_name: str | None = None,
         role: UserRoleEnum = UserRoleEnum.USER,
     ) -> None:
         self.login = login
-        self.password = generate_password_hash(password)
+        self.password = generate_password_hash(password) if password else ""
+        self.email = email
+        self.oauth_id = oauth_id
         self.country = country
         self.partition_country = partition_country
         self.first_name = first_name
@@ -120,6 +125,14 @@ class User(Base):
         Возвращает пользователя по логину.
         """
         result = await db.execute(select(cls).where(cls.login == login))
+        return result.scalar_one_or_none()
+
+    @classmethod
+    async def get_user_by_email(cls, db: AsyncSession, email: str) -> "User | None":
+        """
+        Возвращает пользователя по email.
+        """
+        result = await db.execute(select(cls).where(cls.email == email))
         return result.scalar_one_or_none()
 
     @classmethod

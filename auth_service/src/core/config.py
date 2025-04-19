@@ -69,6 +69,12 @@ class Settings(BaseSettings):
         SQLAlchemyError, SQLIntegrityError, SQLOperationalError
     )
 
+    # OAuth Yandex
+    yandex_client_id: str = Field(..., env="YANDEX_CLIENT_ID")
+    yandex_client_secret: str = Field(..., env="YANDEX_CLIENT_SECRET")
+    yandex_redirect_uri: str = Field(..., env="YANDEX_REDIRECT_URI")
+    yandex_auth_url: str = "https://oauth.yandex.ru/authorize"
+
     # Безопасность
     login_url: str = "/api/v1/auth/users/login"
     token_revoke: ClassVar[bytes] = b"revoked"
@@ -77,6 +83,5 @@ class Settings(BaseSettings):
     algorithm: str = "HS256"
     access_token_expire_minutes: int = 15
     refresh_token_expire_days: int = 7
-
 
 settings = Settings()

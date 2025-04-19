@@ -21,6 +21,7 @@ from src.schemas.user import UserCreate, UserUpdate
 from src.services.auth_service import AuthService
 from src.utils.normalize_country import normalize_country
 
+
 logger = logging.getLogger(__name__)
 
 
@@ -126,6 +127,7 @@ class UserService:
                 detail="Incorrect login or password",
             )
 
+
         access_token, refresh_token = await self._create_tokens_from_user(
             user, source_service
         )
@@ -133,6 +135,14 @@ class UserService:
         user_device_type = self._get_device_type(user_agent)
         await user.add_login_history(self.db, user_agent, user_device_type)
 
+        return Token(access_token=access_token, refresh_token=refresh_token)
+
+    async def login_user_oauth(self, user: User) -> Token:
+        """
+        Авторизация OAuth-пользователя — создание токенов и запись истории входа.
+        """
+        access_token, refresh_token = await self._create_tokens_from_user(user)
+        await user.add_login_history(self.db)
         return Token(access_token=access_token, refresh_token=refresh_token)
 
     async def refresh_tokens(self, refresh_token: str) -> Token:
@@ -225,6 +235,21 @@ class UserService:
             db=self.db, page_size=page_size, page_number=page_number
         )
 
+    async def get_or_create_oauth_user(self, email: str, oauth_id: str, username: str) -> User:
+        user = await User.get_user_by_email(self.db, email)
+        if user:
+            return user
+
+        new_user = User(
+            login=username,
+            email=email,
+            password=None,
+            oauth_id=oauth_id
+        )
+        self.db.add(new_user)
+        await self.db.commit()
+        await self.db.refresh(new_user)
+        return new_user
 
 @lru_cache()
 def get_user_service(
