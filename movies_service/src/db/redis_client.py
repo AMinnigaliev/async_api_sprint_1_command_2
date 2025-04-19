@@ -1,6 +1,5 @@
 import logging
 from contextlib import asynccontextmanager
-from typing import AsyncGenerator, Any
 
 from redis.asyncio import Redis
 from redis.exceptions import ConnectionError
@@ -44,7 +43,7 @@ async def get_redis_cache() -> CacheService:
 
 
 @asynccontextmanager
-async def redis_client_by_rate_limit() -> AsyncGenerator[Redis | None | Redis[bytes], Any]:
+async def redis_client_by_rate_limit():
     """
     Асинхронный контекстный менеджер Redis для RateLimit.
 

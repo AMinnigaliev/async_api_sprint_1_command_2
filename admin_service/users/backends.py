@@ -1,4 +1,5 @@
 import logging
+import uuid
 from typing import Any
 from uuid import UUID
 
@@ -38,7 +39,8 @@ class AdminBackend(BaseBackend):
         url = settings.AUTH_API_LOGIN_URL
         payload = {'username': username, 'password': password}
         headers = {
-            'X-Source-Service': 'admin_service'
+            'X-Source-Service': 'admin_service',
+            'X-Request-Id': str(uuid.uuid4()),
         }
         try:
             response = requests.post(
