@@ -5,7 +5,7 @@ from enum import Enum
 from fastapi import HTTPException, status
 from sqlalchemy import Boolean, Column, DateTime
 from sqlalchemy import Enum as SQLAEnum
-from sqlalchemy import String
+from sqlalchemy import String, UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
@@ -38,18 +38,23 @@ class UserRoleEnum(str, Enum):
 
 
 class User(Base):
-    __table_args__ = {"schema": "auth"}
-    __tablename__ = 'users'
+    __table_args__ = (
+        UniqueConstraint("id", "partition_country"),
+        UniqueConstraint("login", "partition_country"),
+        {
+            "postgresql_partition_by": "LIST (partition_country)",
+            "schema": "auth"
+        },
+    )
+    __tablename__ = "users"
 
     id = Column(
         UUID(as_uuid=True),
         primary_key=True,
         default=uuid.uuid4,
-        unique=True,
         nullable=False,
-        index=True,
     )
-    login = Column(String(100), unique=True, nullable=False)
+    login = Column(String(100), nullable=False)
     password = Column(String(255), nullable=False)
     first_name = Column(String(100), nullable=True)
     last_name = Column(String(100), nullable=True)
@@ -68,17 +73,25 @@ class User(Base):
         cascade="all, delete-orphan",
         lazy="selectin",
     )
+    country = Column(String(100), nullable=False, default="unknown")
+    partition_country = Column(
+        String(10), nullable=False, primary_key=True, default="unknown"
+    )
 
     def __init__(
         self,
         login: str,
         password: str,
+        country: str,
+        partition_country: str,
         first_name: str | None = None,
         last_name: str | None = None,
         role: UserRoleEnum = UserRoleEnum.USER,
     ) -> None:
         self.login = login
         self.password = generate_password_hash(password)
+        self.country = country
+        self.partition_country = partition_country
         self.first_name = first_name
         self.last_name = last_name
         self.role = role
@@ -89,7 +102,10 @@ class User(Base):
     @classmethod
     async def get_user_by_id(cls, db: AsyncSession, user_id: UUID) -> "User":
         if user_id:
-            if user := await db.get(cls, user_id):
+            result = await db.execute(
+                select(cls).where(cls.id == user_id)
+            )
+            if user := result.scalar_one_or_none():
                 return user
 
         raise HTTPException(
@@ -119,12 +135,17 @@ class User(Base):
         return await cls.get_user_by_id(db, user_id)
 
     async def add_login_history(
-            self, db: AsyncSession, user_agent: str = "unknown"
+            self, db: AsyncSession, user_agent: str, user_device_type: str
     ) -> None:
         """
         Добавляет запись входа в систему.
         """
-        login_entry = LoginHistory(user_id=self.id, user_agent=user_agent)
+        login_entry = LoginHistory(
+            user_id=self.id,
+            user_agent=user_agent,
+            user_device_type=user_device_type,
+            partition_country=self.partition_country,
+        )
         db.add(login_entry)
         await db.commit()
 

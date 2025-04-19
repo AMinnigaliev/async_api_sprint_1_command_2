@@ -1,12 +1,11 @@
 import os
 from typing import Any, ClassVar
 
-from pydantic import Field, computed_field
 from asyncpg.exceptions import \
     ConnectionDoesNotExistError as PGConnectionDoesNotExistError
 from asyncpg.exceptions import PostgresError
 from asyncpg.exceptions import SyntaxOrAccessError as PGSyntaxOrAccessError
-from pydantic import Field
+from pydantic import Field, computed_field
 from pydantic_settings import BaseSettings
 from redis.exceptions import RedisError
 from sqlalchemy.exc import IntegrityError as SQLIntegrityError
@@ -15,7 +14,6 @@ from sqlalchemy.exc import SQLAlchemyError
 
 
 class Settings(BaseSettings):
-    project_name: str = Field(default="movies", alias="PROJECT_NAME")
     project_name: str = Field(default="movies", alias="PROJECT_NAME")
     service_name: str = Field("auth_service", alias="AUTH_SERVICE_NAME")
     env_type: str = Field("prod", alias="ENV_TYPE")

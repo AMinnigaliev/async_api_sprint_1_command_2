@@ -53,3 +53,5 @@ opentelemetry-exporter-otlp==1.32.0
 opentelemetry-exporter-otlp-proto-common==1.32.0
 opentelemetry-exporter-otlp-proto-grpc==1.32.0
 opentelemetry-exporter-otlp-proto-http==1.32.0
+user-agents==2.2.0
+pycountry==24.6.1

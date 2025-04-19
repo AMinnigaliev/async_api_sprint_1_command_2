@@ -1,11 +1,16 @@
 import asyncio
+import logging
 import os
 
 import psycopg2
 
+logger = logging.getLogger(__name__)
+
 
 async def create_schemas() -> None:
-    """Функция создания схемы admin в postgres."""
+    """Функция создания схем admin и content в postgres."""
+    logger.info("Начало работы скрипта по созданию схемы admin и content.")
+
     dsn = (
         f"dbname={os.getenv('PG_NAME')} "
         f"user={os.getenv('PG_USER')} "
@@ -21,6 +26,8 @@ async def create_schemas() -> None:
         cursor.execute("CREATE SCHEMA IF NOT EXISTS content;")
 
     conn.close()
+
+    logger.info("Схемы созданы.")
 
 
 async def main():
