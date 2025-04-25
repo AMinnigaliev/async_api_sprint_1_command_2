@@ -16,6 +16,7 @@ from src.core.security import (create_access_token, create_refresh_token,
 from src.db.postgres import get_session
 from src.db.redis_client import get_redis_auth
 from src.models.user import LoginHistory, User
+from src.models.social_account import SocialAccount, SocialProviderEnum
 from src.schemas.token import Token
 from src.schemas.user import UserCreate, UserUpdate
 from src.services.auth_service import AuthService
@@ -142,7 +143,11 @@ class UserService:
         Авторизация OAuth-пользователя — создание токенов и запись истории входа.
         """
         access_token, refresh_token = await self._create_tokens_from_user(user)
-        await user.add_login_history(self.db)
+        await user.add_login_history(
+            self.db,
+            user_agent="oauth",
+            user_device_type="web",
+        )
         return Token(access_token=access_token, refresh_token=refresh_token)
 
     async def refresh_tokens(self, refresh_token: str) -> Token:
@@ -235,21 +240,49 @@ class UserService:
             db=self.db, page_size=page_size, page_number=page_number
         )
 
-    async def get_or_create_oauth_user(self, email: str, oauth_id: str, username: str) -> User:
-        user = await User.get_user_by_email(self.db, email)
-        if user:
-            return user
-
-        new_user = User(
-            login=username,
-            email=email,
-            password=None,
-            oauth_id=oauth_id
+    async def get_or_create_oauth_user(
+        self,
+        provider: str,
+        oauth_id: str,
+        username: str,
+        email: str | None = None,
+    ) -> User:
+        """
+        1. Проверяем, нет ли уже SocialAccount с таким provider+oauth_id.
+        2. Если пришёл email — ищем пользователя по email.
+        3. Создаём при необходимости и пользователя, и SocialAccount.
+        """
+        stmt = select(SocialAccount).where(
+            SocialAccount.provider == provider,
+            SocialAccount.oauth_id == oauth_id,
         )
-        self.db.add(new_user)
+        if social := (await self.db.scalars(stmt)).first():
+            return social.user
+
+        user: User | None = None
+        if email:
+            user = await User.get_user_by_email(self.db, email)
+
+        if not user:
+            user = User(
+                login=username or f"user_{provider}_{oauth_id[:8]}",
+                email=email,
+                password=None,          # пароля нет — OAuth
+            )
+            self.db.add(user)
+            await self.db.flush()       # получаем user.id
+
+        social = SocialAccount(
+            provider=provider,
+            oauth_id=oauth_id,
+            email=email,
+            username=username,
+            user_id=user.id,
+        )
+        self.db.add(social)
         await self.db.commit()
-        await self.db.refresh(new_user)
-        return new_user
+        await self.db.refresh(user)
+        return user
 
 
 @lru_cache()

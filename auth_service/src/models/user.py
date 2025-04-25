@@ -15,6 +15,7 @@ from werkzeug.security import check_password_hash, generate_password_hash
 from src.core.security import verify_token
 from src.db.postgres import Base
 from src.models.login_history import LoginHistory
+from src.models.social_account import SocialAccount
 
 
 class UserRoleEnum(str, Enum):
@@ -75,10 +76,17 @@ class User(Base):
         cascade="all, delete-orphan",
         lazy="selectin",
     )
-    country = Column(String(100), nullable=False, default="unknown")
-    partition_country = Column(
-        String(10), nullable=False, primary_key=True, default="unknown"
+
+    social_accounts = relationship(
+        "SocialAccount",
+        back_populates="user",
+        cascade="all, delete-orphan",
+        lazy="selectin",
     )
+
+    country = Column(String(100), nullable=False, default="unknown")
+    partition_country = Column(String(10), nullable=False,
+                               primary_key=True, default="unknown")
 
     def __init__(
         self,

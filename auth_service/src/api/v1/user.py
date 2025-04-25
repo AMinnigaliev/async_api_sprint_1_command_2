@@ -12,9 +12,13 @@ from src.services.oauth_service import YandexOAuthService
 from src.services.auth_service import AuthService
 from src.core.config import settings
 from src.db.redis_client import get_redis_auth
+from src.models.social_account import SocialProviderEnum
 
 router = APIRouter()
 
+OAUTH_PROVIDERS: dict[str, type[YandexOAuthService]] = {
+    SocialProviderEnum.YANDEX: YandexOAuthService,
+}
 
 @lru_cache()
 def get_oauth_service() -> YandexOAuthService:
@@ -136,58 +140,50 @@ async def login_history(
     return await user_service.get_login_history(token=token, page_size=page_size, page_number=page_number)
 
 
-@router.get(
-    "/social/login/yandex",
-    summary="Перенаправляет на Yandex OAuth"
-)
-async def login_yandex():
-    """
-    Формирует URL авторизации Yandex и перенаправляет на него.
-    """
-    # Базовый URL теперь в настройках
-    base_auth_url = settings.yandex_auth_url
-    # Собираем query-параметры
-    params = (
-        f"?response_type=code"
-        f"&client_id={settings.yandex_client_id}"
-        f"&redirect_uri={settings.yandex_redirect_uri}"
-    )
-    redirect_url = base_auth_url + params
-    return RedirectResponse(redirect_url)
+@router.get("/social/login/{provider}", summary="Перенаправляет на страницу авторизации провайдера")
+async def social_login(provider: SocialProviderEnum = Path(...)):
+    service_cls = OAUTH_PROVIDERS.get(provider)
+    if not service_cls:
+        raise HTTPException(status_code=404, detail="Unsupported provider")
+    return RedirectResponse(service_cls().build_auth_url())
 
-
-@router.get("/social/callback/yandex", response_model=Token, summary="Колбэк от Yandex OAuth")
-async def callback_yandex(
+@router.get("/social/callback/{provider}", response_model=Token, summary="Колбэк от OAuth-провайдера")
+async def social_callback(
+    provider: SocialProviderEnum,
     request: Request,
     user_service: UserService = Depends(get_user_service),
-    oauth_service: YandexOAuthService = Depends(get_oauth_service),
     auth_service: AuthService = Depends(get_redis_auth),
 ) -> Token:
+    service_cls = OAUTH_PROVIDERS.get(provider)
+    if not service_cls:
+        raise HTTPException(status_code=404, detail="Unsupported provider")
+
     code = request.query_params.get("code")
     if not code:
         raise HTTPException(400, "Missing code")
 
-    cache_key = f"yandex_code:{code}"
+    cache_key = f"{provider}_code:{code}"
     if cached := await auth_service.redis_client.get(cache_key):
         return Token.parse_raw(cached)
 
-    try:
-        token_value = await oauth_service.get_access_token(code)
-    except HTTPException as exc:
-        # если первый запрос уже успел обменять code и сохранить результат – берём из кэша
-        if "Code has expired" in str(exc.detail):
-            if cached := await auth_service.redis_client.get(cache_key):
-                return Token.parse_raw(cached)
-        raise
+    service = service_cls()
+    token_value = await service.get_access_token(code)
+    user_info = await service.get_user_info(token_value)
 
-    user_info = await oauth_service.get_user_info(token_value)
-
-    email = user_info.get("default_email")
-    yandex_id = user_info.get("id")
-    username = user_info.get("login") or f"user_{yandex_id}"
+    if provider is SocialProviderEnum.YANDEX:
+        email = user_info.get("default_email")
+        oauth_id = user_info["id"]
+        username = user_info.get("login") or f"user_{oauth_id}"
+    else:
+        email = user_info.get("email")
+        oauth_id = user_info["id"]
+        username = user_info.get("username") or f"user_{oauth_id}"
 
     user = await user_service.get_or_create_oauth_user(
-        email=email, oauth_id=yandex_id, username=username
+        provider=provider,
+        oauth_id=oauth_id,
+        username=username,
+        email=email,
     )
     result = await user_service.login_user_oauth(user)
 
