@@ -4,6 +4,7 @@ import functools
 from opentelemetry import trace
 from opentelemetry.trace import set_span_in_context
 
+from src.core.config import settings
 from src.core.jaeger_init import tracer
 
 
@@ -43,30 +44,38 @@ class JaegerWorker:
 
             @functools.wraps(func)
             async def async_wrapped(*args, **kwargs):
-                new_span_name = span_name if span_name else func.__name__
-                parent_span = trace.get_current_span()
+                if settings.enable_jaeger:
+                    new_span_name = span_name if span_name else func.__name__
+                    parent_span = trace.get_current_span()
 
-                if parent_span.get_span_context().is_valid:
-                    span_context = set_span_in_context(parent_span)
+                    if parent_span.get_span_context().is_valid:
+                        span_context = set_span_in_context(parent_span)
+
+                    else:
+                        span_context = None
+
+                    with tracer.start_as_current_span(new_span_name, context=span_context):
+                        return await func(*args, **kwargs)
 
                 else:
-                    span_context = None
-
-                with tracer.start_as_current_span(new_span_name, context=span_context):
                     return await func(*args, **kwargs)
 
             @functools.wraps(func)
             def sync_wrapped(*args, **kwargs):
-                new_span_name = span_name if span_name else func.__name__
-                parent_span = trace.get_current_span()
+                if settings.enable_jaeger:
+                    new_span_name = span_name if span_name else func.__name__
+                    parent_span = trace.get_current_span()
 
-                if parent_span.get_span_context().is_valid:
-                    span_context = set_span_in_context(parent_span)
+                    if parent_span.get_span_context().is_valid:
+                        span_context = set_span_in_context(parent_span)
+
+                    else:
+                        span_context = None
+
+                    with tracer.start_as_current_span(new_span_name, context=span_context):
+                        return func(*args, **kwargs)
 
                 else:
-                    span_context = None
-
-                with tracer.start_as_current_span(new_span_name, context=span_context):
                     return func(*args, **kwargs)
 
             if asyncio.iscoroutinefunction(func):
