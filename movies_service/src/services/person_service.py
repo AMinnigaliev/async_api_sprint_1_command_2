@@ -32,7 +32,7 @@ class PersonService(BaseService):
         logger.info(log_info)
 
         #  Индекс для Elasticsearch
-        es_index = "persons"
+        es_index = "person"
         # Ключ для кеша
         cache_key = f"person:{person_id}"
         # Модель Pydantic для возврата
@@ -60,7 +60,7 @@ class PersonService(BaseService):
         logger.info(log_info)
 
         #  Индекс для Elasticsearch
-        es_index = "persons"
+        es_index = "person"
         # Ключ для кеша
         cache_key = f"person_films:{person_id}"
         # Модель Pydantic для возврата
@@ -124,7 +124,7 @@ class PersonService(BaseService):
         logger.info(log_info)
 
         #  Индекс для Elasticsearch
-        es_index = "persons"
+        es_index = "person"
         # Модель Pydantic для возврата
         model = Person
 
