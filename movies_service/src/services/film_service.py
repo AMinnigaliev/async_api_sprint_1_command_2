@@ -32,7 +32,7 @@ class FilmService(BaseService):
         logger.info(log_info)
 
         #  Индекс для Elasticsearch
-        es_index = "films"
+        es_index = "film_work"
         # Ключ для кеша
         cache_key = f"film:{film_id}"
         # Модель Pydantic для возврата
@@ -64,7 +64,7 @@ class FilmService(BaseService):
         logger.info(log_info)
 
         #  Индекс для Elasticsearch
-        es_index = "films"
+        es_index = "film_work"
         # Ключ для кеша
         cache_key = f"films:{genre}:{sort}:{page_size}:{page_number}"
         # Модель Pydantic для возврата
@@ -125,7 +125,7 @@ class FilmService(BaseService):
         logger.info(log_info)
 
         #  Индекс для Elasticsearch
-        es_index = "films"
+        es_index = "film_work"
         # Модель Pydantic для возврата
         model = FilmBase
 
