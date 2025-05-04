@@ -1,0 +1,68 @@
+@startuml
+!theme reddress-lightorange
+' Подключаем C4-PlantUML через includeurl
+!define C4P https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master
+!includeurl C4P/C4_Container.puml
+
+LAYOUT_WITH_LEGEND()
+
+' Актор и внешние приложения
+Person(user, "Пользователь", "Использует SPA, Mobile App или админку")
+System_Ext(spa, "Single-Page Application", "Отправляет события и запрашивает данные кинотеатра")
+System_Ext(mobile, "Mobile App", "Отправляет события и запрашивает данные кинотеатра")
+
+' Группа микросервисов как составляющая единой платформы
+System_Boundary(s1, "Movies system") {
+    ' Сервис авторизации
+    Container(auth, "Auth-сервис", "FastAPI", "Выдача, проверка и валидация токенов доступа")
+
+    ' Сервис кинотеатра
+    Container(movies, "Movies-сервис", "FastAPI", "Просмотр контента кинотеатра")
+
+    ' Сервис админпанели
+    Container(admin, "Admin-сервис", "Django", "Веб-интерфейс для управления системой и пользователями")
+
+    ' Сервисы обработки событий
+    Container(flask, "Event-сервис", "Python + Flask", "Входной шлюз для событий (валидация, обогащение, публикация)")
+    Container(etl, "ETL-сервис", "Python + Scheduler", "Обработка page_view пар и отправка в ClickHouse")
+
+    ' Система обмена сообщениями
+    Container(kafka, "Kafka", "Apache Kafka", "Очередь событий")
+
+    ' Хранилищи данных
+    ContainerDb(redis, "Redis", "In-memory Key-Value Store", "Кеш токенов")
+    ContainerDb(clickhouse, "ClickHouse", "OLAP Database", "Хранение аналитических событий")
+    ContainerDb(postgres, "PostgreSQL", "Relational Database", "Хранение контента и пользователей")
+    ContainerDb(elastic, "Elasticsearch", "Search engine", "Поиск контента")
+
+}
+
+' Взаимодействия пользователя
+Rel(user, spa, "Использует SPA")
+Rel(user, mobile, "Использует Mobile app")
+Rel(user, admin, "Использует админку", "HTTPS")
+
+' Взаимодействия приложений с сервисами
+Rel(spa, flask, "Отправляет событие", "HTTPS/JSON")
+Rel(mobile, flask, "Отправляет событие", "HTTPS/JSON")
+Rel(spa, movies, "Взаимодействие с сервисом", "HTTPS/JSON")
+Rel(mobile, movies, "Взаимодействие с сервисом", "HTTPS/JSON")
+Rel(spa, auth, "Взаимодействие с сервисом", "HTTPS/JSON")
+Rel(mobile, auth, "Взаимодействие с сервисом", "HTTPS/JSON")
+
+' Межсервисные взаимодействия
+Rel(admin, auth, "Проверка прав доступа при входе", "HTTP/REST")
+Rel(admin, postgres, "CRUD контента", "Django ORM")
+Rel(flask, auth, "Проверка токена", "HTTP/JSON")
+Rel(flask, redis, "Кеш токенов", "Redis protocol")
+Rel(flask, kafka, "Публикация событий", "Kafka protocol")
+Rel(etl, kafka, "Читает события", "Kafka consumer")
+Rel(etl, clickhouse, "Запись аналитики", "ClickHouse SQL")
+Rel(etl, postgres, "Читает контент пачками", "SQLAlchemy Async")
+Rel(etl, elastic, "Индексация контента", "Async HTTP/Batch")
+Rel(movies, redis, "Кеш токенов и контента", "Redis protocol")
+Rel(movies, auth, "Проверка токена", "HTTP/JSON")
+Rel(movies, elastic, "Выполняет полнотекстовый поиск контента по запросам пользователя", "HTTP/JSON")
+Rel(auth, redis, "Кеш токенов", "Redis protocol")
+Rel(auth, postgres, "CRUD пользователей", "SQLAlchemy Async")
+@enduml
