@@ -30,7 +30,7 @@ class GenreService(BaseService):
         logger.info(log_info)
 
         #  Индекс для Elasticsearch
-        es_index = "genres"
+        es_index = "genre"
         # Ключ для кеша
         cache_key = f"genre:{genre_id}"
         # Модель Pydantic для возврата
@@ -50,7 +50,7 @@ class GenreService(BaseService):
         logger.info(log_info)
 
         # Индекс для Elasticsearch
-        es_index = "genres"
+        es_index = "genre"
         # Ключ для кеша
         cache_key = "genres"
         # Модель Pydantic для возврата
@@ -74,7 +74,7 @@ class GenreService(BaseService):
         logger.info(log_info)
 
         #  Индекс для Elasticsearch
-        es_index = "genres"
+        es_index = "genre"
         # Модель Pydantic для возврата
         model = GenreBase
 

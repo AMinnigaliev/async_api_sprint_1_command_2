@@ -58,6 +58,7 @@ class Settings(BaseSettings):
 
     jaeger_host: str = Field("jaeger", alias="JAEGER_HOST")
     jaeger_port: int = Field(4318, alias="JAEGER_PORT")
+    enable_jaeger: bool = Field(True, alias="ENABLE_JAEGER")
 
     @computed_field
     @property

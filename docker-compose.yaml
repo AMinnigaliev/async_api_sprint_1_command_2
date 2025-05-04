@@ -71,6 +71,24 @@ services:
     networks:
       - sec_network
 
+  etl_service:
+    container_name: ${ETL_SERVICE_HOST}
+    build: ./etl_service
+    restart: unless-stopped
+    mem_limit: 512m
+    cpus: "0.50"
+    env_file:
+      - .env
+    depends_on:
+      redis:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    networks:
+      - sec_network
+
   redis:
     image: redis:6.2
     container_name: ${REDIS_HOST}
