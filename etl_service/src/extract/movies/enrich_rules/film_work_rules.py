@@ -2,7 +2,7 @@ import socket
 
 from sqlalchemy import select
 
-from models.movies_models.pg_models import FilmWork, Person, Genre, PersonFilmWork, GenreFilmWork
+from models.movies.pg_models import FilmWork, Person, Genre, PersonFilmWork, GenreFilmWork
 from interface import DataBaseUOW_T
 from schemas.movies_schemas.film_work_models import PersonModel, GenreModel, FilmWorkModel
 from utils import backoff_by_connection

@@ -3,9 +3,9 @@ import json
 from core.logger import logger
 from schemas import Base as BaseSchema
 from utils.movies_utils.etl_enum import RuleTypes
-from models.movies_models.pg_models import FilmWork, Person
-from models.movies_models.pg_models import Base as BaseModel
-from extract.enrich_rules import FilmWorkRules, PersonRules
+from models.movies.pg_models import FilmWork, Person
+from models.movies.pg_models import Base as BaseModel
+from extract.movies.enrich_rules import FilmWorkRules, PersonRules
 from interface import RedisStorage_T, DataBaseUOW_T, ESClient_T
 
 

@@ -4,10 +4,10 @@ from typing import Optional, TypeVar
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession as AlchemyAsyncSession
 
-from db.pg_session import AsyncScopedSession, async_session, scoped_session
+from db.postgres_session import AsyncScopedSession, async_session, scoped_session
 from utils import backoff_by_connection
 
-__all__ = ["DataBaseUOW_T", "DataBaseUOWContextManager", "db_uow_"]
+__all__ = ["DataBaseUOW_T", "DataBaseUOWContextManager", "postgres_uow_"]
 
 DataBaseUOW_T = TypeVar("DataBaseUOW_T", bound="DataBaseUOWContextManager")
 
@@ -37,4 +37,4 @@ class DataBaseUOWContextManager:
         await self._async_session.close()
 
 
-db_uow_ = DataBaseUOWContextManager(async_scoped_session_=scoped_session)
+postgres_uow_ = DataBaseUOWContextManager(async_scoped_session_=scoped_session)

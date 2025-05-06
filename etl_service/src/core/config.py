@@ -8,15 +8,15 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 
     project_name: str = Field(default="movies", alias="PROJECT_NAME")
-    service_name: str = Field("etl_service", alias="ETL_SERVICE_NAME")
+    service_name: str = Field(default="etl_service", alias="ETL_SERVICE_NAME")
 
-    env_type: str = Field("prod", alias="ENV_TYPE")
+    env_type: str = Field(default="prod", alias="ENV_TYPE")
     base_dir: str = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
     redis_host: str = Field(default="127.0.0.1", alias="REDIS_HOST")
     redis_port: int = Field(default=6379, alias="REDIS_PORT")
-    redis_password: str = Field("password", alias="REDIS_PASSWORD")
-    redis_movies_db: int = Field(3, alias="REDIS_ETL_DB_BY_MOVIES")
+    redis_password: str = Field(default="password", alias="REDIS_PASSWORD")
+    redis_movies_db: int = Field(default=3, alias="REDIS_ETL_DB_BY_MOVIES")
 
     elastic_schema: str = Field(default="film_work", alias="ELASTIC_SCHEME")
     elastic_name: str = Field(default="elastic", alias="ELASTIC_USERNAME")
@@ -27,13 +27,28 @@ class Settings(BaseSettings):
     postgres_driver_name: str = Field(default="postgresql+asyncpg", alias="PG_DRIVER_NAME")
     postgres_db: str = Field(default="postgres", alias="PG_NAME")
     postgres_user: str = Field(default="postgres", alias="PG_USER")
+    postgres_password: str = Field(default="password", alias="PG_PASSWORD")
     postgres_host: str = Field(default="127.0.0.1", alias="PG_HOST")
     postgres_port: int = Field(default=5432, alias="PG_PORT")
-    postgres_password: str = Field(default="password", alias="PG_PASSWORD")
+
+    clickhouse_http_driver_name: str = Field(default="clickhouse+http", alias="CLICK_HTTP_DRIVER_NAME")
+    clickhouse_db: str = Field(default="movies_database", alias="CLICKHOUSE_DB")
+    clickhouse_user: str = Field(default="clickhouse", alias="CLICKHOUSE_USER")
+    clickhouse_password: str = Field(default="password", alias="CLICKHOUSE_PASSWORD")
+    clickhouse_host: str = Field(default="127.0.0.1", alias="CLICKHOUSE_HOST")
+    clickhouse_http_port: int = Field(default=8123, alias="CLICKHOUSE_HTTP_PORT")
+    clickhouse_tcp_port: int = Field(default=9000, alias="CLICKHOUSE_TCP_PORT")
+
+    kafka_broker: str = Field(default="localhost:29092", alias="KAFKA_BROKERS1")  # TODO:
+    kafka_events_topic: str = Field(default="events", alias="KAFKA_TOPIC")
+    kafka_consumer_timeout: float = Field(default=1.0, alias="KAFKA_CONSUMER_TIMEOUT")
+    kafka_consumer_group_id: str = Field(default="consumer-group", alias="KAFKA_CONSUMER_GROUP_ID")
 
     etl_task_trigger: str = Field(default="interval", alias="ETL_TASK_TRIGGER")
-    etl_task_interval_sec: int = Field(default=1 * 60, alias="ETL_TASK_INTERVAL_SEC")
-    etl_select_limit: int = Field(default=1 * 250, alias="ETL_SELECT_LIMIT")
+    etl_movies_task_interval_sec: int = Field(default=1 * 60, alias="ETL_MOVIES_TASK_INTERVAL_SEC")
+    etl_events_task_interval_sec: int = Field(default=3 * 60, alias="ETL_EVENTS_TASK_INTERVAL_SEC")
+    etl_movies_select_limit: int = Field(default=1 * 250, alias="ETL_MOVIES_SELECT_LIMIT")
+    etl_events_select_limit: int = Field(default=1 * 250, alias="ETL_EVENTS_SELECT_LIMIT")
 
 
 config = Settings()

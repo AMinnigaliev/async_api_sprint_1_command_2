@@ -4,7 +4,7 @@ from datetime import datetime
 from sqlalchemy import select
 
 from core import config
-from models.movies_models.pg_models import Genre
+from models.movies.pg_models import Genre
 from interface import DataBaseUOW_T
 from schemas.movies_schemas.genre_models import GenreModel
 from utils import backoff_by_connection
@@ -17,7 +17,7 @@ class GenreRules:
     async def genre_selection_data_rule(
         cls, db_uow: DataBaseUOW_T, date_modified: datetime
     ) -> list[Genre]:
-        limit = config.etl_select_limit
+        limit = config.etl_movies_select_limit
 
         query_ = await db_uow.scalars(
             select(Genre)

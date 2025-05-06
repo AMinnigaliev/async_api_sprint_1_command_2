@@ -8,15 +8,15 @@ from interface import RedisStorage_T, DataBaseUOW_T
 from schemas.movies_schemas.film_work_models import FilmWorkESModel
 from schemas.movies_schemas.person_models import PersonModel
 from schemas.movies_schemas.genre_models import GenreModel
-from models.movies_models.pg_models import FilmWork, Person, Genre
-from models.movies_models.pg_models import Base as BaseModel
+from models.movies.pg_models import FilmWork, Person, Genre
+from models.movies.pg_models import Base as BaseModel
 
 
 class Loader:
     """Класс по загрузке данных в ES."""
 
     MODELS_PATH = "models"
-    MOVIES_MODELS_PATH = "movies_models"
+    MOVIES_MODELS_PATH = "movies"
     ES_INDICES_PATH = "es_indices"
     CONCAT = 1
 

@@ -46,7 +46,7 @@ def backoff_async_storage(start_sleep_time=2, factor=2, border_sleep_time=20):
     return wrapper_storage
 
 
-def check_free_size_storage(start_sleep_time=2, factor=2, border_sleep_time=20):
+def check_free_size_storage(start_sleep_time=2, factor=2, border_sleep_time=20, select_limit=100):
     def wrapper(func):
         @functools.wraps(func)
         async def wrapped(*args, **kwargs):
@@ -60,7 +60,7 @@ def check_free_size_storage(start_sleep_time=2, factor=2, border_sleep_time=20):
                 )
                 num_obj_in_stor = len(gen_scan_iter_)
 
-                if num_obj_in_stor >= config.etl_select_limit:
+                if num_obj_in_stor >= select_limit:
                     t = t * (factor ^ n) if t < border_sleep_time else border_sleep_time
                     msg = f"Store contains the maximum of unfinished proc ({num_obj_in_stor}), recheck after {t} sec."
                     logger.warning(msg)

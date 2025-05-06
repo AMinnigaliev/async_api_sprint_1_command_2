@@ -7,8 +7,8 @@ from core.logger import logger
 from utils.movies_utils.etl_enum import RuleTypes
 from schemas import Base as BaseSchema
 from utils import backoff_by_connection, EntitiesNotFoundInDBError
-from models.movies_models.pg_models import FilmWork, Person, Genre, BaseWithTimeStampedType
-from extract.producer_rules import FilmWorkRules, PersonRules, GenreRules
+from models.movies.pg_models import FilmWork, Person, Genre, BaseWithTimeStampedType
+from extract.movies.producer_rules import FilmWorkRules, PersonRules, GenreRules
 from interface import (
     RedisStorage_T,
     DataBaseUOW_T,

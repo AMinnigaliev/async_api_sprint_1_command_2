@@ -4,7 +4,7 @@ from datetime import datetime
 from sqlalchemy import select
 
 from core import config
-from models.movies_models.pg_models import Person
+from models.movies.pg_models import Person
 from interface import DataBaseUOW_T
 from schemas.movies_schemas.person_models import PersonModel
 from utils import backoff_by_connection
@@ -19,7 +19,7 @@ class PersonRules:
         db_uow: DataBaseUOW_T,
         date_modified: datetime,
     ) -> list[Person]:
-        limit = config.etl_select_limit
+        limit = config.etl_movies_select_limit
 
         query_ = await db_uow.scalars(
             select(Person)

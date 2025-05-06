@@ -17,7 +17,7 @@ def receive_event():
     """
     # 1. Валидация payload
     schema = EventSchema.parse_obj(request.json)
-    event_obj = schema.__root__
+    event_obj = schema.root  # TODO: schema.__root__ - устаревшее
 
     # 2. Обогащаем user_id
     token = event_obj.token

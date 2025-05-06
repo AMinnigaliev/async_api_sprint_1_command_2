@@ -1,10 +1,10 @@
 import json
 
 from core.logger import logger
-from models.movies_models.pg_models import FilmWork, Person, Genre
-from models.movies_models.pg_models import Base as BaseModel
+from models.movies.pg_models import FilmWork, Person, Genre
+from models.movies.pg_models import Base as BaseModel
 from schemas import Base as BaseSchema
-from transfer.convert_rules import FilmWorkRules, PersonRules, GenreRules
+from transfer.movies.convert_rules import FilmWorkRules, PersonRules, GenreRules
 from interface import RedisStorage_T, DataBaseUOW_T, ESClient_T
 
 
