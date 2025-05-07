@@ -58,13 +58,10 @@ docker compose -f ./docker-compose-apps.yaml -f ./docker-compose-services.yaml -
 - Auth-сервис;
 - Сервис распределенной трассировки (Jaeger);
 - Тесты;
+- Event-сервис ([Выявленные требования](docs/analytics/requirements.md))
 
 Ссылка на схему архитектуры проекта:
-- https://drive.google.com/file/d/1wTGGXUpEM_81bsTcJUe0QtYLDVpGdYEv/view?usp=sharing
-
-Принцип взаимосвязи компонентов архитектуры на схеме:
-- связь "сплошная": прямая взаимосвязь объектов архитектуры.
-- связь "штриховой пунктир": косвенная связь объектов архитектуры (либо элемент является составной частью объекта).
+![scheme](docs/analytics/scheme.png)
 
 ## Основные модели Postgres
 - FilmWork: Фильм;
