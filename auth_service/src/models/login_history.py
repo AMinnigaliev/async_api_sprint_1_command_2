@@ -16,7 +16,6 @@ class LoginHistory(Base):
             ["user_id", "partition_country"],
             ["auth.users.id", "auth.users.partition_country"],
             ondelete="CASCADE",
-            onupdate="CASCADE",
         ),
         {
             "postgresql_partition_by": "LIST (user_device_type)",

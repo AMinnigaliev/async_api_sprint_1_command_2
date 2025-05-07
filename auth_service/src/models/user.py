@@ -42,9 +42,11 @@ class User(Base):
     __table_args__ = (
         UniqueConstraint("id", "partition_country"),
         UniqueConstraint("login", "partition_country"),
+        UniqueConstraint("email", "partition_country"),
+        UniqueConstraint("oauth_id", "partition_country"),
         {
             "postgresql_partition_by": "LIST (partition_country)",
-            "schema": "auth"
+            "schema": "auth",
         },
     )
     __tablename__ = "users"
@@ -57,8 +59,8 @@ class User(Base):
     )
     login = Column(String(100), nullable=False)
     password = Column(String(255), nullable=False)
-    email = Column(String(255), unique=True, nullable=True)
-    oauth_id = Column(String(255), unique=True, nullable=True)
+    email = Column(String(255), nullable=True)
+    oauth_id = Column(String(255), nullable=True)
     first_name = Column(String(100), nullable=True)
     last_name = Column(String(100), nullable=True)
     created_at = Column(
@@ -85,8 +87,9 @@ class User(Base):
     )
 
     country = Column(String(100), nullable=False, default="unknown")
-    partition_country = Column(String(10), nullable=False,
-                               primary_key=True, default="unknown")
+    partition_country = Column(
+        String(10), nullable=False, primary_key=True, default="unknown"
+    )
 
     def __init__(
         self,

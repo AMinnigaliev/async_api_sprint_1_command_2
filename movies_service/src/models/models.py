@@ -87,8 +87,8 @@ class Film(FilmBase):
     Модель для представления информации о фильме.
     """
     description: str = Field(..., description="Описание фильма")
-    genre: list[GenreBase] = Field(
-        ..., description="Список жанров фильма"
+    genres: list[GenreBase] = Field(
+        ..., description="Список жанров фильма", serialization_alias="genre",
     )
     actors: list[PersonBase] = Field(..., description="Список актёров фильма")
     writers: list[PersonBase] = Field(

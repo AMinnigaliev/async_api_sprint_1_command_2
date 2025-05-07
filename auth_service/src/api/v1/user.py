@@ -1,18 +1,20 @@
-from fastapi import APIRouter, Depends, status, Query, HTTPException, Request
-from fastapi.security import OAuth2PasswordRequestForm
 from functools import lru_cache
-from fastapi.responses import RedirectResponse
 
+from fastapi import (APIRouter, Depends, HTTPException, Path, Query, Request,
+                     status)
+from fastapi.responses import RedirectResponse
+from fastapi.security import OAuth2PasswordRequestForm
+
+from src.core.config import settings
+from src.db.redis_client import get_redis_auth
 from src.dependencies.auth import oauth2_scheme
+from src.models.social_account import SocialProviderEnum
 from src.schemas.login_history import LoginHistory
 from src.schemas.token import Token
 from src.schemas.user import UserCreate, UserResponse, UserUpdate
-from src.services.user_service import UserService, get_user_service
-from src.services.oauth_service import YandexOAuthService
 from src.services.auth_service import AuthService
-from src.core.config import settings
-from src.db.redis_client import get_redis_auth
-from src.models.social_account import SocialProviderEnum
+from src.services.oauth_service import YandexOAuthService
+from src.services.user_service import UserService, get_user_service
 
 router = APIRouter()
 
@@ -33,7 +35,8 @@ def get_oauth_service() -> YandexOAuthService:
     response_model=UserResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Регистрация нового пользователя",
-    description="Создание нового пользователя с логином, паролем и профилем. Возвращает объект пользователя."
+    description="Создание нового пользователя с логином, паролем и профилем. "
+                "Возвращает объект пользователя."
 )
 async def register_user(
     user_create: UserCreate,
@@ -70,7 +73,8 @@ async def login(
     "/refresh",
     response_model=Token,
     summary="Обновление access-токена",
-    description="Обновляет access-токен при валидном refresh-токене. Возвращает новые токены."
+    description="Обновляет access-токен при валидном refresh-токене. "
+                "Возвращает новые токены."
 )
 async def refresh_token(
     refresh_token: str,
@@ -86,7 +90,8 @@ async def refresh_token(
     "/update",
     response_model=UserResponse,
     summary="Обновление данных пользователя",
-    description="Позволяет пользователю изменить логин и/или пароль без подтверждения email."
+    description="Позволяет пользователю изменить логин и/или пароль без "
+                "подтверждения email."
 )
 async def update_user(
     user_update: UserUpdate,
@@ -137,17 +142,26 @@ async def login_history(
     """
     Возвращает историю входов пользователя.
     """
-    return await user_service.get_login_history(token=token, page_size=page_size, page_number=page_number)
+    return await user_service.get_login_history(
+        token=token, page_size=page_size, page_number=page_number
+    )
 
 
-@router.get("/social/login/{provider}", summary="Перенаправляет на страницу авторизации провайдера")
+@router.get(
+    "/social/login/{provider}",
+    summary="Перенаправляет на страницу авторизации провайдера",
+)
 async def social_login(provider: SocialProviderEnum = Path(...)):
     service_cls = OAUTH_PROVIDERS.get(provider)
     if not service_cls:
         raise HTTPException(status_code=404, detail="Unsupported provider")
     return RedirectResponse(service_cls().build_auth_url())
 
-@router.get("/social/callback/{provider}", response_model=Token, summary="Колбэк от OAuth-провайдера")
+@router.get(
+    "/social/callback/{provider}",
+    response_model=Token,
+    summary="Колбэк от OAuth-провайдера",
+)
 async def social_callback(
     provider: SocialProviderEnum,
     request: Request,

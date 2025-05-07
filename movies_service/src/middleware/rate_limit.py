@@ -2,7 +2,8 @@ from redis.asyncio.client import Pipeline
 from limits import parse
 from limits.storage import RedisStorage
 from limits.strategies import FixedWindowRateLimiter
-from fastapi import Request, Response, HTTPException, status
+from fastapi import Request, Response, status
+from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 
 from src.core.config import settings
@@ -23,7 +24,10 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         client_id = request.client.host
 
         if not self._strategy.test(self._rate_limit, client_id):
-            raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail="TOO MANY REQUESTS")
+            return JSONResponse(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                content={"detail": "TOO MANY REQUESTS"}
+            )
 
         self._strategy.hit(self._rate_limit, client_id)
 
@@ -50,7 +54,10 @@ class AsyncRateLimitMiddleware(BaseHTTPMiddleware):
             current_count = int(current_count) if current_count else self.__def_counter
 
             if current_count > self._limit:
-                raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail="TOO MANY REQUESTS")
+                return JSONResponse(
+                    status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                    content={"detail": "TOO MANY REQUESTS"}
+                )
 
             pipe: Pipeline = await rm_redis_client.pipeline()
             pipe.incr(name=key_)

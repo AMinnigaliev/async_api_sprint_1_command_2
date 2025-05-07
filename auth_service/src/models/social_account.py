@@ -2,7 +2,8 @@ import uuid
 from datetime import UTC, datetime
 from enum import Enum
 
-from sqlalchemy import Column, DateTime, ForeignKey, String, UniqueConstraint
+from sqlalchemy import Column, DateTime, ForeignKey, String, UniqueConstraint, \
+    ForeignKeyConstraint
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 
@@ -20,6 +21,11 @@ class SocialAccount(Base):
     __tablename__ = "social_accounts"
     __table_args__ = (
         UniqueConstraint("provider", "oauth_id", name="uq_provider_oauth_id"),
+        ForeignKeyConstraint(
+            ["user_id", "partition_country"],
+            ["auth.users.id", "auth.users.partition_country"],
+            ondelete="CASCADE"
+        ),
         {"schema": "auth"},
     )
 
@@ -32,7 +38,7 @@ class SocialAccount(Base):
     linked_at = Column(DateTime(timezone=True),
                        default=lambda: datetime.now(UTC), nullable=False)
 
-    user_id = Column(UUID(as_uuid=True),
-                     ForeignKey("auth.users.id", ondelete="CASCADE"),
-                     nullable=False)
+    user_id = Column(UUID(as_uuid=True), nullable=False)
+    partition_country = Column(String(10), nullable=False, default="unknown")
+
     user = relationship("User", back_populates="social_accounts")
