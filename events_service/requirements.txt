@@ -4,5 +4,5 @@ confluent-kafka==2.3.0
 redis==5.0.4
 requests==2.32.2
 PyJWT==2.8.0
-kafka-python
-gunicorn
+kafka-python==2.2.4
+gunicorn==23.0.0

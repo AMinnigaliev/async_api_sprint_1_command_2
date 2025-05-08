@@ -25,8 +25,8 @@ do
   sleep 1
 done
 
-echo "✅ Kafka в сети."
-echo "🚀 Стартуем приложение…"
+echo "Kafka в сети."
+echo "Стартуем приложение…"
 
 exec gunicorn -w 4 -k gthread \
      'events_service.src.app.main:create_app()' \
