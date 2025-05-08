@@ -6,7 +6,7 @@ from utils.movies_utils.etl_enum import RuleTypes
 from models.movies.pg_models import FilmWork, Person
 from models.movies.pg_models import Base as BaseModel
 from extract.movies.enrich_rules import FilmWorkRules, PersonRules
-from interface import RedisStorage_T, DataBaseUOW_T, ESClient_T
+from interface import RedisStorage_T, ESClient_T
 
 
 class Enricher:
@@ -17,11 +17,11 @@ class Enricher:
     def __init__(
         self,
         redis_storage: RedisStorage_T,
-        db_uow: DataBaseUOW_T,
+        pg_session,
         es_client: ESClient_T,
     ):
         self._redis_storage: RedisStorage_T = redis_storage
-        self._db_uow: DataBaseUOW_T = db_uow
+        self._pg_session = pg_session
         self._es_client: ESClient_T = es_client
 
     @property
@@ -29,8 +29,8 @@ class Enricher:
         return self._redis_storage
 
     @property
-    def db_uow(self) -> DataBaseUOW_T:
-        return self._db_uow
+    def pg_session(self):
+        return self._pg_session
 
     @property
     def model_rules(self) -> dict:
@@ -82,7 +82,7 @@ class Enricher:
                     obj_id = obj_key_rule.split(f"{key_rule}_")[-1]
 
                     selection_data = await selection_rule(
-                        db_uow=self._db_uow, obj_id=obj_id
+                        pg_session=self.pg_session, obj_id=obj_id
                     )
                     enriched_data = await enrich_rule(
                         obj_data=obj_, selection_data=selection_data

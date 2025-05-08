@@ -3,7 +3,6 @@ import socket
 from sqlalchemy import select
 
 from models.movies.pg_models import FilmWork, Person, Genre, PersonFilmWork, GenreFilmWork
-from interface import DataBaseUOW_T
 from schemas.movies_schemas.film_work_models import PersonModel, GenreModel, FilmWorkModel
 from utils import backoff_by_connection
 
@@ -13,9 +12,9 @@ class FilmWorkRules:
     @classmethod
     @backoff_by_connection(exceptions=(ConnectionRefusedError, socket.gaierror))
     async def film_work_selection_data_rule(
-        cls, db_uow: DataBaseUOW_T, obj_id: int
+        cls, pg_session, obj_id: int
     ) -> dict:
-        query_person = await db_uow.execute(
+        query_person = await pg_session.execute(
             select(
                 FilmWork.id.label("film_work_id"),
                 PersonFilmWork.role.label("person_role"),
@@ -35,7 +34,7 @@ class FilmWorkRules:
             )
         )
 
-        query_genre = await db_uow.execute(
+        query_genre = await pg_session.execute(
             select(
                 FilmWork.id.label("film_work_id"),
                 Genre.id.label("genre_id"),

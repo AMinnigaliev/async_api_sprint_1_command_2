@@ -5,7 +5,7 @@ from models.movies.pg_models import FilmWork, Person, Genre
 from models.movies.pg_models import Base as BaseModel
 from schemas import Base as BaseSchema
 from transfer.movies.convert_rules import FilmWorkRules, PersonRules, GenreRules
-from interface import RedisStorage_T, DataBaseUOW_T, ESClient_T
+from interface import RedisStorage_T, ESClient_T
 
 
 class Convertor:
@@ -16,11 +16,11 @@ class Convertor:
     def __init__(
         self,
         redis_storage: RedisStorage_T,
-        db_uow: DataBaseUOW_T,
+        pg_session,
         es_client: ESClient_T,
     ):
         self._redis_storage: RedisStorage_T = redis_storage
-        self._db_uow: DataBaseUOW_T = db_uow
+        self._pg_session = pg_session
         self._es_client: ESClient_T = es_client
 
     @property
@@ -28,8 +28,8 @@ class Convertor:
         return self._redis_storage
 
     @property
-    def db_uow(self) -> DataBaseUOW_T:
-        return self._db_uow
+    def pg_session(self):
+        return self._pg_session
 
     @property
     def model_rules(self) -> dict:

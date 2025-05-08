@@ -4,7 +4,7 @@ import json
 from core import config
 from core.logger import logger
 from interface.es_client import ESClient_T
-from interface import RedisStorage_T, DataBaseUOW_T
+from interface import RedisStorage_T
 from schemas.movies_schemas.film_work_models import FilmWorkESModel
 from schemas.movies_schemas.person_models import PersonModel
 from schemas.movies_schemas.genre_models import GenreModel
@@ -23,11 +23,11 @@ class Loader:
     def __init__(
         self,
         redis_storage: RedisStorage_T,
-        db_uow: DataBaseUOW_T,
+        pg_session,
         es_client: ESClient_T,
     ):
         self._redis_storage: RedisStorage_T = redis_storage
-        self._db_uow: DataBaseUOW_T = db_uow
+        self._pg_session = pg_session
         self._es_client: ESClient_T = es_client
 
     @property
@@ -35,8 +35,8 @@ class Loader:
         return self._redis_storage
 
     @property
-    def db_uow(self) -> DataBaseUOW_T:
-        return self._db_uow
+    def pg_session(self):
+        return self._pg_session
 
     @property
     def models(self) -> dict:
@@ -78,7 +78,7 @@ class Loader:
             scan_lst = await self.redis_storage.scan_iter(f"{key_rule}_es_*")
 
             if scan_lst:
-                logger.info(f"{key_rule}: start load to ES(count: {len(scan_lst)})")
+                logger.debug(f"{key_rule}: start load to ES(count: {len(scan_lst)})")
 
             for obj_key_rule in scan_lst:
                 obj_id = obj_key_rule.split(f"{key_rule}_es_")[-1]

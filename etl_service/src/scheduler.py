@@ -1,18 +1,18 @@
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 from core import config
+from db.clickhouse_session import clickhouse_session
+from db.postgres_session import pg_scoped_session
 from utils.abstract import ETLSchedulerInterface
-from interface import redis_context_manager, postgres_uow_, clickhouse_uow_, es_context_manager
+from interface import es_context_manager, RedisContextManager
 
 from extract.movies.producer import Producer as MoviesProducer
 from extract.movies.enricher import Enricher as MoviesEnricher
 from transfer.movies.convertor import Convertor as MoviesConvertor
 from loader.movies_loader import Loader as MoviesLoader
 
-from extract.events.producer import Producer as EventsProducer  # TODO:
-# from extract.events.enricher import Enricher as EventsEnricher  # TODO:
-# from transfer.events.convertor import Convertor as EventsConvertor  # TODO:
-# from loader.events import Loader as EventsLoader  # TODO:
+from extract.events.producer import Producer as EventsProducer
+from loader.events_loader import Loader as EventsLoader
 
 
 class MoviesETLScheduler(ETLSchedulerInterface):
@@ -67,10 +67,14 @@ class MoviesETLScheduler(ETLSchedulerInterface):
     async def run(cls) -> None:
         scheduler_ = AsyncIOScheduler()
 
-        async with redis_context_manager as redis_storage, postgres_uow_ as db_uow, es_context_manager as es_client:
+        async with (
+            RedisContextManager(redis_db=config.redis_db_movies) as redis_storage,
+            pg_scoped_session.context_session() as pg_session,
+            es_context_manager as es_client,
+        ):
             for job_ in cls.jobs():
                 scheduler_.add_job(
-                    func=job_["cls_job"](redis_storage, db_uow, es_client).run,
+                    func=job_["cls_job"](redis_storage, pg_session, es_client).run,
                     **job_["job_params"]
                 )
 
@@ -87,51 +91,34 @@ class EventsETLScheduler(ETLSchedulerInterface):
                 "cls_job": EventsProducer,
                 "job_params": {
                     "trigger": config.etl_task_trigger,
-                    "seconds": config.etl_event_task_interval_sec,
+                    "seconds": config.etl_events_task_interval_sec,
                     "coalesce": True,
                     "max_instances": 1,
                     "misfire_grace_time": None,
                 },
             },
-            # {
-            #     "cls_job": EventsEnricher,
-            #     "job_params": {
-            #         "trigger": config.etl_task_trigger,
-            #         "seconds": config.etl_event_task_interval_sec,
-            #         "coalesce": True,
-            #         "max_instances": 1,
-            #         "misfire_grace_time": None,
-            #     },
-            # },
-            # {
-            #     "cls_job": EventsConvertor,
-            #     "job_params": {
-            #         "trigger": config.etl_task_trigger,
-            #         "seconds": config.etl_event_task_interval_sec,
-            #         "coalesce": True,
-            #         "max_instances": 1,
-            #         "misfire_grace_time": None,
-            #     },
-            # },
-            # {
-            #     "cls_job": EventsLoader,
-            #     "job_params": {
-            #         "trigger": config.etl_task_trigger,
-            #         "seconds": config.etl_event_task_interval_sec,
-            #         "coalesce": True,
-            #         "max_instances": 1,
-            #         "misfire_grace_time": None,
-            #     },
-            # },
+            {
+                "cls_job": EventsLoader,
+                "job_params": {
+                    "trigger": config.etl_task_trigger,
+                    "seconds": config.etl_events_task_interval_sec,
+                    "coalesce": True,
+                    "max_instances": 1,
+                    "misfire_grace_time": None,
+                },
+            },
         ]
 
     @classmethod
     async def run(cls) -> None:
         scheduler_ = AsyncIOScheduler()
 
-        with clickhouse_uow_ as clickhouse_uow:
-            async with redis_context_manager as redis_storage:
+        with clickhouse_session.context_session() as clickhouse_session_:
+            async with RedisContextManager(redis_db=config.redis_db_events) as redis_storage:
                 for job_ in cls.jobs():
-                    scheduler_.add_job(func=job_["cls_job"](clickhouse_uow, redis_storage).run, **job_["job_params"])
+                    scheduler_.add_job(
+                        func=job_["cls_job"](clickhouse_session_, redis_storage).run,
+                        **job_["job_params"],
+                    )
 
                 scheduler_.start()

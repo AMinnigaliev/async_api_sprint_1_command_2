@@ -5,7 +5,6 @@ from sqlalchemy import select
 
 from core import config
 from models.movies.pg_models import Person
-from interface import DataBaseUOW_T
 from schemas.movies_schemas.person_models import PersonModel
 from utils import backoff_by_connection
 
@@ -16,12 +15,12 @@ class PersonRules:
     @backoff_by_connection(exceptions=(ConnectionRefusedError, socket.gaierror))
     async def person_selection_data_rule(
         cls,
-        db_uow: DataBaseUOW_T,
+        pg_session,
         date_modified: datetime,
     ) -> list[Person]:
         limit = config.etl_movies_select_limit
 
-        query_ = await db_uow.scalars(
+        query_ = await pg_session.scalars(
             select(Person)
             .where(Person.modified >= date_modified)
             .order_by(Person.modified)

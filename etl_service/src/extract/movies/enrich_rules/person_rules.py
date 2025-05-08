@@ -4,7 +4,6 @@ from collections import defaultdict
 from sqlalchemy import select
 
 from models.movies.pg_models import PersonFilmWork
-from interface import DataBaseUOW_T
 from schemas.movies_schemas.person_models import PersonModel, FilmWorkModel
 from utils import backoff_by_connection
 
@@ -14,9 +13,9 @@ class PersonRules:
     @classmethod
     @backoff_by_connection(exceptions=(ConnectionRefusedError, socket.gaierror))
     async def person_selection_data_rule(
-        cls, db_uow: DataBaseUOW_T, obj_id: int
+        cls, pg_session, obj_id: int
     ) -> dict:
-        query_person_film_work = await db_uow.execute(
+        query_person_film_work = await pg_session.execute(
             select(
                 PersonFilmWork.film_work_id.label("film_work_id"),
                 PersonFilmWork.role.label("person_role"),

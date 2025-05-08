@@ -72,4 +72,3 @@ class KafkaConsumerUOW:
                 else:
                     step += self.CONCAT
                     time.sleep(step)
-

@@ -5,7 +5,6 @@ from sqlalchemy import select
 
 from core import config
 from models.movies.pg_models import Genre
-from interface import DataBaseUOW_T
 from schemas.movies_schemas.genre_models import GenreModel
 from utils import backoff_by_connection
 
@@ -15,11 +14,11 @@ class GenreRules:
     @classmethod
     @backoff_by_connection(exceptions=(ConnectionRefusedError, socket.gaierror))
     async def genre_selection_data_rule(
-        cls, db_uow: DataBaseUOW_T, date_modified: datetime
+        cls, pg_session, date_modified: datetime
     ) -> list[Genre]:
         limit = config.etl_movies_select_limit
 
-        query_ = await db_uow.scalars(
+        query_ = await pg_session.scalars(
             select(Genre)
             .where(Genre.modified >= date_modified)
             .order_by(Genre.modified)
