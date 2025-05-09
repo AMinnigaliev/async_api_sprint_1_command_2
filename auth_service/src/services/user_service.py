@@ -18,7 +18,7 @@ from src.db.redis_client import get_redis_auth
 from src.models.user import LoginHistory, User
 from src.models.social_account import SocialAccount, SocialProviderEnum
 from src.schemas.token import Token
-from src.schemas.user import UserCreate, UserUpdate
+from src.schemas.user import UserCreate, UserResponse, UserUpdate
 from src.services.auth_service import AuthService
 from src.utils.normalize_country import normalize_country
 
@@ -91,7 +91,7 @@ class UserService:
 
         return access_token, refresh_token
 
-    async def create_user(self, user_data: UserCreate) -> User:
+    async def create_user(self, user_data: UserCreate) -> UserResponse:
         lock_sql = text("SELECT pg_advisory_xact_lock(hashtext(:login))")
         await self.db.execute(lock_sql, {"login": user_data.login})
 
@@ -106,18 +106,22 @@ class UserService:
         norm_country, partition_country = self._get_normalize_country(
             user_data.country
         )
+
         new_user = User(
             first_name=user_data.first_name,
             last_name=user_data.last_name,
             login=user_data.login,
             password=user_data.password,
+            email=user_data.email,
             country=norm_country,
             partition_country=partition_country
         )
+
         self.db.add(new_user)
         await self.db.commit()
         await self.db.refresh(new_user)
-        return new_user
+
+        return UserResponse.model_validate(new_user)
 
     async def login_user(
         self, login: str, password: str, user_agent: str, source_service: str

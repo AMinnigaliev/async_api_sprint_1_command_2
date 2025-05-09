@@ -22,14 +22,18 @@ class AuthService:
         self.redis_client = redis_client
 
     @staticmethod
-    async def verify_token_through_auth(token: str) -> dict:
+    async def verify_token_through_auth(token: str, request_id: str) -> dict:
         """Проверяет токен через auth-сервис."""
+        headers = {
+            "Authorization": f"Bearer {token}",
+            "X-Request-Id": request_id,
+        }
         async with httpx.AsyncClient() as client:
             try:
                 response = await client.post(
                     f"{settings.auth_service_url}/validate",
-                    json={"token": token},
-                    timeout=5.0,
+                    headers=headers,
+                    timeout=1.0,
                 )
                 response.raise_for_status()
 
@@ -78,7 +82,9 @@ class AuthService:
                 detail="Invalid token",
             )
 
-    async def varify_token_with_cache(self, token: str) -> dict:
+    async def varify_token_with_cache(
+            self, token: str, request_id: str
+    ) -> dict:
         """
         Проверяет токен с использованием кеша через auth-сервис или локально
         (если не получается через auth-сервис).
@@ -106,7 +112,7 @@ class AuthService:
             pass
 
         try:
-            payload = await self.verify_token_through_auth(token)
+            payload = await self.verify_token_through_auth(token, request_id)
 
         except HTTPException:
             payload = await self.varify_token_locally(token)
@@ -114,8 +120,7 @@ class AuthService:
 
         else:
             exp = payload.get("exp")
-            ttl = int(exp.timestamp() - datetime.now(UTC).timestamp())
-
+            ttl = int(int(exp) - datetime.now(UTC).timestamp())
             expire = ttl if ttl > 1 else None
 
         if expire:

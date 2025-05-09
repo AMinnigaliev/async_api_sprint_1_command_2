@@ -72,9 +72,9 @@ class Settings(BaseSettings):
     )
 
     # OAuth Yandex
-    yandex_client_id: str = Field(..., env="YANDEX_CLIENT_ID")
-    yandex_client_secret: str = Field(..., env="YANDEX_CLIENT_SECRET")
-    yandex_redirect_uri: str = Field(..., env="YANDEX_REDIRECT_URI")
+    yandex_client_id: str = Field(..., alias="YANDEX_CLIENT_ID")
+    yandex_client_secret: str = Field(..., alias="YANDEX_CLIENT_SECRET")
+    yandex_redirect_uri: str = Field(..., alias="YANDEX_REDIRECT_URI")
     yandex_auth_url: str = "https://oauth.yandex.ru/authorize"
 
     # Безопасность
@@ -92,7 +92,10 @@ class Settings(BaseSettings):
     @computed_field
     @property
     def redis_rate_limit_url(self) -> str:
-        return f"redis://:{self.redis_password}@{self.redis_host}:{self.redis_port}/{self.redis_rate_limit_db}"
+        return (
+            f"redis://:{self.redis_password}@{self.redis_host}:"
+            f"{self.redis_port}/{self.redis_rate_limit_db}"
+        )
 
  
 settings = Settings()

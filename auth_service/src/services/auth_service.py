@@ -98,7 +98,7 @@ class AuthService:
         payload = verify_token(token)
 
         if exp := payload.get("exp"):
-            ttl = int(exp.timestamp() - datetime.now(UTC).timestamp())
+            ttl = int(int(exp) - datetime.now(UTC).timestamp())
 
             if ttl > 0:
                 await self.set(token, settings.token_revoke, ttl, log_info)
