@@ -10,6 +10,8 @@ class PayloadResponse(BaseModel):
         ..., description="Уникальный идентификатор пользователя"
     )
     role: str = Field(..., description="Роль пользователя")
-    exp: datetime = Field(..., description="Срок действия токена")
+    exp: int = Field(
+        ..., description="Срок действия токена в секундах от эпохи"
+    )
 
     model_config = {"from_attributes": True}

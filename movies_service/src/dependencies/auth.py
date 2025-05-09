@@ -1,4 +1,4 @@
-from fastapi import Depends, HTTPException, Security, status
+from fastapi import Depends, HTTPException, Request, Security, status
 from fastapi.security import OAuth2PasswordBearer
 
 from src.core.config import settings
@@ -17,6 +17,7 @@ def role_dependency(required_roles: tuple[str]):
     3. Сравнивает роль пользователя с переданными допустимыми ролями.
     """
     async def _check_role(
+        request: Request,
         token: str = Security(oauth2_scheme),
         auth_service: AuthService = Depends(get_auth_service)
     ) -> dict:
@@ -25,8 +26,9 @@ def role_dependency(required_roles: tuple[str]):
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Not authenticated",
             )
+        request_id = request.headers.get("X-Request-Id")
 
-        payload = await auth_service.varify_token_with_cache(token)
+        payload = await auth_service.varify_token_with_cache(token, request_id)
 
         if payload.get("role") not in required_roles:
             raise HTTPException(

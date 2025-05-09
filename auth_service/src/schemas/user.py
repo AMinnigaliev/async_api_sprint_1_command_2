@@ -30,7 +30,7 @@ class BaseUser(BaseModel):
         orm_mode = True
 
 
-class UserUpdate(BaseModel):
+class UserUpdate(BaseUser):
     email: str | None = Field(None, description="Новый email пользователя")
     username: str | None = Field(None, description="Новый логин пользователя")
     password: str | None = Field(
@@ -44,11 +44,13 @@ class UserUpdate(BaseModel):
         orm_mode = True
 
 
-class UserResponse(BaseModel):
+class UserResponse(BaseUser):
     id: UUID = Field(..., description="Уникальный идентификатор пользователя")
-    email: EmailStr = Field(..., description="Email пользователя")
-    username: str = Field(..., description="Логин пользователя")
+    email: EmailStr | None = Field(description="Email пользователя")
+    username: str = Field(..., description="Логин пользователя", alias="login")
     created_at: datetime = Field(..., description="Дата и время создания аккаунта")
 
-    class Config:
-        orm_mode = True
+    model_config = {
+        "from_attributes": True,
+        "populate_by_name": True,
+    }
