@@ -4,8 +4,7 @@ from datetime import datetime
 from sqlalchemy import select
 
 from core import config
-from models.movies_models.pg_models import FilmWork
-from interface import DataBaseUOW_T
+from models.movies.pg_models import FilmWork
 from schemas.movies_schemas.film_work_models import FilmWorkModel
 from utils import backoff_by_connection
 
@@ -15,11 +14,11 @@ class FilmWorkRules:
     @classmethod
     @backoff_by_connection(exceptions=(ConnectionRefusedError, socket.gaierror))
     async def film_work_selection_data_rule(
-        cls, db_uow: DataBaseUOW_T, date_modified: datetime
+        cls, pg_session, date_modified: datetime
     ) -> list[FilmWork]:
-        limit = config.etl_select_limit
+        limit = config.etl_movies_select_limit
 
-        query_ = await db_uow.scalars(
+        query_ = await pg_session.scalars(
             select(FilmWork)
             .where(FilmWork.modified >= date_modified)
             .order_by(FilmWork.modified)

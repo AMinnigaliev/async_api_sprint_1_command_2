@@ -7,11 +7,10 @@ from core.logger import logger
 from utils.movies_utils.etl_enum import RuleTypes
 from schemas import Base as BaseSchema
 from utils import backoff_by_connection, EntitiesNotFoundInDBError
-from models.movies_models.pg_models import FilmWork, Person, Genre, BaseWithTimeStampedType
-from extract.producer_rules import FilmWorkRules, PersonRules, GenreRules
+from models.movies.pg_models import FilmWork, Person, Genre, BaseWithTimeStampedType
+from extract.movies.producer_rules import FilmWorkRules, PersonRules, GenreRules
 from interface import (
     RedisStorage_T,
-    DataBaseUOW_T,
     check_free_size_storage,
     ESClient_T,
 )
@@ -25,11 +24,11 @@ class Producer:
     def __init__(
         self,
         redis_storage: RedisStorage_T,
-        db_uow: DataBaseUOW_T,
+        pg_session,
         es_client: ESClient_T,
     ):
         self._redis_storage: RedisStorage_T = redis_storage
-        self._db_uow: DataBaseUOW_T = db_uow
+        self._pg_session = pg_session
         self._es_client: ESClient_T = es_client
 
     @property
@@ -37,8 +36,8 @@ class Producer:
         return self._redis_storage
 
     @property
-    def db_uow(self) -> DataBaseUOW_T:
-        return self._db_uow
+    def pg_session(self):
+        return self._pg_session
 
     @property
     def model_rules(self) -> dict:
@@ -90,7 +89,7 @@ class Producer:
                 continue
 
             if selection_data := await selection_rule(
-                db_uow=self._db_uow, date_modified=date_modified
+                pg_session=self.pg_session, date_modified=date_modified
             ):
                 logger.info(
                     f"{model_.model_name()}, received date modified: {date_modified}"
@@ -140,7 +139,7 @@ class Producer:
     async def _get_date_modified_from_db(
         self, model_: BaseWithTimeStampedType
     ) -> datetime:
-        query_ = await self._db_uow.execute(
+        query_ = await self.pg_session.execute(
             select(model_).order_by(model_.modified.asc())
         )
         last_modified_entity = query_.scalar()

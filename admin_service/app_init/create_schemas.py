@@ -12,11 +12,11 @@ async def create_schemas() -> None:
     logger.info("Начало работы скрипта по созданию схемы admin и content.")
 
     dsn = (
-        f"dbname={os.getenv('PG_NAME')} "
-        f"user={os.getenv('PG_USER')} "
-        f"password={os.getenv('PG_PASSWORD')} "
-        f"host={os.getenv('PG_HOST')} "
-        f"port={os.getenv('PG_PORT', '5432')}"
+        f"dbname=name "
+        f"user=user "
+        f"password=password "
+        f"host=127.0.0.1 "
+        f"port=5432"
     )
     conn = psycopg2.connect(dsn)
     conn.autocommit = True

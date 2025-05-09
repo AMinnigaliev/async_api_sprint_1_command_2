@@ -5,7 +5,7 @@ from redis.asyncio import Redis
 from core import config
 from interface.storage.redis_storage import RedisStorage
 
-__all__ = ["RedisContextManagerT", "RedisContextManager", "redis_context_manager"]
+__all__ = ["RedisContextManagerT", "RedisContextManager"]
 
 RedisContextManagerT = TypeVar("RedisContextManagerT", bound="RedisContextManager")
 
@@ -15,8 +15,9 @@ class RedisContextManager:
 
     URL_TEMPLATE = "redis://{}:{}"
 
-    def __init__(self) -> None:
+    def __init__(self, redis_db: int) -> None:
         self._redis_storage = None
+        self._redis_db = redis_db
 
     @property
     def redis_storage(self):
@@ -26,7 +27,7 @@ class RedisContextManager:
         redis_ = await Redis.from_url(
             url=self.URL_TEMPLATE.format(config.redis_host, config.redis_port),
             password=config.redis_password,
-            db=config.redis_movies_db,
+            db=self._redis_db,
             decode_responses=True,
         )
         self._redis_storage = RedisStorage(redis_=redis_)
@@ -35,6 +36,3 @@ class RedisContextManager:
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         await self._redis_storage.close_()
-
-
-redis_context_manager = RedisContextManager()
