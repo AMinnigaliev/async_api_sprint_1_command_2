@@ -43,6 +43,7 @@ class Settings(BaseSettings):
     kafka_events_topic: str = Field(default="events", alias="KAFKA_TOPIC")
     kafka_consumer_timeout: float = Field(default=1.0, alias="KAFKA_CONSUMER_TIMEOUT")
     kafka_consumer_group_id: str = Field(default="consumer-group", alias="KAFKA_CONSUMER_GROUP_ID")
+    kafka_enable_auto_commit: bool = Field(default=False, alias="KAFKA_ENABLE_AUTO_COMMIT")
 
     etl_task_trigger: str = Field(default="interval", alias="ETL_TASK_TRIGGER")
     etl_movies_task_interval_sec: int = Field(default=1 * 60, alias="ETL_MOVIES_TASK_INTERVAL_SEC")

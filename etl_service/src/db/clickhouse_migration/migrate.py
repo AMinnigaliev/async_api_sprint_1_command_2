@@ -1,6 +1,5 @@
 import os
 import importlib
-import time
 
 from core.logger import logger
 from db.clickhouse_session import clickhouse_session
