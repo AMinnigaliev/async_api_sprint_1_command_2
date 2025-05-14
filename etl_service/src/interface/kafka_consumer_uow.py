@@ -23,6 +23,7 @@ class KafkaConsumerUOW:
             "bootstrap.servers": config.kafka_broker,
             "group.id": config.kafka_consumer_group_id,
             "auto.offset.reset": "earliest",
+            "enable.auto.commit": config.kafka_enable_auto_commit,
         }
 
     @property
@@ -67,6 +68,8 @@ class KafkaConsumerUOW:
                 if pool_messages := consumer.consume(config.etl_events_select_limit, config.kafka_consumer_timeout):
                     for pool_message in pool_messages:
                         yield pool_message
+
+                    consumer.commit()
                     break
 
                 else:

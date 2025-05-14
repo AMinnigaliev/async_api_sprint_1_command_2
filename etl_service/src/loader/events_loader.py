@@ -39,8 +39,10 @@ class Loader:
 
         :return None:
         """
+        events_keys_lst = list()
+        event_entities_lst = list()
+
         for event_type in self.event_types:
-            event_entities_lst = list()
             events_keys = await self.redis_storage.scan_iter(f"{event_type}:*")
 
             if events_keys:
@@ -52,14 +54,15 @@ class Loader:
 
                 if event_data and load_rule:
                     if event_entities := await self._execute_load_rule(load_rule=load_rule, event_data=event_data):
-                        event_entities_lst.append(event_entities)
+                        event_entities_lst.extend(event_entities)
+                        events_keys_lst.extend(events_keys)
 
             if len(event_entities_lst) >= config.etl_events_select_limit:
                 self.clickhouse_session.insert(event_entities_lst)
-                event_entities_lst.clear()
+                await self._delete_events_from_storage(keys=events_keys_lst, event_type=event_type)
 
-            if events_keys:
-                await self._delete_events_from_storage(keys=events_keys, event_type=event_type)
+                events_keys_lst.clear()
+                event_entities_lst.clear()
 
     async def _get_event_data_by_key(self, event_key: str) -> dict:
         event_data = await self.redis_storage.retrieve_state(key_=event_key)
