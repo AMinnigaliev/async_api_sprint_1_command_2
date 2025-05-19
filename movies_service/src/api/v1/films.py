@@ -95,6 +95,21 @@ async def get_films(
 
 
 @router.get(
+    "/is_exist/{film_id}",
+    response_model=bool,
+)
+async def film_is_exist(
+    film_id: UUID,
+    film_service: FilmService = Depends(get_film_service),
+) -> Film:
+    """Эндпоинт для проверки наличия фильма по ID."""
+    film_id = str(film_id)
+    film = await film_service.get_film_by_id(film_id)
+
+    return True if film else False
+
+
+@router.get(
     "/{film_id}",
     response_model=Film,
     dependencies=[Depends(role_dependency(UserRoleEnum.get_all_roles()))],

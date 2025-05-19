@@ -221,7 +221,7 @@ services:
 
   clickhouse:
     image: clickhouse/clickhouse-server:25.4.2
-    container_name: clickhouse
+    container_name: ${CLICKHOUSE_HOST}
     environment:
       - CLICKHOUSE_DB=$CLICKHOUSE_DB
       - CLICKHOUSE_USER=$CLICKHOUSE_USER
