@@ -6,8 +6,10 @@ from fastapi import Depends
 from pymongo import AsyncMongoClient
 
 from src.core.logger import LOGGING
-from src.schemas.film_rating import AverageFilmRatingResponse, \
-    AmountFilmRatingResponse, FilmRatingResponse
+from src.db.mongo_client import get_mongo_client
+from src.schemas.film_rating import (AmountFilmRatingResponse,
+                                     AverageFilmRatingResponse,
+                                     FilmRatingResponse)
 
 logging.config.dictConfig(LOGGING)
 logger = logging.getLogger(__name__)
@@ -82,7 +84,7 @@ class FilmRatingService:
 
 @lru_cache()
 def get_film_rating_service(
-    mongo_client = Depends(get_mongo_client)
+    mongo_client=Depends(get_mongo_client)
 ) -> FilmRatingService:
     """
     Провайдер для получения экземпляра FilmRatingService.

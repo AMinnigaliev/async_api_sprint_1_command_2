@@ -2,14 +2,14 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends
 
-from src.dependencies.auth import role_dependency, \
-    role_dependency_exp_important
+from src.dependencies.auth import (role_dependency,
+                                   role_dependency_exp_important)
 from src.dependencies.movies import film_existence_dependency
 from src.schemas.film_rating import (AmountFilmRatingResponse,
                                      AverageFilmRatingResponse,
                                      DeleteFilmRatingResponse,
-                                     FilmRatingResponse,
-                                     FilmRatingCreateUpdate)
+                                     FilmRatingCreateUpdate,
+                                     FilmRatingResponse)
 from src.schemas.user_role_enum import UserRoleEnum
 from src.services.film_rating_service import (FilmRatingService,
                                               get_film_rating_service)

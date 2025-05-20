@@ -6,7 +6,8 @@ from fastapi import Depends
 from pymongo import AsyncMongoClient
 
 from src.core.logger import LOGGING
-from src.schemas.film_review import FilmReviewResponse, BaseFilmReviewResponse
+from src.db.mongo_client import get_mongo_client
+from src.schemas.film_review import BaseFilmReviewResponse, FilmReviewResponse
 
 logging.config.dictConfig(LOGGING)
 logger = logging.getLogger(__name__)
@@ -33,7 +34,7 @@ class FilmReviewService:
         #  todo
 
     async def get_reviews(
-        self, film_id: UUID, sort: str, page_size: int, page_number:int
+        self, film_id: UUID, sort: str, page_size: int, page_number: int
     ) -> list[BaseFilmReviewResponse]:
         """Получить список рецензий фильма с гибкой сортировкой."""
         log_info = (
@@ -48,7 +49,7 @@ class FilmReviewService:
 
 @lru_cache()
 def get_film_review_service(
-    mongo_client = Depends(get_mongo_client)
+    mongo_client=Depends(get_mongo_client)
 ) -> FilmReviewService:
     """
     Провайдер для получения экземпляра FilmReviewService.

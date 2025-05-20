@@ -4,10 +4,8 @@ from typing import Any
 
 from pydantic import Field, computed_field
 from pydantic_settings import BaseSettings
-from pymongo.errors import (
-    ConnectionFailure as MongoConnectionFailure,
-    OperationFailure as MongoOperationFailure,
-)
+from pymongo.errors import ConnectionFailure as MongoConnectionFailure
+from pymongo.errors import OperationFailure as MongoOperationFailure
 from redis.exceptions import RedisError
 
 

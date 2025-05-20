@@ -6,6 +6,7 @@ from fastapi import Depends
 from pymongo import AsyncMongoClient
 
 from src.core.logger import LOGGING
+from src.db.mongo_client import get_mongo_client
 from src.schemas.bookmark import BookmarkResponse
 
 logging.config.dictConfig(LOGGING)
@@ -56,7 +57,7 @@ class BookmarkService:
 
 @lru_cache()
 def get_bookmark_service(
-    mongo_client = Depends(get_mongo_client)
+    mongo_client=Depends(get_mongo_client)
 ) -> BookmarkService:
     """
     Провайдер для получения экземпляра BookmarkService.

@@ -17,6 +17,7 @@ class ReviewRatingCreateUpdate(BaseModel):
 class ReviewRatingResponse(BaseResponse):
     pass
 
+
 class FilmReviewCreateUpdate(BaseModel):
     review: str = Field(..., description="Текст рецензии")
 

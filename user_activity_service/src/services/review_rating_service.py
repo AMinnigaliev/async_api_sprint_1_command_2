@@ -6,7 +6,8 @@ from fastapi import Depends
 from pymongo import AsyncMongoClient
 
 from src.core.logger import LOGGING
-from src.schemas.film_review import FilmReviewResponse, BaseFilmReviewResponse
+from src.db.mongo_client import get_mongo_client
+from src.schemas.film_review import FilmReviewResponse
 
 logging.config.dictConfig(LOGGING)
 logger = logging.getLogger(__name__)
@@ -36,7 +37,7 @@ class ReviewRatingService:
 
 @lru_cache()
 def get_review_rating_service(
-    mongo_client = Depends(get_mongo_client)
+    mongo_client=Depends(get_mongo_client)
 ) -> ReviewRatingService:
     """
     Провайдер для получения экземпляра ReviewRatingService.

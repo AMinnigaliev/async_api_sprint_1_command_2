@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, FastAPI
 from fastapi.responses import ORJSONResponse
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 
-from src.api.v1 import healthcheck, bookmark, film_rating, film_review
+from src.api.v1 import bookmark, film_rating, film_review, healthcheck
 from src.core.config import settings
 from src.db.mongo_client import get_mongo_client
 from src.db.redis_client import get_redis_cache

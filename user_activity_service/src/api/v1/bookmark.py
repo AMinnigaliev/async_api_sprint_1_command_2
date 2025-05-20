@@ -2,11 +2,11 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends
 
-from src.dependencies.auth import role_dependency_exp_important, \
-    role_dependency
+from src.dependencies.auth import (role_dependency,
+                                   role_dependency_exp_important)
 from src.dependencies.movies import film_existence_dependency
-from src.schemas.bookmark import BookmarkResponse, BookmarkCreateDelete, \
-    DeleteBookmarkResponse
+from src.schemas.bookmark import (BookmarkCreateDelete, BookmarkResponse,
+                                  DeleteBookmarkResponse)
 from src.schemas.user_role_enum import UserRoleEnum
 from src.services.bookmark_service import BookmarkService, get_bookmark_service
 
