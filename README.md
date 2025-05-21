@@ -106,6 +106,9 @@ docker compose -f ./docker-compose-apps.yaml -f ./docker-compose-services.yaml -
 
 ![example_4](docs/jaeger/example_4.png)
 
+### Сравнительные тесты:
+- **[Mongo и Postgres](tests/database_comparison/README.md)**
+
 * * *
 
 # Соглашения разработки:
