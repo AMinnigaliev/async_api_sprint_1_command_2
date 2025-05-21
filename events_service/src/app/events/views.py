@@ -1,12 +1,12 @@
 import logging
-
-from flask import Blueprint, request, jsonify
 from datetime import datetime
+
+from flask import Blueprint, jsonify, request
 from pydantic import ValidationError
 
 from ..core.auth_client import get_user_id
-from ..core.kafka_client import publish_event
 from ..core.config import KAFKA_TOPIC
+from ..core.kafka_client import publish_event
 from ..models.event import EventSchema
 
 # Настраиваем логгер для этого модуля

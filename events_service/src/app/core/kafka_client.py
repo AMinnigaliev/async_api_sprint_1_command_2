@@ -5,9 +5,8 @@ import json
 import threading
 import time
 
-from confluent_kafka import Producer
-from confluent_kafka.admin import AdminClient, NewTopic, KafkaException
-from confluent_kafka import KafkaError
+from confluent_kafka import KafkaError, Producer
+from confluent_kafka.admin import AdminClient, KafkaException, NewTopic
 
 from .config import KAFKA_BROKERS, KAFKA_TOPIC
 

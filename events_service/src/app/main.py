@@ -1,6 +1,9 @@
 import logging
+
 from flask import Flask
+
 from .events.views import bp as events_bp
+
 # Если позже потребуется фоновый scheduler (TTL‑чистка пар «page_view»),
 # раскомментируйте строку ниже и добавьте реализацию в core.scheduler:
 # from .core.scheduler import start as start_scheduler

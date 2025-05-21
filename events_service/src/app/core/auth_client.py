@@ -1,8 +1,8 @@
-import requests
 import jwt
+import requests
 from redis import Redis
 
-from .config import AUTH_SERVICE_URL, TOKEN_CACHE_TTL, REDIS_URL
+from .config import AUTH_SERVICE_URL, REDIS_URL, TOKEN_CACHE_TTL
 
 # --------------------------------------------------------------------------- #
 # Redis‑кеш для валидации токенов
