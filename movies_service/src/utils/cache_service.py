@@ -73,7 +73,7 @@ class CacheService:
                 key, expire, log_info
             )
 
-    async def close(self):
+    async def close(self) -> None:
         logger.info("Закрытие соединения с Redis по работе с кешом...")
 
         try:
