@@ -20,7 +20,9 @@ def _decode_without_expiry(token: str) -> str:
     Возвращает user_id (claim *sub* или *user_id*) либо 'anonymous',
     если ни один из клеймов не найден.
     """
-    claims = jwt.decode(token, options={"verify_exp": False}, algorithms=["HS256"])
+    claims = jwt.decode(
+        token, options={"verify_exp": False}, algorithms=["HS256"]
+    )
     return claims.get("sub") or claims.get("user_id") or "anonymous"
 
 

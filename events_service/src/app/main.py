@@ -27,5 +27,6 @@ def create_app() -> Flask:
 
 if __name__ == "__main__":
     application = create_app()
-    # В продакшене запускайте Gunicorn/Uvicorn; эта строка — для локального dev‑раннера
+    # В продакшене запускайте Gunicorn/Uvicorn; эта строка — для локального
+    # dev‑раннера
     application.run(host="0.0.0.0", port=5000)

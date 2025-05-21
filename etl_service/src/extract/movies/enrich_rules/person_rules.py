@@ -4,14 +4,16 @@ from collections import defaultdict
 from sqlalchemy import select
 
 from models.movies.pg_models import PersonFilmWork
-from schemas.movies_schemas.person_models import PersonModel, FilmWorkModel
+from schemas.movies_schemas.person_models import FilmWorkModel, PersonModel
 from utils import backoff_by_connection
 
 
 class PersonRules:
 
     @classmethod
-    @backoff_by_connection(exceptions=(ConnectionRefusedError, socket.gaierror))
+    @backoff_by_connection(
+        exceptions=(ConnectionRefusedError, socket.gaierror)
+    )
     async def person_selection_data_rule(
         cls, pg_session, obj_id: int
     ) -> dict:
@@ -37,11 +39,15 @@ class PersonRules:
         person_data = PersonModel(**obj_data)
         person_data.was_enrich = True
 
-        if person_film_work_data := selection_data.get(PersonFilmWork.model_name()):
+        if person_film_work_data := selection_data.get(
+                PersonFilmWork.model_name()
+        ):
             person_roles_by_film_work_id = defaultdict(list)
 
             for person_film_work in person_film_work_data:
-                person_roles_by_film_work_id[person_film_work.film_work_id].append(
+                person_roles_by_film_work_id[
+                    person_film_work.film_work_id
+                ].append(
                     person_film_work.person_role
                 )
 
@@ -50,7 +56,9 @@ class PersonRules:
                     id=film_work_id,
                     roles=person_roles,
                 )
-                for film_work_id, person_roles in person_roles_by_film_work_id.items()
+                for (
+                    film_work_id, person_roles
+                ) in person_roles_by_film_work_id.items()
             ]
 
         return person_data

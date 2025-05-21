@@ -1,8 +1,9 @@
 from typing import TypeVar
 
 from aiohttp import ClientConnectorError
+from elasticsearch import AsyncElasticsearch
 from elasticsearch import ConnectionError as ConnectionErrorES
-from elasticsearch import AsyncElasticsearch, NotFoundError
+from elasticsearch import NotFoundError
 
 from core import config
 from utils import backoff_by_connection
@@ -26,7 +27,9 @@ class AsyncESClient:
     async def close_(self) -> None:
         await self._client.close()
 
-    @backoff_by_connection(exceptions=(ConnectionErrorES, ClientConnectorError))
+    @backoff_by_connection(
+        exceptions=(ConnectionErrorES, ClientConnectorError)
+    )
     async def create_index_with_ignore(self, index_: str, body: dict = None):
         if body:
             try:
@@ -35,12 +38,16 @@ class AsyncESClient:
             except NotFoundError:
                 await self._client.indices.create(index=index_, body=body)
 
-    @backoff_by_connection(exceptions=(ConnectionErrorES, ClientConnectorError))
+    @backoff_by_connection(
+        exceptions=(ConnectionErrorES, ClientConnectorError)
+    )
     async def insert_document(
         self, index_: str, document: dict, id_: int = None
     ) -> dict:
         result = {"status": True}
-        response_ = await self._client.index(index=index_, document=document, id=id_)
+        response_ = await self._client.index(
+            index=index_, document=document, id=id_
+        )
 
         if body := response_.get("body"):
             if error := body.get("error"):

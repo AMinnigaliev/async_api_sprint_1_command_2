@@ -7,7 +7,9 @@ class ETLSchedulerInterface(ABC):
     @classmethod
     @abstractmethod
     def jobs(cls) -> list[dict]:
-        """Метод получения всех задач (с заданными параметрами) для планировщика."""
+        """
+        Метод получения всех задач (с заданными параметрами) для планировщика.
+        """
 
     @classmethod
     @abstractmethod

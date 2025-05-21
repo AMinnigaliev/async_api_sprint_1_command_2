@@ -25,7 +25,9 @@ class QualityChangeEventRule(AbstractEventRule):
 
     @property
     def event_storage_key(self) -> str:
-        return f"{self.event_key}:{self.quality_change_dc.user_id}:{uuid.uuid4()}"
+        return (
+            f"{self.event_key}:{self.quality_change_dc.user_id}:{uuid.uuid4()}"
+        )
 
     def execute(self) -> tuple:
         event_storage_key = self.event_storage_key

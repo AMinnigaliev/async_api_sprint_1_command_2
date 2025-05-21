@@ -64,7 +64,10 @@ class KafkaConsumerUOW:
             step = self.START_STEP
 
             while self.MAX_STEP > step:
-                if pool_messages := consumer.consume(config.etl_events_select_limit, config.kafka_consumer_timeout):
+                if pool_messages := consumer.consume(
+                        config.etl_events_select_limit,
+                        config.kafka_consumer_timeout,
+                ):
                     for pool_message in pool_messages:
                         yield pool_message
                     break

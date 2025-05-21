@@ -33,7 +33,8 @@ def _ensure_topic() -> None:
     futures = admin.create_topics([topic])
 
     try:
-        futures[KAFKA_TOPIC].result(timeout=10)  # поднимет исключение при ошибке
+        futures[KAFKA_TOPIC].result(timeout=10)
+        # поднимет исключение при ошибке
         print(f"[Kafka] topic '{KAFKA_TOPIC}' created (6 partitions, lz4)")
     except KafkaException as exc:
         if exc.args[0].code() != KafkaError.TOPIC_ALREADY_EXISTS:

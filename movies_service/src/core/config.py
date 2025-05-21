@@ -85,7 +85,10 @@ class Settings(BaseSettings):
     @computed_field
     @property
     def redis_rate_limit_url(self) -> str:
-        return f"redis://:{self.redis_password}@{self.redis_host}:{self.redis_port}/{self.redis_rate_limit_db}"
+        return (
+            f"redis://:{self.redis_password}@{self.redis_host}:"
+            f"{self.redis_port}/{self.redis_rate_limit_db}"
+        )
 
     @cached_property
     def auth_service_url(self) -> str:

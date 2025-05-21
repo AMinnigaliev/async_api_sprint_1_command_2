@@ -4,16 +4,14 @@ from datetime import datetime
 from sqlalchemy import select
 
 from core.logger import logger
-from utils.movies_utils.etl_enum import RuleTypes
+from extract.movies.producer_rules import (FilmWorkRules, GenreRules,
+                                           PersonRules)
+from interface import ESClient_T, RedisStorage_T, check_free_size_storage
+from models.movies.pg_models import (BaseWithTimeStampedType, FilmWork, Genre,
+                                     Person)
 from schemas import Base as BaseSchema
-from utils import backoff_by_connection, EntitiesNotFoundInDBError
-from models.movies.pg_models import FilmWork, Person, Genre, BaseWithTimeStampedType
-from extract.movies.producer_rules import FilmWorkRules, PersonRules, GenreRules
-from interface import (
-    RedisStorage_T,
-    check_free_size_storage,
-    ESClient_T,
-)
+from utils import EntitiesNotFoundInDBError, backoff_by_connection
+from utils.movies_utils.etl_enum import RuleTypes
 
 
 class Producer:
@@ -43,16 +41,22 @@ class Producer:
     def model_rules(self) -> dict:
         return {
             FilmWork: {
-                RuleTypes.SELECTION_RULE.value: FilmWorkRules.film_work_selection_data_rule,
-                RuleTypes.NORMALIZE_RULE.value: FilmWorkRules.film_work_normalize_data_rule,
+                RuleTypes.SELECTION_RULE.value:
+                    FilmWorkRules.film_work_selection_data_rule,
+                RuleTypes.NORMALIZE_RULE.value:
+                    FilmWorkRules.film_work_normalize_data_rule,
             },
             Person: {
-                RuleTypes.SELECTION_RULE.value: PersonRules.person_selection_data_rule,
-                RuleTypes.NORMALIZE_RULE.value: PersonRules.person_normalize_data_rule,
+                RuleTypes.SELECTION_RULE.value:
+                    PersonRules.person_selection_data_rule,
+                RuleTypes.NORMALIZE_RULE.value:
+                    PersonRules.person_normalize_data_rule,
             },
             Genre: {
-                RuleTypes.SELECTION_RULE.value: GenreRules.genre_selection_data_rule,
-                RuleTypes.NORMALIZE_RULE.value: GenreRules.genre_normalize_data_rule,
+                RuleTypes.SELECTION_RULE.value:
+                    GenreRules.genre_selection_data_rule,
+                RuleTypes.NORMALIZE_RULE.value:
+                    GenreRules.genre_normalize_data_rule,
             },
         }
 
@@ -92,12 +96,14 @@ class Producer:
                 pg_session=self.pg_session, date_modified=date_modified
             ):
                 logger.info(
-                    f"{model_.model_name()}, received date modified: {date_modified}"
+                    f"{model_.model_name()}, received date modified: "
+                    f"{date_modified}"
                 )
 
                 normalized_data = normalize_rule(selection_data=selection_data)
                 logger.debug(
-                    f"{model_.model_name()}, select and normalize data for date modified: {date_modified}"
+                    f"{model_.model_name()}, select and normalize data for "
+                    f"date modified: {date_modified}"
                 )
 
                 await self._insert_data_in_storage(
@@ -108,16 +114,21 @@ class Producer:
                 )
 
                 logger.info(
-                    f"{model_.model_name()}, ids({len(selection_data)})={[d.id for d in selection_data]} was produce"
+                    f"{model_.model_name()}, ids({len(selection_data)})="
+                    f"{[d.id for d in selection_data]} was produce"
                 )
 
             else:
-                logger.info(f"{model_.model_name()}, not found data for modified")
+                logger.info(
+                    f"{model_.model_name()}, not found data for modified"
+                )
 
-    async def _get_date_modified(self, model_: BaseWithTimeStampedType) -> datetime:
+    async def _get_date_modified(
+            self, model_: BaseWithTimeStampedType
+    ) -> datetime:
         """
-        Получение modified по модели из DB. Если данной информации по модели нет в Storage, получаем ее из DB и
-        записываем в Storage.
+        Получение modified по модели из DB. Если данной информации по модели
+        нет в Storage, получаем ее из DB и записываем в Storage.
 
         :param BaseWithTimeStampedType model_:
         :return datetime date_modified:
@@ -125,17 +136,23 @@ class Producer:
         key_rule = self.get_key_of_rule(model_=model_)
 
         if date_from_storage := await self.redis_storage.get_(name=key_rule):
-            date_modified = self.str_to_datetime(datetime_str=date_from_storage)
+            date_modified = self.str_to_datetime(
+                datetime_str=date_from_storage
+            )
 
         else:
-            date_modified = await self._get_date_modified_from_db(model_=model_)
+            date_modified = await self._get_date_modified_from_db(
+                model_=model_
+            )
             await self._set_date_modified(
                 key_rule=key_rule, date_modified=date_modified
             )
 
         return date_modified
 
-    @backoff_by_connection(exceptions=(ConnectionRefusedError, socket.gaierror))
+    @backoff_by_connection(
+        exceptions=(ConnectionRefusedError, socket.gaierror)
+    )
     async def _get_date_modified_from_db(
         self, model_: BaseWithTimeStampedType
     ) -> datetime:
@@ -145,7 +162,9 @@ class Producer:
         last_modified_entity = query_.scalar()
 
         if not last_modified_entity:
-            raise EntitiesNotFoundInDBError(message=f"not found records in DB for model '{model_.model_name()}'")
+            raise EntitiesNotFoundInDBError(message=(
+                f"not found records in DB for model '{model_.model_name()}'"
+            ))
 
         return last_modified_entity.modified
 
@@ -156,21 +175,28 @@ class Producer:
             selection_data, key=lambda d: d.modified, reverse=False
         )
 
-        date_modified, key_rule = ord_selection_data[-1].modified, self.get_key_of_rule(
-            model_=model_
+        date_modified, key_rule = ord_selection_data[-1].modified
+        key_rule = self.get_key_of_rule(model_=model_)
+        await self._set_date_modified(
+            key_rule=key_rule, date_modified=date_modified
         )
-        await self._set_date_modified(key_rule=key_rule, date_modified=date_modified)
 
-        logger.debug(f"{model_.model_name()}: set new date modified({date_modified})")
+        logger.debug(
+            f"{model_.model_name()}: set new date modified({date_modified})"
+        )
 
-    async def _set_date_modified(self, key_rule: str, date_modified: datetime) -> None:
+    async def _set_date_modified(
+            self, key_rule: str, date_modified: datetime
+    ) -> None:
         await self.redis_storage.set_(
             name=key_rule, value=self.datetime_to_str(datetime_=date_modified)
         )
 
     @check_free_size_storage()
     async def _insert_data_in_storage(
-        self, model_: BaseWithTimeStampedType, normalized_data: list[BaseSchema]
+        self,
+        model_: BaseWithTimeStampedType,
+        normalized_data: list[BaseSchema],
     ) -> None:
         key_rule = self.get_key_of_rule(model_=model_)
 
@@ -180,4 +206,6 @@ class Producer:
                 key_=key_, value=data_.model_dump_json()
             )
 
-        logger.debug(f"{model_.model_name()}: normalized data was insert in storage")
+        logger.debug(
+            f"{model_.model_name()}: normalized data was insert in storage"
+        )

@@ -32,7 +32,8 @@ class JaegerWorker:
     @staticmethod
     def start_span(span_name: str | None = None):
         """
-        Декоратор, добавляющий выполнение метода/функции в отдельный span текущего context.
+        Декоратор, добавляющий выполнение метода/функции в отдельный span
+        текущего context.
 
         @type span_name: str | None
         @param span_name:
@@ -54,7 +55,9 @@ class JaegerWorker:
                     else:
                         span_context = None
 
-                    with tracer.start_as_current_span(new_span_name, context=span_context):
+                    with tracer.start_as_current_span(
+                            new_span_name, context=span_context
+                    ):
                         return await func(*args, **kwargs)
 
                 else:
@@ -72,7 +75,9 @@ class JaegerWorker:
                     else:
                         span_context = None
 
-                    with tracer.start_as_current_span(new_span_name, context=span_context):
+                    with tracer.start_as_current_span(
+                            new_span_name, context=span_context
+                    ):
                         return func(*args, **kwargs)
 
                 else:

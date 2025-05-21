@@ -1,1 +1,1 @@
-from .rate_limit import RateLimitMiddleware, AsyncRateLimitMiddleware
+from .rate_limit import AsyncRateLimitMiddleware, RateLimitMiddleware

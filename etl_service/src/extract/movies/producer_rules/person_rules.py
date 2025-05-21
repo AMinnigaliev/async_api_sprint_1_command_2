@@ -12,7 +12,9 @@ from utils import backoff_by_connection
 class PersonRules:
 
     @classmethod
-    @backoff_by_connection(exceptions=(ConnectionRefusedError, socket.gaierror))
+    @backoff_by_connection(
+        exceptions=(ConnectionRefusedError, socket.gaierror)
+    )
     async def person_selection_data_rule(
         cls,
         pg_session,
