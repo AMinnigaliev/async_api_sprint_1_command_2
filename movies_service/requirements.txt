@@ -54,3 +54,7 @@ opentelemetry-exporter-otlp-proto-common==1.32.0
 opentelemetry-exporter-otlp-proto-grpc==1.32.0
 opentelemetry-exporter-otlp-proto-http==1.32.0
 limits==4.7.3
+structlog==24.1.0
+python-json-logger==2.0.7
+sentry-sdk==0.10.2
+
