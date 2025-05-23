@@ -5,8 +5,7 @@ from fastapi import APIRouter, Depends
 from src.dependencies.auth import (role_dependency,
                                    role_dependency_exp_important)
 from src.dependencies.movies import film_existence_dependency
-from src.schemas.bookmark import (BookmarkCreateDelete, BookmarkResponse,
-                                  DeleteBookmarkResponse)
+from src.schemas.bookmark import BookmarkResponse, DeleteBookmarkResponse
 from src.schemas.user_role_enum import UserRoleEnum
 from src.services.bookmark_service import BookmarkService, get_bookmark_service
 
@@ -14,20 +13,19 @@ router = APIRouter()
 
 
 @router.post(
-    "/create",
+    "/{film_id}/create",
     summary="Добавить закладку на фильм",
     response_model=BookmarkResponse,
 )
 async def create_bookmark(
-    bookmark_data: BookmarkCreateDelete,
-    payload: dict = Depends(
+    film_id: UUID = Depends(film_existence_dependency),
+    token_payload: dict = Depends(
         role_dependency_exp_important(UserRoleEnum.get_all_roles())
     ),
     bookmark_service: BookmarkService = Depends(get_bookmark_service),
 ) -> BookmarkResponse:
     """Эндпоинт для добавления пользовательской закладки на фильм."""
-    film_id = film_existence_dependency(bookmark_data.film_id)
-    return await bookmark_service.create(film_id, payload)
+    return await bookmark_service.create(film_id, token_payload)
 
 
 @router.delete(
@@ -37,13 +35,13 @@ async def create_bookmark(
 )
 async def delete_bookmark(
     bookmark_id: UUID,
-    payload: dict = Depends(
+    token_payload: dict = Depends(
         role_dependency_exp_important(UserRoleEnum.get_all_roles())
     ),
     bookmark_service: BookmarkService = Depends(get_bookmark_service),
 ) -> DeleteBookmarkResponse:
     """Эндпоинт для удаления пользовательской закладки на фильм."""
-    await bookmark_service.delete(bookmark_id, payload)
+    await bookmark_service.delete(bookmark_id, token_payload)
     return DeleteBookmarkResponse(message="Bookmark deleted successfully")
 
 
@@ -53,8 +51,8 @@ async def delete_bookmark(
     response_model=list[BookmarkResponse],
 )
 async def list_bookmark(
-    payload: dict = Depends(role_dependency(UserRoleEnum.get_all_roles())),
+    token_payload: dict = Depends(role_dependency(UserRoleEnum.get_all_roles())),
     bookmark_service: BookmarkService = Depends(get_bookmark_service),
 ) -> list[BookmarkResponse]:
     """Эндпоинт для получения списка закладок пользователя на фильмы"""
-    return await bookmark_service.get_bookmarks(payload)
+    return await bookmark_service.get_bookmarks(token_payload)

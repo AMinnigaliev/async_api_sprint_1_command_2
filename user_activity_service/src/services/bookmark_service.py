@@ -18,6 +18,7 @@ class BookmarkService:
 
     def __init__(self, mongo_client: AsyncMongoClient):
         self.mongo_client = mongo_client
+        self.collection = self.mongo_client["your_db_name"]["bookmark"]
 
     async def create(self, film_id: UUID, payload: dict) -> BookmarkResponse:
         """Добавить пользовательскую закладку на фильм."""

@@ -16,8 +16,8 @@ logging.basicConfig(level=logging.INFO)
 
 app = FastAPI(
     title=settings.project_name,
-    docs_url='/api/v1/activity/openapi',
-    openapi_url='/api/v1/activity/openapi.json',
+    docs_url='/api/v1/user-activity/openapi',
+    openapi_url='/api/v1/user-activity/openapi.json',
     default_response_class=ORJSONResponse,
     dependencies=[
         Depends(check_request_id),

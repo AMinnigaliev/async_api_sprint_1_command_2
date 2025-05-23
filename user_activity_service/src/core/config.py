@@ -43,10 +43,6 @@ class Settings(BaseSettings):
     redis_password: str = Field(default="password", alias="REDIS_PASSWORD")
     redis_rate_limit_db: int = Field(default=1, alias="REDIS_RATE_LIMIT_DB")
 
-    mongo_user: str = Field(default="user", alias="MONGO_USER")
-    mongo_password: str = Field(default="password", alias="MONGO_PASSWORD")
-    mongo_host: str = Field(default="localhost", alias="MONGO_HOST")
-    mongo_port: int = Field(default=27017, alias="MONGO_PORT")
     mongo_name: str = Field(default="name", alias="MONGO_NAME")
     mongo_server_selection_timeout_ms: int = 5000
     mongo_max_pool_size: int = 100
@@ -84,9 +80,12 @@ class Settings(BaseSettings):
     @computed_field
     @property
     def mongo_uri(self) -> str:
+        """
+        Подключение к двум mongos с fail-over и без привязки к одному хосту.
+        """
+        hosts = f"mongos1:27017,mongos2:27017"
         return (
-            f"mongodb://{self.mongo_user}:{self.mongo_password}@"
-            f"{self.mongo_host}:{self.mongo_port}/{self.mongo_name}"
+            f"mongodb://{hosts}/{self.mongo_name}?directConnection=false"
         )
 
     @cached_property
