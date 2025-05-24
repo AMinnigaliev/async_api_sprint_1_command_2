@@ -37,6 +37,9 @@ appendonly.aof
 # Исключения для Elasticsearch
 elasticsearch-data/
 
+# Исключения для MongoDB
+mongo_clusters/
+
 # Исключения для Nginx
 nginx/*.log
 nginx/*.pid
