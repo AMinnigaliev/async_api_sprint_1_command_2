@@ -2,45 +2,25 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query
 
-from src.dependencies.auth import (role_dependency,
-                                   role_dependency_exp_important)
-from src.dependencies.movies import film_existence_dependency
-from src.schemas.film_review import (BaseFilmReviewResponse,
-                                     FilmReviewCreateUpdate,
-                                     FilmReviewResponse,
-                                     ReviewRatingCreateUpdate,
-                                     ReviewRatingResponse)
 from src.schemas.user_role_enum import UserRoleEnum
-from src.services.film_review_service import (FilmReviewService,
-                                              get_film_review_service)
-from src.services.review_rating_service import (ReviewRatingService,
-                                                get_review_rating_service)
-
-router = APIRouter()
-
-
-@router.post(
-    "/{film_id}/create",
-    summary="Добавить рецензию фильма",
-    response_model=FilmReviewResponse,
+from src.dependencies.auth import role_dependency, role_dependency_exp_important
+from src.dependencies.movies import film_existence_dependency
+from src.services.film_review_service import FilmReviewService, get_film_review_service
+from src.schemas.film_review import (
+    FilmReviewCreateUpdate,
+    FilmReviewResponse,
+    DeleteFilmReviewResponse,
+    FilmReviewsLstResponse
 )
-async def create_review(
-    review_data: FilmReviewCreateUpdate,
-    film_id: UUID = Depends(film_existence_dependency),
-    payload: dict = Depends(
-        role_dependency_exp_important(UserRoleEnum.get_all_roles())
-    ),
-    film_review_service: FilmReviewService = Depends(get_film_review_service),
-) -> FilmReviewResponse:
-    """Эндпоинт для добавления ревью фильму."""
-    review = review_data.review
-    return await film_review_service.create(film_id, payload, review)
+
+#  Рецензия фильма
+router = APIRouter()
 
 
 @router.get(
     "/{film_id}",
     summary="Рецензии фильма",
-    response_model=list[BaseFilmReviewResponse],
+    response_model=FilmReviewsLstResponse,
     dependencies=[Depends(role_dependency(UserRoleEnum.get_all_roles()))],
 )
 async def list_reviews(
@@ -61,97 +41,112 @@ async def list_reviews(
         description="Смещение для пагинации (больше ноля)",
     ),
     film_review_service: FilmReviewService = Depends(get_film_review_service),
-) -> list[BaseFilmReviewResponse]:
-    """Эндпоинт для получения списка рецензий с гибкой сортировкой"""
-    return await film_review_service.get_reviews(
-        film_id, sort, page_size, page_number
+) -> FilmReviewsLstResponse:
+    """
+    Endpoint для получения списка рецензий с гибкой сортировкой и пагинацией.
+
+    @type film_id:
+    @param film_id:
+    @type sort:
+    @param sort:
+    @type page_size:
+    @param page_size:
+    @type page_number:
+    @param page_number:
+    @type film_review_service:
+    @param film_review_service:
+    @rtype FilmReviewsLstResponse:
+    """
+    return await film_review_service.get(
+        film_id=film_id,
+        sort=sort,
+        page_size=page_size,
+        page_number=page_number,
     )
 
 
 @router.post(
-    "/{review_id}/rating/create",
-    summary="Добавить оценку рецензии фильма",
-    response_model=ReviewRatingResponse,
+    "/{film_id}/create",
+    summary="Добавить рецензию фильма",
+    response_model=FilmReviewResponse,
 )
-async def create_review_rating(
-    review_like_data: ReviewRatingCreateUpdate,
-    review_id: UUID,
-    payload: dict = Depends(
-        role_dependency_exp_important(UserRoleEnum.get_all_roles())
-    ),
-    review_rating_service: ReviewRatingService = Depends(
-        get_review_rating_service
-    ),
-) -> ReviewRatingResponse:
-    """Эндпоинт для добавления оценки рецензии фильма."""
-    review_like = review_like_data.review_like
-    return await review_rating_service.create(
-        review_id, payload, review_like
+async def create(
+    review_data: FilmReviewCreateUpdate,
+    film_id: UUID = Depends(film_existence_dependency),
+    payload: dict = Depends(role_dependency_exp_important(UserRoleEnum.get_all_roles())),
+    film_review_service: FilmReviewService = Depends(get_film_review_service),
+) -> FilmReviewResponse:
+    """
+    Endpoint для добавления ревью к фильму.
+
+    @type review_data:
+    @param review_data:
+    @type film_id:
+    @param film_id:
+    @type payload:
+    @param payload:
+    @type film_review_service:
+    @param film_review_service:
+    @rtype FilmReviewResponse:
+    """
+    return await film_review_service.create(
+        film_id=film_id,
+        payload=payload,
+        review_data=review_data
     )
 
 
-# @router.post(
-#     "/review-rating/{review_rating_id}/update",
-#     summary="Изменить оценку рецензии фильма",
-#     response_model=FilmReviewResponse,
-# )
-# async def update_review_rating(
-#     new_review_like: ReviewRatingCreateUpdate,
-#     review_rating_id: UUID,
-#     payload: dict = Depends(role_dependency(UserRoleEnum.get_all_roles())),
-#     review_rating_service: ReviewRatingService = Depends(
-#         get_review_rating_service
-#     ),
-# ) -> FilmReviewResponse:
-#     """Эндпоинт для изменения оценки рецензии фильма."""
-#     return await review_rating_service.update(
-#         review_rating_id, payload, new_review_like
-#     )
-#
-# @router.delete(
-#     "/review-rating/{review_rating_id}/delete",
-#     summary="Удалить оценку рецензии фильма",
-#     response_model=DeleteFilmReviewResponse,
-# )
-# async def delete(
-#     review_rating_id: UUID,
-#     payload: dict = Depends(role_dependency(UserRoleEnum.get_all_roles())),
-#     review_rating_service: ReviewRatingService = Depends(
-#         get_review_rating_service
-#     ),
-# )-> DeleteFilmReviewResponse:
-#     """Эндпоинт для удаления оценки рецензии фильма."""
-#     await review_rating_service.delete(review_rating_id, payload)
-#     return DeleteFilmReviewResponse(message="Review rating deleted successfully")
+@router.post(
+    "/{film_review_id}/update",
+    summary="Изменить рецензию фильма",
+    response_model=FilmReviewResponse,
+    dependencies=[Depends(role_dependency(UserRoleEnum.get_all_roles()))],
+)
+async def update(
+    review_data: FilmReviewCreateUpdate,
+    film_review_id: UUID,
+    film_review_service: FilmReviewService = Depends(get_film_review_service),
+) -> FilmReviewResponse:
+    """
+    Endpoint для обновления ревью к фильму.
+
+    @type review_data:
+    @param review_data:
+    @type film_review_id:
+    @param film_review_id:
+    @type payload:
+    @param payload:
+    @type film_review_service:
+    @param film_review_service:
+    @rtype FilmReviewResponse:
+    """
+    return await film_review_service.update(
+        film_review_id=film_review_id,
+        review_data=review_data,
+    )
 
 
-# @router.post(
-#     "/review/{film_rating_id}/update",
-#     summary="Изменить рецензию фильма",
-#     response_model=FilmReviewResponse,
-# )
-# async def update(
-#     new_review: FilmReviewCreateUpdate,
-#     film_rating_id: UUID,
-#     payload: dict = Depends(role_dependency(UserRoleEnum.get_all_roles())),
-#     film_review_service: FilmReviewService = Depends(get_film_review_service),
-# ) -> FilmReviewResponse:
-#     """Эндпоинт для изменения рецензии фильма."""
-#     return await film_review_service.update(
-#         film_id, payload, new_review
-#     )
-#
-#
-# @router.delete(
-#     "/rating/{film_rating_id}/delete",
-#     summary="Удалить рецензию фильма",
-#     response_model=DeleteResponse,
-# )
-# async def delete(
-#     film_rating_id: UUID,
-#     payload: dict = Depends(role_dependency(UserRoleEnum.get_all_roles())),
-#     film_review_service: FilmReviewService = Depends(get_film_review_service),
-# ) -> DeleteResponse:
-#     """Эндпоинт для удаления рецензии фильма."""
-#     await film_review_service.delete(film_rating_id, payload)
-#     return DeleteResponse(message="Review deleted successfully")
+@router.delete(
+    "/{film_review_id}/delete",
+    summary="Удалить рецензию фильма",
+    response_model=DeleteFilmReviewResponse,
+    dependencies=[Depends(role_dependency(UserRoleEnum.get_all_roles()))],
+)
+async def delete(
+    film_review_id: UUID,
+    film_review_service: FilmReviewService = Depends(get_film_review_service),
+) -> DeleteFilmReviewResponse:
+    """
+    Endpoint для обновления ревью к фильму.
+
+    @type film_review_id:
+    @param film_review_id:
+    @type payload:
+    @param payload:
+    @type film_review_service:
+    @param film_review_service:
+    @rtype DeleteResponse:
+    """
+    await film_review_service.delete(film_review_id=film_review_id)
+
+    return DeleteFilmReviewResponse(message="Review deleted successfully")

@@ -4,39 +4,31 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 
 
-class BaseResponse(BaseModel):
-    review_id: UUID = Field(..., description="ID рецензии")
-    likes: int = Field(0, ge=0, description="Количество лайков рецензии")
-    dislikes: int = Field(0, ge=0, description="Количество дизлайков рецензии")
-
-
-class ReviewRatingCreateUpdate(BaseModel):
-    review_like: bool = Field(..., description="Понравилась рецензия или нет")
-
-
-class ReviewRatingResponse(BaseResponse):
-    pass
-
-
 class FilmReviewCreateUpdate(BaseModel):
     review: str = Field(..., description="Текст рецензии")
+    rating: int = Field(..., description="Оценка фильма пользователем")
 
 
-class BaseFilmReviewResponse(BaseResponse, FilmReviewCreateUpdate):
-    users_film_rating: int | None = Field(
-        None, ge=1, le=10, description="Пользовательская оценка фильма"
-    )
-
-
-class FilmReviewResponse(BaseFilmReviewResponse):
+class FilmReviewResponse(BaseModel):
+    _id: str = Field(..., description="ID")
     user_id: UUID = Field(..., description="ID пользователя")
     film_id: UUID = Field(..., description="ID фильма")
-    created: datetime = Field(
+    users_film_rating_id: str = Field(..., description="ID оценки фильма пользователем")
+    created_at: datetime = Field(
         ..., description="Дата и время создания записи"
     )
-    modified: datetime | None = Field(
+    modified_at: datetime | None = Field(
         None, description="Дата и время изменения записи"
     )
+
+
+class FilmReviewsLstResponse(BaseModel):
+    total: str = Field(..., description="Общее кол-во рецензий")
+    page: int = Field(..., description="Номер страницы")
+    per_page: int = Field(..., description="Кол-во рецензий на странице")
+    total_pages: int = Field(..., description="Общее кол-во страниц")
+
+    film_reviews: list[FilmReviewResponse] = Field(..., description="Список рецензий фильма")
 
 
 class DeleteFilmReviewResponse(BaseModel):

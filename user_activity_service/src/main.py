@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, FastAPI
 from fastapi.responses import ORJSONResponse
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 
-from src.api.v1 import bookmark, film_rating, film_review, healthcheck
+from src.api.v1 import bookmark, film_rating, film_review, healthcheck, film_rating_review
 from src.core.config import settings
 from src.db.mongo_client import get_mongo_client
 from src.db.redis_client import get_redis_cache
@@ -95,6 +95,9 @@ api_router.include_router(
 )
 api_router.include_router(
     film_review.router, prefix="/user-activity/reviews", tags=["reviews"]
+)
+api_router.include_router(
+    film_rating_review.router, prefix="/user-activity/rating_reviews", tags=["rating_reviews"]
 )
 api_router.include_router(
     healthcheck.router, prefix="/user-activity", tags=["healthcheck"]
