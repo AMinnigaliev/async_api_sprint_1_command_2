@@ -28,7 +28,7 @@ async def get_redis_cache() -> CacheService:
                 host=settings.redis_host,
                 port=settings.redis_port,
                 password=settings.redis_password,
-                db=1,
+                db=15,
             )
             if not await redis_client.ping():
                 raise ConnectionError("Redis недоступен!")

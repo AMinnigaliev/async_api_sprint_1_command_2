@@ -1,15 +1,15 @@
 from uuid import UUID
 
+from bson import ObjectId
 from fastapi import APIRouter, Depends
 
 from src.dependencies.auth import (role_dependency,
                                    role_dependency_exp_important)
 from src.dependencies.movies import film_existence_dependency
-from src.schemas.film_rating import (AmountFilmRatingResponse,
-                                     AverageFilmRatingResponse,
-                                     DeleteFilmRatingResponse,
+from src.schemas.film_rating import (DeleteFilmRatingResponse,
                                      FilmRatingCreateUpdate,
-                                     FilmRatingResponse)
+                                     FilmRatingResponse,
+                                     AmtAvgFilmRatingResponse)
 from src.schemas.user_role_enum import UserRoleEnum
 from src.services.film_rating_service import (FilmRatingService,
                                               get_film_rating_service)
@@ -18,31 +18,20 @@ router = APIRouter()
 
 
 @router.get(
-    "/{film_id}/amount",
-    summary="Количество пользовательских оценок фильма",
-    response_model=AmountFilmRatingResponse,
+    "/{film_id}/amt-avg",
+    summary="Количество и средний рейтинг пользовательских оценок фильма",
+    response_model=AmtAvgFilmRatingResponse,
     dependencies=[Depends(role_dependency(UserRoleEnum.get_all_roles()))],
 )
-async def amount_rating(
+async def amt_avg_rating(
     film_id: UUID = Depends(film_existence_dependency),
     film_rating_service: FilmRatingService = Depends(get_film_rating_service),
-) -> AmountFilmRatingResponse:
-    """Эндпоинт для получения количества пользовательских оценок фильма."""
-    return await film_rating_service.amount(film_id)
-
-
-@router.get(
-    "/{film_id}/average",
-    summary="Средняя пользовательская оценка фильма",
-    response_model=AverageFilmRatingResponse,
-    dependencies=[Depends(role_dependency(UserRoleEnum.get_all_roles()))],
-)
-async def average_rating(
-    film_id: UUID = Depends(film_existence_dependency),
-    film_rating_service: FilmRatingService = Depends(get_film_rating_service),
-) -> AverageFilmRatingResponse:
-    """Эндпоинт для получения средней пользовательской оценки фильма."""
-    return await film_rating_service.average(film_id)
+) -> AmtAvgFilmRatingResponse:
+    """
+    Эндпоинт для получения количества и среднего рейтинга пользовательских
+    оценок фильма.
+    """
+    return await film_rating_service.amt_avg(film_id)
 
 
 @router.post(
@@ -70,7 +59,7 @@ async def create_rating(
 )
 async def update_rating(
     rating_data: FilmRatingCreateUpdate,
-    rating_id: UUID,
+    rating_id: ObjectId,
     payload: dict = Depends(
         role_dependency_exp_important(UserRoleEnum.get_all_roles())
     ),
@@ -89,7 +78,7 @@ async def update_rating(
     response_model=DeleteFilmRatingResponse,
 )
 async def delete_rating(
-    rating_id: UUID,
+    rating_id: ObjectId,
     payload: dict = Depends(
         role_dependency_exp_important(UserRoleEnum.get_all_roles())
     ),

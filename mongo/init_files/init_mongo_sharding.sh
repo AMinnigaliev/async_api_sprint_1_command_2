@@ -22,7 +22,7 @@ echo "→ OK"
 
 echo "Шардирование коллекций..."
 declare -A shards=(
-  [film_ratings]=film_id
+  [film_ratings]=user_id
   [film_reviews]=film_id
   [review_ratings]=review_id
   [bookmarks]=user_id

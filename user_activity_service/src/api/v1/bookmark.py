@@ -1,5 +1,6 @@
 from uuid import UUID
 
+from bson import ObjectId
 from fastapi import APIRouter, Depends
 
 from src.dependencies.auth import (role_dependency,
@@ -34,7 +35,7 @@ async def create_bookmark(
     response_model=DeleteBookmarkResponse,
 )
 async def delete_bookmark(
-    bookmark_id: UUID,
+    bookmark_id: ObjectId,
     token_payload: dict = Depends(
         role_dependency_exp_important(UserRoleEnum.get_all_roles())
     ),

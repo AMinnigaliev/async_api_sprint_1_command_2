@@ -32,11 +32,15 @@ class Settings(BaseSettings):
         """
         return self.env_type == "prod"
 
-    auth_service_host: str = Field(alias="AUTH_SERVICE_HOST")
-    auth_service_port: int = Field(alias="AUTH_SERVICE_PORT")
+    auth_service_host: str = Field(
+        default="localhost", alias="AUTH_SERVICE_HOST"
+    )
+    auth_service_port: int = Field(default=8000, alias="AUTH_SERVICE_PORT")
 
-    movies_service_host: str = Field(alias="MOVIES_SERVICE_HOST")
-    movies_service_port: int = Field(alias="MOVIES_SERVICE_PORT")
+    movies_service_host: str = Field(
+        default="localhost", alias="MOVIES_SERVICE_HOST"
+    )
+    movies_service_port: int = Field(default=8000, alias="MOVIES_SERVICE_PORT")
 
     redis_host: str = Field(default="localhost", alias="REDIS_HOST")
     redis_port: int = Field(default=6379, alias="REDIS_PORT")
@@ -83,7 +87,8 @@ class Settings(BaseSettings):
         """
         Подключение к двум mongos с fail-over и без привязки к одному хосту.
         """
-        hosts = f"mongos1:27017,mongos2:27017"
+        hosts = f"localhost:27027,localhost:27017"
+        # hosts = f"mongos1:27017,mongos2:27017"
         return (
             f"mongodb://{hosts}/{self.mongo_name}?directConnection=false"
         )

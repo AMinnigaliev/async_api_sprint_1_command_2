@@ -1,10 +1,14 @@
 import logging.config
+from datetime import datetime, UTC
 from functools import lru_cache
 from uuid import UUID
 
-from fastapi import Depends
+from bson import ObjectId
+from fastapi import Depends, HTTPException, status
 from pymongo import AsyncMongoClient
+from pymongo.errors import DuplicateKeyError
 
+from src.core.config import settings
 from src.core.logger import LOGGING
 from src.db.mongo_client import get_mongo_client
 from src.schemas.bookmark import BookmarkResponse
@@ -17,44 +21,76 @@ class BookmarkService:
     """Сервис для работы с пользовательскими закладками на фильмы."""
 
     def __init__(self, mongo_client: AsyncMongoClient):
-        self.mongo_client = mongo_client
-        self.collection = self.mongo_client["your_db_name"]["bookmark"]
+        self.collection = mongo_client[settings.mongo_name]["bookmarks"]
 
     async def create(self, film_id: UUID, payload: dict) -> BookmarkResponse:
         """Добавить пользовательскую закладку на фильм."""
         user_id = payload.get("user_id")
 
-        log_info = (
-            f"Добавление пользовательской закладки на фильм. "
-            f"film_id={film_id}, user_id={user_id}"
+        logger.info(
+            "Добавление пользовательской закладки на фильм. "
+            "film_id=%s, user_id=%s",
+            film_id, user_id
         )
-        logger.info(log_info)
 
-        #  todo
+        doc = {
+            "user_id": str(user_id),
+            "film_id": str(film_id),
+            "created_at": datetime.now(UTC),
+        }
 
-    async def delete(self, film_id: UUID, payload: dict) -> None:
+        try:
+            result = await self.collection.insert_one(doc)
+            doc["_id"] = result.inserted_id
+
+        except DuplicateKeyError:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Bookmark already exists",
+            )
+
+        return BookmarkResponse(**doc)
+
+    async def delete(self, bookmark_id: ObjectId, payload: dict) -> None:
         """Удалить пользовательскую закладку на фильм."""
         user_id = payload.get("user_id")
 
-        log_info = (
-            f"Удаление пользовательской закладки на фильм. "
-            f"film_id={film_id}, user_id={user_id}"
+        logger.info(
+            "Удаление пользовательской закладки на фильм. "
+            "bookmark_id=%s, user_id=%s",
+            bookmark_id, user_id
         )
-        logger.info(log_info)
 
-        #  todo
+        result = await self.collection.delete_one({
+            "_id": bookmark_id,
+            "user_id": user_id
+        })
+        if result.deleted_count == 0:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Bookmark not found or no rights to delete"
+            )
 
     async def get_bookmarks(self, payload: dict) -> list[BookmarkResponse]:
         """Получить список рецензий фильма с гибкой сортировкой."""
         user_id = payload.get("user_id")
 
-        log_info = (
-            f"Получение списка закладок на фильмы. user_id={user_id}"
-        )
-        logger.info(log_info)
+        logger.info("Получение списка закладок на фильмы. user_id=%s", user_id)
 
-        #  todo
+        cursor = self.collection.find(
+            {"user_id": user_id}
+        ).sort("created_at", -1)
 
+        docs = await cursor.to_list(length=None)
+        return [
+            BookmarkResponse(
+                bookmark_id=doc["_id"],
+                user_id=doc["user_id"],
+                film_id=doc["film_id"],
+                created_at=doc["created_at"],
+            )
+            for doc in docs
+        ]
 
 @lru_cache()
 def get_bookmark_service(
