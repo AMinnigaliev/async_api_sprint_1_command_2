@@ -97,5 +97,5 @@ class Settings(BaseSettings):
             f"{self.redis_port}/{self.redis_rate_limit_db}"
         )
 
- 
+
 settings = Settings()

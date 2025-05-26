@@ -27,8 +27,12 @@ router = APIRouter()
 async def create(
     rating_review_data: FilmRatingReviewCreateUpdate,
     review_id: str,
-    payload: dict = Depends(role_dependency_exp_important(UserRoleEnum.get_all_roles())),
-    rating_review_service: RatingReviewService = Depends(get_rating_review_service),
+    payload: dict = Depends(role_dependency_exp_important(
+        UserRoleEnum.get_all_roles())
+    ),
+    rating_review_service: RatingReviewService = Depends(
+        get_rating_review_service
+    ),
 ) -> FilmRatingReviewBaseResponse:
     """
     Endpoint для добавления оценки рецензии фильма.
@@ -59,7 +63,9 @@ async def create(
 async def update(
     rating_review_data: FilmRatingReviewCreateUpdate,
     rating_review_id: str,
-    rating_review_service: RatingReviewService = Depends(get_rating_review_service),
+    rating_review_service: RatingReviewService = Depends(
+        get_rating_review_service
+    ),
 ) -> FilmRatingReviewBaseResponse:
     """
     Endpoint для изменения оценки рецензии фильма.
@@ -103,4 +109,7 @@ async def delete(
     """
     await rating_review_service.delete(rating_review_id=rating_review_id)
 
-    return DeleteRatingReviewResponse(message="Review rating deleted successfully", rating_review_id=rating_review_id)
+    return DeleteRatingReviewResponse(
+        message="Review rating deleted successfully",
+        rating_review_id=rating_review_id,
+    )

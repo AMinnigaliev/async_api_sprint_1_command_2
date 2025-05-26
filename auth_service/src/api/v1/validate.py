@@ -20,4 +20,3 @@ async def validate_token(
 ) -> PayloadResponse:
     """Валидация токена пользователя"""
     return await validate_service.validate_token(token)
-

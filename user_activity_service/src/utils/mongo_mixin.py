@@ -15,7 +15,9 @@ class MongoMixin:
     """Mixin для операций с MongoDB."""
 
     @staticmethod
-    async def _get_count_documents(collection, filters: dict[str, Any], error_msg: str = None):
+    async def _get_count_documents(
+            collection, filters: dict[str, Any], error_msg: str = None
+    ):
         """
         Получение кол-ва документов в коллекции в Mongo.
 
@@ -33,7 +35,10 @@ class MongoMixin:
         except PyMongoError as ex:
             logger.error(f"Error update in mongo: {ex}")
 
-            default_error_msg = f"Error get count documents (collection: {collection}, filters: {filters} in Mongo)"
+            default_error_msg = (
+                f"Error get count documents (collection: {collection}, "
+                f"filters: {filters} in Mongo)"
+            )
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=error_msg if error_msg else default_error_msg,
@@ -80,11 +85,19 @@ class MongoMixin:
 
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=error_msg if error_msg else f"Error get docs with pagination by filters {filters} in Mongo",
+                detail=error_msg or (
+                    f"Error get docs with pagination by filters {filters} "
+                    f"in Mongo"
+                ),
             )
 
     @staticmethod
-    async def _insert_in_mongo(doc_: dict[str, Any], collection, error_msg: str = None, log_msg: str = None) -> str:
+    async def _insert_in_mongo(
+        doc_: dict[str, Any],
+        collection,
+        error_msg: str = None,
+        log_msg: str = None,
+    ) -> str:
         """
         Добавление документа в Mongo.
 
@@ -109,11 +122,16 @@ class MongoMixin:
         except DuplicateKeyError:
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
-                detail=error_msg if error_msg else f"Error insert data in Mongo (collection: {collection}, {doc_})",
+                detail=error_msg or (
+                    f"Error insert data in Mongo (collection: {collection}, "
+                    f"{doc_})"
+                ),
             )
 
     @staticmethod
-    async def _get_one_from_mongo(filters: dict[str, Any], collection, error_msg: str = None):
+    async def _get_one_from_mongo(
+            filters: dict[str, Any], collection, error_msg: str = None
+    ):
         """
         Получение документа в Mongo.
 
@@ -131,7 +149,10 @@ class MongoMixin:
         else:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=error_msg if error_msg else f"Not found data in collection {collection} by filters {filters}",
+                detail=error_msg or (
+                    f"Not found data in collection {collection} by filters "
+                    f"{filters}"
+                ),
             )
 
     @staticmethod
@@ -168,7 +189,10 @@ class MongoMixin:
 
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=error_msg if error_msg else f"Error update data {update_data} by filters {filters} in Mongo",
+                detail=error_msg or (
+                    f"Error update data {update_data} by filters {filters} "
+                    f"in Mongo"
+                ),
             )
 
     @staticmethod
@@ -202,5 +226,7 @@ class MongoMixin:
 
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=error_msg if error_msg else f"Error delete data by filters {filters} in Mongo",
+                detail=error_msg or (
+                    f"Error delete data by filters {filters} in Mongo"
+                ),
             )

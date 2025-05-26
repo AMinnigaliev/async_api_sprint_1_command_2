@@ -11,4 +11,4 @@ REDIS_URL = os.getenv("REDIS_URL", "redis://redis:6379/0")
 
 # ---------------------- Kafka ------------------------- #
 KAFKA_BROKERS = os.getenv("KAFKA_BROKERS", "kafka:9092")
-KAFKA_TOPIC   = os.getenv("KAFKA_TOPIC",   "events")  # один топик
+KAFKA_TOPIC = os.getenv("KAFKA_TOPIC", "events")  # один топик

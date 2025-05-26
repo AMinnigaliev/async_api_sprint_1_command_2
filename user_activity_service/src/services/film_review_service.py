@@ -62,7 +62,9 @@ class FilmReviewService(MongoMixin):
         )
         docs_lst = list(data) if data else []
 
-        total = await self._get_count_documents(collection=self._film_reviews_collection, filters=filters)
+        total = await self._get_count_documents(
+            collection=self._film_reviews_collection, filters=filters
+        )
         total_pages = (total + page_size - 1) // page_size
 
         return FilmReviewsLstResponse(
@@ -134,12 +136,16 @@ class FilmReviewService(MongoMixin):
             id=str(film_review_mongo_doc.get("_id")),
             user_id=film_review_mongo_doc.get("user_id"),
             film_id=film_review_mongo_doc.get("film_id"),
-            users_film_rating_id=film_review_mongo_doc.get("users_film_rating_id"),
+            users_film_rating_id=film_review_mongo_doc.get(
+                "users_film_rating_id"
+            ),
             created_at=film_review_mongo_doc.get("created_at"),
             modified_at=film_review_mongo_doc.get("modified_at"),
         )
 
-    async def update(self, film_review_id: str, review_data: FilmReviewCreateUpdate) -> FilmReviewResponse:
+    async def update(
+            self, film_review_id: str, review_data: FilmReviewCreateUpdate
+    ) -> FilmReviewResponse:
         """
         Обновление:
         - Оценки фильма.
@@ -163,19 +169,23 @@ class FilmReviewService(MongoMixin):
             filters={"_id": ObjectId(film_review_id)},
             collection=self._film_reviews_collection,
         )
-        if users_film_rating_id := film_review_mongo_doc.get("users_film_rating_id"):
+        if users_film_rating_id := film_review_mongo_doc.get(
+                "users_film_rating_id"
+        ):
             await self._update_in_mongo(
                 collection=self._film_ratings_collection,
                 filters={"_id": ObjectId(users_film_rating_id)},
                 update_data={"rating": review_data.rating, "modified_at": now},
-                log_msg = f"Update FilmRating (ID={users_film_rating_id})"
+                log_msg=f"Update FilmRating (ID={users_film_rating_id})"
             )
 
         return FilmReviewResponse(
             id=str(film_review_mongo_doc.get("_id")),
             user_id=film_review_mongo_doc.get("user_id"),
             film_id=film_review_mongo_doc.get("film_id"),
-            users_film_rating_id=film_review_mongo_doc.get("users_film_rating_id"),
+            users_film_rating_id=film_review_mongo_doc.get(
+                "users_film_rating_id"
+            ),
             created_at=film_review_mongo_doc.get("created_at"),
             modified_at=film_review_mongo_doc.get("modified_at"),
         )
@@ -197,17 +207,19 @@ class FilmReviewService(MongoMixin):
             collection=self._film_reviews_collection,
         )
 
-        if users_film_rating_id := film_review_mongo_doc.get("users_film_rating_id"):
+        if users_film_rating_id := film_review_mongo_doc.get(
+                "users_film_rating_id"
+        ):
             await self._delete_in_mongo(
                 collection=self._film_ratings_collection,
                 filters={"_id": ObjectId(users_film_rating_id)},
-                log_msg = f"Delete FilmRating (ID={users_film_rating_id})"
+                log_msg=f"Delete FilmRating (ID={users_film_rating_id})"
             )
 
         await self._delete_in_mongo(
             collection=self._film_reviews_collection,
             filters={"_id": ObjectId(film_review_id)},
-            log_msg = f"Delete FilmReview (ID={film_review_id})"
+            log_msg=f"Delete FilmReview (ID={film_review_id})"
         )
 
 

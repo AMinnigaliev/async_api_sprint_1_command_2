@@ -5,7 +5,6 @@ from fastapi import (APIRouter, Depends, HTTPException, Path, Query, Request,
 from fastapi.responses import RedirectResponse
 from fastapi.security import OAuth2PasswordRequestForm
 
-from src.core.config import settings
 from src.db.redis_client import get_redis_auth
 from src.dependencies.auth import oauth2_scheme
 from src.models.social_account import SocialProviderEnum
@@ -21,6 +20,7 @@ router = APIRouter()
 OAUTH_PROVIDERS: dict[str, type[YandexOAuthService]] = {
     SocialProviderEnum.YANDEX: YandexOAuthService,
 }
+
 
 @lru_cache()
 def get_oauth_service() -> YandexOAuthService:
@@ -156,6 +156,7 @@ async def social_login(provider: SocialProviderEnum = Path(...)):
     if not service_cls:
         raise HTTPException(status_code=404, detail="Unsupported provider")
     return RedirectResponse(service_cls().build_auth_url())
+
 
 @router.get(
     "/social/callback/{provider}",

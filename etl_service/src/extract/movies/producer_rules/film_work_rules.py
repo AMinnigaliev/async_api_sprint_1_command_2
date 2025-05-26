@@ -12,7 +12,9 @@ from utils import backoff_by_connection
 class FilmWorkRules:
 
     @classmethod
-    @backoff_by_connection(exceptions=(ConnectionRefusedError, socket.gaierror))
+    @backoff_by_connection(
+        exceptions=(ConnectionRefusedError, socket.gaierror)
+    )
     async def film_work_selection_data_rule(
         cls, pg_session, date_modified: datetime
     ) -> list[FilmWork]:
@@ -37,7 +39,7 @@ class FilmWorkRules:
                 id=film_work.id,
                 imdb_rating=film_work.rating if film_work.rating else 0.0,
                 title=film_work.title if film_work.title else "",
-                description=film_work.description if film_work.description else "",
+                description=film_work.description or "",
             )
             for film_work in selection_data
         ]

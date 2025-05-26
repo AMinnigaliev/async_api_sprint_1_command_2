@@ -5,7 +5,9 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
+    model_config = SettingsConfigDict(
+        env_file=".env", env_file_encoding="utf-8"
+    )
 
     project_name: str = Field(default="movies", alias="PROJECT_NAME")
     service_name: str = Field(default="etl_service", alias="ETL_SERVICE_NAME")
@@ -25,31 +27,52 @@ class Settings(BaseSettings):
     elastic_port: int = Field(default=9200, alias="ELASTIC_PORT")
     elastic_password: str = Field(default="123qwe", alias="ELASTIC_PASSWORD")
 
-    postgres_driver_name: str = Field(default="postgresql+asyncpg", alias="PG_DRIVER_NAME")
+    postgres_driver_name: str = Field(
+        default="postgresql+asyncpg", alias="PG_DRIVER_NAME"
+    )
     postgres_db: str = Field(default="postgres", alias="PG_NAME")
     postgres_user: str = Field(default="user", alias="PG_USER")
     postgres_password: str = Field(default="password", alias="PG_PASSWORD")
     postgres_host: str = Field(default="127.0.0.1", alias="PG_HOST")
     postgres_port: int = Field(default=5432, alias="PG_PORT")
 
-    clickhouse_db: str = Field(default="events_database", alias="CLICKHOUSE_DB")
+    clickhouse_db: str = Field(
+        default="events_database", alias="CLICKHOUSE_DB"
+    )
     clickhouse_user: str = Field(default="clickhouse", alias="CLICKHOUSE_USER")
-    clickhouse_password: str = Field(default="password", alias="CLICKHOUSE_PASSWORD")
+    clickhouse_password: str = Field(
+        default="password", alias="CLICKHOUSE_PASSWORD"
+    )
     clickhouse_host: str = Field(default="127.0.0.1", alias="CLICKHOUSE_HOST")
-    clickhouse_http_port: int = Field(default=8123, alias="CLICKHOUSE_HTTP_PORT")
+    clickhouse_http_port: int = Field(
+        default=8123, alias="CLICKHOUSE_HTTP_PORT")
     clickhouse_tcp_port: int = Field(default=9000, alias="CLICKHOUSE_TCP_PORT")
 
     kafka_broker: str = Field(default="localhost:29092", alias="KAFKA_BROKERS")
     kafka_events_topic: str = Field(default="events", alias="KAFKA_TOPIC")
-    kafka_consumer_timeout: float = Field(default=1.0, alias="KAFKA_CONSUMER_TIMEOUT")
-    kafka_consumer_group_id: str = Field(default="consumer-group", alias="KAFKA_CONSUMER_GROUP_ID")
-    kafka_enable_auto_commit: bool = Field(default=False, alias="KAFKA_ENABLE_AUTO_COMMIT")
+    kafka_consumer_timeout: float = Field(
+        default=1.0, alias="KAFKA_CONSUMER_TIMEOUT"
+    )
+    kafka_consumer_group_id: str = Field(
+        default="consumer-group", alias="KAFKA_CONSUMER_GROUP_ID"
+    )
+    kafka_enable_auto_commit: bool = Field(
+        default=False, alias="KAFKA_ENABLE_AUTO_COMMIT"
+    )
 
     etl_task_trigger: str = Field(default="interval", alias="ETL_TASK_TRIGGER")
-    etl_movies_task_interval_sec: int = Field(default=1 * 60, alias="ETL_MOVIES_TASK_INTERVAL_SEC")
-    etl_events_task_interval_sec: int = Field(default=1 * 30, alias="ETL_EVENTS_TASK_INTERVAL_SEC")
-    etl_movies_select_limit: int = Field(default=1 * 250, alias="ETL_MOVIES_SELECT_LIMIT")
-    etl_events_select_limit: int = Field(default=2 * 250, alias="ETL_EVENTS_SELECT_LIMIT")
+    etl_movies_task_interval_sec: int = Field(
+        default=1 * 60, alias="ETL_MOVIES_TASK_INTERVAL_SEC"
+    )
+    etl_events_task_interval_sec: int = Field(
+        default=1 * 30, alias="ETL_EVENTS_TASK_INTERVAL_SEC"
+    )
+    etl_movies_select_limit: int = Field(
+        default=1 * 250, alias="ETL_MOVIES_SELECT_LIMIT"
+    )
+    etl_events_select_limit: int = Field(
+        default=2 * 250, alias="ETL_EVENTS_SELECT_LIMIT"
+    )
 
 
 config = Settings()

@@ -3,15 +3,13 @@ from asyncio import iscoroutinefunction
 from typing import Callable
 
 from core.logger import logger
+from extract.events.producer_rules import (ElementClickEventRule,
+                                           PageViewEventRule,
+                                           QualityChangeEventRule,
+                                           SearchFilterEventRule,
+                                           VideoCompleteEventRule)
+from interface import KafkaConsumerUOW, RedisStorage_T
 from models.events import EventsEnum
-from interface import RedisStorage_T, KafkaConsumerUOW
-from extract.events.producer_rules import (
-    ElementClickEventRule,
-    VideoCompleteEventRule,
-    SearchFilterEventRule,
-    QualityChangeEventRule,
-    PageViewEventRule,
-)
 
 
 class Producer:
@@ -56,22 +54,36 @@ class Producer:
 
         :return None:
         """
-        for event_message in self.kafka_consumer_uow.gen_pool_messages_from_topics():
-            event_key = self.kafka_consumer_uow.get_message_key(event_message=event_message)
+        for event_message in (
+            self.kafka_consumer_uow.gen_pool_messages_from_topics()
+        ):
+            event_key = self.kafka_consumer_uow.get_message_key(
+                event_message=event_message
+            )
 
             if event_rule := self.events_rules.get(event_key):
                 event_storage_key, event_data = await self._execute_event_rule(
                     event_rule=event_rule,
                     event_key=event_key,
-                    event_value=self.kafka_consumer_uow.get_message_value(event_message=event_message),
+                    event_value=self.kafka_consumer_uow.get_message_value(
+                        event_message=event_message
+                    ),
                 )
 
                 if event_storage_key and event_data:
-                    await self._insert_event_data_in_storage(event_storage_key=event_storage_key, event_data=event_data)
-                    logger.info(f"Event '{event_key}'(EventStorageKey={event_storage_key}) was Produce")
+                    await self._insert_event_data_in_storage(
+                        event_storage_key=event_storage_key,
+                        event_data=event_data,
+                    )
+                    logger.info(
+                        f"Event '{event_key}'(EventStorageKey="
+                        f"{event_storage_key}) was Produce"
+                    )
 
     @staticmethod
-    async def _execute_event_rule(event_rule: Callable, event_key: str, event_value: dict) -> tuple:
+    async def _execute_event_rule(
+            event_rule: Callable, event_key: str, event_value: dict
+    ) -> tuple:
         execute_method = event_rule(event_value, event_key).execute
 
         if iscoroutinefunction(execute_method):
@@ -82,8 +94,16 @@ class Producer:
 
         return event_storage_key, event_data
 
-    async def _insert_event_data_in_storage(self, event_storage_key: str, event_data: dict | str) -> None:
-        value = event_data if isinstance(event_data, str) else json.dumps(event_data)
-        await self.redis_storage.save_state(key_=event_storage_key, value=value)
+    async def _insert_event_data_in_storage(
+            self, event_storage_key: str, event_data: dict | str
+    ) -> None:
+        value = event_data if isinstance(event_data, str) else json.dumps(
+            event_data
+        )
+        await self.redis_storage.save_state(
+            key_=event_storage_key, value=value
+        )
 
-        logger.debug(f"EventStorageKey={event_storage_key} was was insert in Storage")
+        logger.debug(
+            f"EventStorageKey={event_storage_key} was was insert in Storage"
+        )

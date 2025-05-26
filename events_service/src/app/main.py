@@ -1,6 +1,9 @@
 import logging
+
 from flask import Flask
+
 from .events.views import bp as events_bp
+
 # Если позже потребуется фоновый scheduler (TTL‑чистка пар «page_view»),
 # раскомментируйте строку ниже и добавьте реализацию в core.scheduler:
 # from .core.scheduler import start as start_scheduler
@@ -27,5 +30,6 @@ def create_app() -> Flask:
 
 if __name__ == "__main__":
     application = create_app()
-    # В продакшене запускайте Gunicorn/Uvicorn; эта строка — для локального dev‑раннера
+    # В продакшене запускайте Gunicorn/Uvicorn; эта строка — для локального
+    # dev‑раннера
     application.run(host="0.0.0.0", port=5000)

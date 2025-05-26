@@ -11,7 +11,9 @@ class ElementClickEventRule:
         return {}
 
     def execute(self):
-        if event_model_executor := self.unic_click_event_models.get(self._event_data.get("element_type")):
+        if event_model_executor := self.unic_click_event_models.get(
+                self._event_data.get("element_type")
+        ):
             return event_model_executor()
 
         else:

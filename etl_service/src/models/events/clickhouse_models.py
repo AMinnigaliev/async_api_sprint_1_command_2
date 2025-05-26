@@ -1,5 +1,5 @@
-from infi.clickhouse_orm.engines import MergeTree
 from infi.clickhouse_orm import Model, fields
+from infi.clickhouse_orm.engines import MergeTree
 
 
 class ClickElementEventModel(Model):

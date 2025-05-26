@@ -115,7 +115,7 @@ class RatingReviewService(MongoMixin):
         await self._delete_in_mongo(
             collection=self._film_rating_reviews_collection,
             filters={"_id": ObjectId(rating_review_id)},
-            log_msg = f"Delete FilmRatingReview (ID={rating_review_id})"
+            log_msg=f"Delete FilmRatingReview (ID={rating_review_id})"
         )
 
 

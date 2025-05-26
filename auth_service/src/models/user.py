@@ -140,7 +140,9 @@ class User(Base):
         return result.scalar_one_or_none()
 
     @classmethod
-    async def get_user_by_email(cls, db: AsyncSession, email: str) -> "User | None":
+    async def get_user_by_email(
+        cls, db: AsyncSession, email: str
+    ) -> "User | None":
         """
         Возвращает пользователя по email.
         """

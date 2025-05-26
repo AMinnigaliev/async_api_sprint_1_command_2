@@ -13,7 +13,9 @@ class BaseEnum(enum.Enum):
 
     @classmethod
     def get_enum(cls) -> DataBaseEnum:
-        return DataBaseEnum(*(value for value in cls), name=cls.get_enum_name())
+        return DataBaseEnum(
+            *(value for value in cls), name=cls.get_enum_name()
+        )
 
 
 class FilmTypesEnum(BaseEnum):

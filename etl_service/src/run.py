@@ -1,15 +1,15 @@
 import asyncio
 import sentry_init
 
-from scheduler import MoviesETLScheduler, EventsETLScheduler
+from scheduler import EventsETLScheduler, MoviesETLScheduler
 
 
 if __name__ == "__main__":
     """
     Точка входа. Запуск планировщиков ETL-событий:
     - MoviesETLScheduler: ETL-обработчиков для сервиса Кинотеатр.
-    - EventsETLScheduler: ETL-обработчиков для сервиса генерации контента пользователем (UGC).
-
+    - EventsETLScheduler: ETL-обработчиков для сервиса генерации контента
+    пользователем (UGC).
     """
     current_loop = asyncio.get_event_loop()
 
