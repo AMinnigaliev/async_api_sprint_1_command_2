@@ -1,4 +1,4 @@
-from fastapi import Depends, HTTPException, Request, status
+from fastapi import Depends, HTTPException, status
 
 from src.dependencies.request import get_request_id
 from src.dependencies.token import get_token
@@ -14,7 +14,7 @@ def role_dependency(required_roles: tuple[str]):
     2. Сравнивает роль пользователя с переданными допустимыми ролями.
     """
     async def _check_role(
-        request_id: Request = Depends(get_request_id),
+        request_id: str = Depends(get_request_id),
         token: str = Depends(get_token),
         auth_service: AuthService = Depends(get_auth_service)
     ) -> dict:
@@ -41,7 +41,7 @@ def role_dependency_exp_important(required_roles: tuple[str]):
     2. Сравнивает роль пользователя с переданными допустимыми ролями.
     """
     async def _check_role(
-        request_id: Request = Depends(get_request_id),
+        request_id: str = Depends(get_request_id),
         token: str = Depends(get_token),
         auth_service: AuthService = Depends(get_auth_service)
     ) -> dict:

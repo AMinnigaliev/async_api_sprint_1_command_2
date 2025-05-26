@@ -2,14 +2,14 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends
 
+from src.dependencies.auth import (role_dependency,
+                                   role_dependency_exp_important)
+from src.schemas.film_rating_review import (DeleteRatingReviewResponse,
+                                            FilmRatingReviewBaseResponse,
+                                            FilmRatingReviewCreateUpdate)
 from src.schemas.user_role_enum import UserRoleEnum
-from src.dependencies.auth import role_dependency, role_dependency_exp_important
-from src.services.film_rating_review_service import get_rating_review_service, RatingReviewService
-from src.schemas.film_rating_review import (
-    FilmRatingReviewBaseResponse,
-    FilmRatingReviewCreateUpdate,
-    DeleteRatingReviewResponse,
-)
+from src.services.film_rating_review_service import (RatingReviewService,
+                                                     get_rating_review_service)
 
 #  Оценка рецензии фильма
 router = APIRouter()
@@ -47,7 +47,7 @@ async def create(
 
 
 @router.post(
-    "/{rating_review_data}/update",
+    "/{rating_review_id}/update",
     summary="Изменить оценку рецензии фильма",
     response_model=FilmRatingReviewBaseResponse,
     dependencies=[Depends(role_dependency(UserRoleEnum.get_all_roles()))],
@@ -84,8 +84,10 @@ async def update(
 )
 async def delete(
     rating_review_id: UUID,
-    rating_review_service: RatingReviewService = Depends(get_rating_review_service),
-)-> DeleteRatingReviewResponse:
+    rating_review_service: RatingReviewService = Depends(
+        get_rating_review_service
+    ),
+) -> DeleteRatingReviewResponse:
     """
     Endpoint для удаления оценки рецензии фильма.
 

@@ -10,10 +10,12 @@ class FilmReviewCreateUpdate(BaseModel):
 
 
 class FilmReviewResponse(BaseModel):
-    _id: str = Field(..., description="ID")
+    id: str = Field(..., alias="_id", description="ID")
     user_id: UUID = Field(..., description="ID пользователя")
     film_id: UUID = Field(..., description="ID фильма")
-    users_film_rating_id: str = Field(..., description="ID оценки фильма пользователем")
+    users_film_rating_id: str = Field(
+        ..., description="ID оценки фильма пользователем"
+    )
     created_at: datetime = Field(
         ..., description="Дата и время создания записи"
     )
@@ -28,7 +30,9 @@ class FilmReviewsLstResponse(BaseModel):
     per_page: int = Field(..., description="Кол-во рецензий на странице")
     total_pages: int = Field(..., description="Общее кол-во страниц")
 
-    film_reviews: list[FilmReviewResponse] = Field(..., description="Список рецензий фильма")
+    film_reviews: list[FilmReviewResponse] = Field(
+        ..., description="Список рецензий фильма"
+    )
 
 
 class DeleteFilmReviewResponse(BaseModel):

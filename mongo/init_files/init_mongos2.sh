@@ -4,8 +4,8 @@ set -e
 
 echo "Добавление шардов через mongos1..."
 mongosh --host "mongos1" --eval '
-  sh.addShard("mongors1/mongors1n1:27017,mongors1n2:27017,mongors1n3:27017");
-  sh.addShard("mongors2/mongors2n1:27017,mongors2n2:27017,mongors2n3:27017");
+  sh.addShard("mongors1/mongors1n1:27017");
+  sh.addShard("mongors2/mongors2n1:27017");
 '
 echo "→ OK"
 

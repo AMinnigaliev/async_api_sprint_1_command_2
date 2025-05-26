@@ -1,8 +1,7 @@
 from datetime import datetime
 from uuid import UUID
 
-from bson import ObjectId
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class FilmRatingCreateUpdate(BaseModel):
@@ -22,22 +21,29 @@ class BaseResponse(BaseModel):
 
 
 class FilmRatingResponse(BaseResponse, FilmRatingCreateUpdate):
-    _id: ObjectId = Field(
-        ..., description="ID оценки", serialization_alias="rating_id")
+    rating_id: str = Field(..., description="ID оценки")
     user_id: UUID = Field(..., description="ID пользователя")
+
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+        populate_by_name=True
+    )
 
 
 class AmtAvgFilmRatingResponse(BaseResponse):
-    _id: ObjectId = Field(
-        ...,
-        description="Уникальный идентификатор записи",
-        serialization_alias="amt_avg_id",
+    amt_avg_id: str = Field(
+        ..., description="Уникальный идентификатор записи"
     )
     amount_ratings: int = Field(
         ..., description="Количество пользовательских оценок фильма"
     )
     average_rating: int = Field(
         ..., ge=1, le=10, description="Средняя пользовательская оценка фильма"
+    )
+
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+        populate_by_name=True
     )
 
 

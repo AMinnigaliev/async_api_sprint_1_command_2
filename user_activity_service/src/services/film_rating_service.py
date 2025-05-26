@@ -1,5 +1,5 @@
 import logging.config
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 from functools import lru_cache
 from uuid import UUID
 
@@ -10,9 +10,10 @@ from pymongo.errors import DuplicateKeyError
 from src.core.config import settings
 from src.core.logger import LOGGING
 from src.db.mongo_client import get_mongo_client
-from src.schemas.film_rating import (FilmRatingResponse,
-                                     AmtAvgFilmRatingResponse,
-                                     DeleteFilmRatingResponse)
+from src.schemas.film_rating import (AmtAvgFilmRatingResponse,
+                                     DeleteFilmRatingResponse,
+                                     FilmRatingResponse)
+from src.utils.object_id_converter import get_object_id, get_string_id
 
 logging.config.dictConfig(LOGGING)
 logger = logging.getLogger(__name__)
@@ -88,7 +89,11 @@ class FilmRatingService:
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"There are no ratings for this movie {film_id} yet."
             )
-        return AmtAvgFilmRatingResponse(**doc)
+
+        response = dict(doc)
+        _id = response.get("_id")
+        response["amt_avg_id"] = get_string_id(_id)
+        return AmtAvgFilmRatingResponse(**response)
 
     async def create(
         self, film_id: UUID, payload: dict, rating: int
@@ -104,14 +109,15 @@ class FilmRatingService:
 
         now = datetime.now(UTC)
         doc = {
-            "film_id": film_id,
-            "user_id": user_id,
+            "film_id": str(film_id),
+            "user_id": str(user_id),
             "rating": rating,
             "created_at": now,
         }
         try:
             result = await self.collection_ratings.insert_one(doc)
-            doc["_id"] = result.inserted_id
+            _id = result.inserted_id
+            doc["rating_id"] = get_string_id(_id)
 
         except DuplicateKeyError:
             raise HTTPException(
@@ -119,13 +125,12 @@ class FilmRatingService:
                 detail="A rating for this movie from the user already exists",
             )
 
-        # пересчёт overall
         await self._recalc_overall(film_id)
 
         return FilmRatingResponse(**doc)
 
     async def update(
-        self, rating_id: UUID, payload: dict, new_rating: int
+        self, rating_id: str, payload: dict, new_rating: int
     ) -> FilmRatingResponse:
         """Изменить пользовательскую оценку фильма."""
         user_id = payload.get("user_id")
@@ -136,10 +141,11 @@ class FilmRatingService:
             rating_id, user_id, new_rating
         )
 
+        _id = get_object_id(rating_id)
         now = datetime.now(UTC)
 
         existing = await self.collection_ratings.find_one(
-            {"_id": rating_id, "user_id": user_id}
+            {"_id": _id, "user_id": user_id}
         )
         if not existing:
             raise HTTPException(
@@ -154,11 +160,10 @@ class FilmRatingService:
             {"$set": {"rating": new_rating, "modified_at": now}},
         )
 
-        # пересчёт агрегатов
         await self._recalc_overall(film_id)
 
         return FilmRatingResponse(
-            _id=rating_id,
+            rating_id=rating_id,
             film_id=film_id,
             user_id=user_id,
             rating=new_rating,
@@ -166,7 +171,7 @@ class FilmRatingService:
             modified_at=now,
         )
 
-    async def delete(self, rating_id: UUID, payload: dict) -> None:
+    async def delete(self, rating_id: str, payload: dict) -> None:
         """Удалить пользовательскую оценку фильма."""
         user_id = payload.get("user_id")
 
@@ -176,8 +181,9 @@ class FilmRatingService:
         )
         logger.info(log_info)
 
+        _id = get_object_id(rating_id)
         existing = await self.collection_ratings.find_one(
-            {"_id": rating_id, "user_id": user_id}
+            {"_id": _id, "user_id": user_id}
         )
         if not existing:
             raise HTTPException(
@@ -186,12 +192,13 @@ class FilmRatingService:
             )
 
         await self.collection_ratings.delete_one(
-            {"_id": rating_id, "user_id": user_id}
+            {"_id": _id, "user_id": user_id}
         )
 
         await self._recalc_overall(existing["film_id"])
 
         return DeleteFilmRatingResponse(message="Rating deleted successfully")
+
 
 @lru_cache()
 def get_film_rating_service(

@@ -1,15 +1,14 @@
 from uuid import UUID
 
-from bson import ObjectId
 from fastapi import APIRouter, Depends
 
 from src.dependencies.auth import (role_dependency,
                                    role_dependency_exp_important)
 from src.dependencies.movies import film_existence_dependency
-from src.schemas.film_rating import (DeleteFilmRatingResponse,
+from src.schemas.film_rating import (AmtAvgFilmRatingResponse,
+                                     DeleteFilmRatingResponse,
                                      FilmRatingCreateUpdate,
-                                     FilmRatingResponse,
-                                     AmtAvgFilmRatingResponse)
+                                     FilmRatingResponse)
 from src.schemas.user_role_enum import UserRoleEnum
 from src.services.film_rating_service import (FilmRatingService,
                                               get_film_rating_service)
@@ -59,7 +58,7 @@ async def create_rating(
 )
 async def update_rating(
     rating_data: FilmRatingCreateUpdate,
-    rating_id: ObjectId,
+    rating_id: str,
     payload: dict = Depends(
         role_dependency_exp_important(UserRoleEnum.get_all_roles())
     ),
@@ -78,7 +77,7 @@ async def update_rating(
     response_model=DeleteFilmRatingResponse,
 )
 async def delete_rating(
-    rating_id: ObjectId,
+    rating_id: str,
     payload: dict = Depends(
         role_dependency_exp_important(UserRoleEnum.get_all_roles())
     ),

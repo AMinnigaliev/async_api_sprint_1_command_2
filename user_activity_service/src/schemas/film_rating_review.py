@@ -9,12 +9,9 @@ class FilmRatingReviewCreateUpdate(BaseModel):
     review_like: bool = Field(..., description="Понравилась рецензия или нет")
 
 
-class FilmRatingReviewBaseResponse(BaseModel):
-    _id: str = Field(..., description="ID")
-
+class FilmRatingReviewBaseResponse(FilmRatingReviewCreateUpdate):
+    id: str = Field(..., alias="_id", description="ID")
     user_id: UUID = Field(..., description="ID пользователя")
-    review_id: UUID = Field(..., description="ID рецензии")
-    review_like: bool = Field(..., description="Понравилась рецензия или нет")
     created_at: datetime = Field(
         ..., description="Дата и время создания записи"
     )

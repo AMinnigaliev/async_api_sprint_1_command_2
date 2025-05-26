@@ -203,4 +203,3 @@ class MongoMixin:
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=error_msg if error_msg else f"Error delete data by filters {filters} in Mongo",
             )
-

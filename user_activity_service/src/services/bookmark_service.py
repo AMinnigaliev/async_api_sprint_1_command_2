@@ -1,9 +1,8 @@
 import logging.config
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 from functools import lru_cache
 from uuid import UUID
 
-from bson import ObjectId
 from fastapi import Depends, HTTPException, status
 from pymongo import AsyncMongoClient
 from pymongo.errors import DuplicateKeyError
@@ -12,6 +11,7 @@ from src.core.config import settings
 from src.core.logger import LOGGING
 from src.db.mongo_client import get_mongo_client
 from src.schemas.bookmark import BookmarkResponse
+from src.utils.object_id_converter import get_object_id, get_string_id
 
 logging.config.dictConfig(LOGGING)
 logger = logging.getLogger(__name__)
@@ -41,7 +41,8 @@ class BookmarkService:
 
         try:
             result = await self.collection.insert_one(doc)
-            doc["_id"] = result.inserted_id
+            _id = result.inserted_id
+            doc["bookmark_id"] = get_string_id(_id)
 
         except DuplicateKeyError:
             raise HTTPException(
@@ -51,7 +52,7 @@ class BookmarkService:
 
         return BookmarkResponse(**doc)
 
-    async def delete(self, bookmark_id: ObjectId, payload: dict) -> None:
+    async def delete(self, bookmark_id: str, payload: dict) -> None:
         """Удалить пользовательскую закладку на фильм."""
         user_id = payload.get("user_id")
 
@@ -61,9 +62,9 @@ class BookmarkService:
             bookmark_id, user_id
         )
 
+        _id = get_object_id(bookmark_id)
         result = await self.collection.delete_one({
-            "_id": bookmark_id,
-            "user_id": user_id
+            "_id": _id, "user_id": user_id
         })
         if result.deleted_count == 0:
             raise HTTPException(
@@ -84,13 +85,14 @@ class BookmarkService:
         docs = await cursor.to_list(length=None)
         return [
             BookmarkResponse(
-                bookmark_id=doc["_id"],
+                bookmark_id=get_string_id(doc["_id"]),
                 user_id=doc["user_id"],
                 film_id=doc["film_id"],
                 created_at=doc["created_at"],
             )
             for doc in docs
         ]
+
 
 @lru_cache()
 def get_bookmark_service(

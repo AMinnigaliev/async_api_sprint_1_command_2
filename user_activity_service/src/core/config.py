@@ -87,8 +87,7 @@ class Settings(BaseSettings):
         """
         Подключение к двум mongos с fail-over и без привязки к одному хосту.
         """
-        hosts = f"localhost:27027,localhost:27017"
-        # hosts = f"mongos1:27017,mongos2:27017"
+        hosts = "mongos1:27017,mongos2:27017"
         return (
             f"mongodb://{hosts}/{self.mongo_name}?directConnection=false"
         )

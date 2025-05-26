@@ -5,4 +5,4 @@ router = APIRouter()
 
 @router.get("")
 async def root():
-    return {"message": "Movies API is running"}
+    return {"message": "User activity API is running"}

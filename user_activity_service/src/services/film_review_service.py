@@ -1,5 +1,5 @@
 import logging.config
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 from functools import lru_cache
 from typing import Any
 from uuid import UUID
@@ -7,11 +7,13 @@ from uuid import UUID
 from fastapi import Depends
 from pymongo import AsyncMongoClient
 
-from src.core.logger import LOGGING
 from src.core.config import settings
-from src.utils.mongo_mixin import MongoMixin
+from src.core.logger import LOGGING
 from src.db.mongo_client import get_mongo_client
-from src.schemas.film_review import FilmReviewsLstResponse, FilmReviewResponse, FilmReviewCreateUpdate
+from src.schemas.film_review import (FilmReviewCreateUpdate,
+                                     FilmReviewResponse,
+                                     FilmReviewsLstResponse)
+from src.utils.mongo_mixin import MongoMixin
 
 logging.config.dictConfig(LOGGING)
 logger = logging.getLogger(__name__)

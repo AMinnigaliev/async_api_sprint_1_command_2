@@ -83,7 +83,7 @@ class AuthService:
             )
 
     async def varify_token_with_cache(
-            self, token: str, request_id: str, is_exp_important: bool
+        self, token: str, request_id: str, is_exp_important: bool = False
     ) -> dict:
         """
         Проверяет токен с использованием кеша через auth-сервис или локально

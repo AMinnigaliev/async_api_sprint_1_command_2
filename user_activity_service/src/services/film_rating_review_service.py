@@ -1,5 +1,5 @@
 import logging.config
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 from functools import lru_cache
 from typing import Any
 from uuid import UUID
@@ -7,10 +7,11 @@ from uuid import UUID
 from fastapi import Depends
 from pymongo import AsyncMongoClient
 
-from src.core.logger import LOGGING
 from src.core.config import settings
+from src.core.logger import LOGGING
 from src.db.mongo_client import get_mongo_client
-from src.schemas.film_rating_review import FilmRatingReviewCreateUpdate, FilmRatingReviewBaseResponse
+from src.schemas.film_rating_review import (FilmRatingReviewBaseResponse,
+                                            FilmRatingReviewCreateUpdate)
 from src.utils.mongo_mixin import MongoMixin
 
 logging.config.dictConfig(LOGGING)
@@ -28,7 +29,7 @@ class RatingReviewService(MongoMixin):
         self,
         review_id: UUID,
         payload: dict[str | int, Any],
-        rating_review_data: FilmRatingReviewCreateUpdate,
+        review_like: bool,
     ) -> FilmRatingReviewBaseResponse:
         """
         Добавление:
@@ -45,7 +46,7 @@ class RatingReviewService(MongoMixin):
         rating_review_mongo_doc = {
             "review_id": str(review_id),
             "user_id": str(payload["user_id"]),
-            "review_like": rating_review_data.review_like,
+            "review_like": review_like,
             "created_at": datetime.now(UTC),
         }
         rating_review_mongo_doc["_id"] = await self._insert_in_mongo(
@@ -72,14 +73,20 @@ class RatingReviewService(MongoMixin):
         @rtype FilmRatingReviewBaseResponse:
         """
         film_rating_review_mongo_doc = await self._get_one_from_mongo(
-            filters={"_id": rating_review_id},
+            filters={
+                "_id": rating_review_id,
+                "review_id": rating_review_data.review_id,
+            },
             collection=self._film_rating_reviews_collection,
         )
 
         await self._update_in_mongo(
             collection=self._film_rating_reviews_collection,
             filters={"_id": rating_review_id},
-            update_data={"review_like": rating_review_data.review_like, "modified_at": datetime.now(UTC)},
+            update_data={
+                "review_like": rating_review_data.review_like,
+                "modified_at": datetime.now(UTC),
+            },
             log_msg=f"Update FilmRatingReview (ID={rating_review_id})"
         )
 
