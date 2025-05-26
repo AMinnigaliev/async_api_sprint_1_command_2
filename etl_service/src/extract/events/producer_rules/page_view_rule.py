@@ -16,7 +16,9 @@ class PageViewEventRule(AbstractEventRule):
             self._page_view_dc = PageViewDC(
                 user_id=self.event_value["user_id"],
                 timestamp=self.event_value["timestamp"],
-                element_page_type=self.event_value["data"]["element_page_type"],
+                element_page_type=self.event_value["data"][
+                    "element_page_type"
+                ],
                 page_number=self.event_value["data"]["page_number"],
             )
 

@@ -4,14 +4,11 @@ from asyncio import iscoroutinefunction
 from core import config
 from core.logger import logger
 from interface import RedisStorage_T
+from loader.events_load_rules import (ElementClickEventRule, PageViewEventRule,
+                                      QualityChangeEventRule,
+                                      SearchFilterEventRule,
+                                      VideoCompleteEventRule)
 from models.events import EventsEnum
-from loader.events_load_rules import (
-    ElementClickEventRule,
-    QualityChangeEventRule,
-    VideoCompleteEventRule,
-    SearchFilterEventRule,
-    PageViewEventRule,
-)
 
 
 class Loader:
@@ -46,20 +43,31 @@ class Loader:
             events_keys = await self.redis_storage.scan_iter(f"{event_type}:*")
 
             if events_keys:
-                logger.debug(f"EventType '{event_type}' start Load to ClickHouse(count: {len(events_keys)})")
+                logger.debug(
+                    f"EventType '{event_type}' start Load to "
+                    f"ClickHouse(count: {len(events_keys)})"
+                )
 
             for event_key in events_keys:
-                event_data = await self._get_event_data_by_key(event_key=event_key)
-                load_rule = self._get_load_rule_by_event_type(event_key=event_key)
+                event_data = await self._get_event_data_by_key(
+                    event_key=event_key
+                )
+                load_rule = self._get_load_rule_by_event_type(
+                    event_key=event_key
+                )
 
                 if event_data and load_rule:
-                    if event_entities := await self._execute_load_rule(load_rule=load_rule, event_data=event_data):
+                    if event_entities := await self._execute_load_rule(
+                            load_rule=load_rule, event_data=event_data
+                    ):
                         event_entities_lst.extend(event_entities)
                         events_keys_lst.extend(events_keys)
 
             if len(event_entities_lst) >= config.etl_events_select_limit:
                 self.clickhouse_session.insert(event_entities_lst)
-                await self._delete_events_from_storage(keys=events_keys_lst, event_type=event_type)
+                await self._delete_events_from_storage(
+                    keys=events_keys_lst, event_type=event_type
+                )
 
                 events_keys_lst.clear()
                 event_entities_lst.clear()
@@ -92,7 +100,9 @@ class Loader:
         else:
             return execute()
 
-    async def _delete_events_from_storage(self, keys: list[str], event_type: str) -> None:
+    async def _delete_events_from_storage(
+            self, keys: list[str], event_type: str
+    ) -> None:
         await self.redis_storage.delete_(names=keys)
 
         logger.debug(f"{event_type}(keys={keys}) was delete from Storage")

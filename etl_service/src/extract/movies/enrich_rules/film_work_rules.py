@@ -2,15 +2,19 @@ import socket
 
 from sqlalchemy import select
 
-from models.movies.pg_models import FilmWork, Person, Genre, PersonFilmWork, GenreFilmWork
-from schemas.movies_schemas.film_work_models import PersonModel, GenreModel, FilmWorkModel
+from models.movies.pg_models import (FilmWork, Genre, GenreFilmWork, Person,
+                                     PersonFilmWork)
+from schemas.movies_schemas.film_work_models import (FilmWorkModel, GenreModel,
+                                                     PersonModel)
 from utils import backoff_by_connection
 
 
 class FilmWorkRules:
 
     @classmethod
-    @backoff_by_connection(exceptions=(ConnectionRefusedError, socket.gaierror))
+    @backoff_by_connection(
+        exceptions=(ConnectionRefusedError, socket.gaierror)
+    )
     async def film_work_selection_data_rule(
         cls, pg_session, obj_id: int
     ) -> dict:

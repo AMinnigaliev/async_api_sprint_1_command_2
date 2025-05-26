@@ -15,13 +15,12 @@ from src.core.security import (create_access_token, create_refresh_token,
                                verify_token)
 from src.db.postgres import get_session
 from src.db.redis_client import get_redis_auth
+from src.models.social_account import SocialAccount
 from src.models.user import LoginHistory, User
-from src.models.social_account import SocialAccount, SocialProviderEnum
 from src.schemas.token import Token
 from src.schemas.user import UserCreate, UserResponse, UserUpdate
 from src.services.auth_service import AuthService
 from src.utils.normalize_country import normalize_country
-
 
 logger = logging.getLogger(__name__)
 
@@ -144,7 +143,8 @@ class UserService:
 
     async def login_user_oauth(self, user: User) -> Token:
         """
-        Авторизация OAuth-пользователя — создание токенов и запись истории входа.
+        Авторизация OAuth-пользователя — создание токенов и запись истории
+        входа.
         """
         access_token, refresh_token = await self._create_tokens_from_user(user)
         await user.add_login_history(

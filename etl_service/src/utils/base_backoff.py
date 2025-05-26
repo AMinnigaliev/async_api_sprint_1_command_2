@@ -24,7 +24,10 @@ def backoff_by_connection(
 
                     return result_
                 except exceptions as ex:
-                    t = t * (factor ^ n) if t < border_sleep_time else border_sleep_time
+                    if t < border_sleep_time:
+                        t = t * (factor ^ n)
+                    else:
+                        border_sleep_time
                     logger.error(f"Error connect({t}): {ex}")
                     await asyncio.sleep(start_sleep_time)
 

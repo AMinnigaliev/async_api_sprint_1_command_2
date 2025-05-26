@@ -1,5 +1,6 @@
 import httpx
 from fastapi import HTTPException
+
 from src.core.config import settings
 
 
@@ -17,7 +18,9 @@ class YandexOAuthService:
         }
         headers = {"Content-Type": "application/x-www-form-urlencoded"}
         async with httpx.AsyncClient() as client:
-            response = await client.post(self.TOKEN_URL, data=data, headers=headers)
+            response = await client.post(
+                self.TOKEN_URL, data=data, headers=headers
+            )
         if response.status_code != 200:
             try:
                 err = response.json()
@@ -52,6 +55,9 @@ class YandexOAuthService:
                 error_detail = response.text
             raise HTTPException(
                 status_code=400,
-                detail=f"Не удалось получить информацию о пользователе Яндекса: {error_detail}",
+                detail=(
+                    f"Не удалось получить информацию о пользователе Яндекса: "
+                    f"{error_detail}"
+                ),
             )
         return response.json()

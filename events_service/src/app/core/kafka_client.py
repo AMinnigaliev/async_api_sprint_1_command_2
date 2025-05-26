@@ -5,9 +5,8 @@ import json
 import threading
 import time
 
-from confluent_kafka import Producer
-from confluent_kafka.admin import AdminClient, NewTopic, KafkaException
-from confluent_kafka import KafkaError
+from confluent_kafka import KafkaError, Producer
+from confluent_kafka.admin import AdminClient, KafkaException, NewTopic
 
 from .config import KAFKA_BROKERS, KAFKA_TOPIC
 
@@ -33,7 +32,8 @@ def _ensure_topic() -> None:
     futures = admin.create_topics([topic])
 
     try:
-        futures[KAFKA_TOPIC].result(timeout=10)  # поднимет исключение при ошибке
+        futures[KAFKA_TOPIC].result(timeout=10)
+        # поднимет исключение при ошибке
         print(f"[Kafka] topic '{KAFKA_TOPIC}' created (6 partitions, lz4)")
     except KafkaException as exc:
         if exc.args[0].code() != KafkaError.TOPIC_ALREADY_EXISTS:

@@ -2,13 +2,13 @@ from asyncio import current_task
 from contextlib import asynccontextmanager
 
 from sqlalchemy.engine import URL
-from sqlalchemy.exc import SQLAlchemyError, InterfaceError
-from sqlalchemy.ext.asyncio import async_sessionmaker, async_scoped_session, AsyncEngine, create_async_engine
+from sqlalchemy.exc import InterfaceError, SQLAlchemyError
+from sqlalchemy.ext.asyncio import (AsyncEngine, async_scoped_session,
+                                    async_sessionmaker, create_async_engine)
 
 from core import config
 from core.logger import logger
 from utils.abstract import SingletonMeta
-
 
 URL_ = URL.create(
     drivername=config.postgres_driver_name,
@@ -85,4 +85,6 @@ def get_async_engine(url_: str | URL) -> AsyncEngine:
     )
 
 
-pg_scoped_session = AsyncScopedSession(async_engine=get_async_engine(url_=URL_))
+pg_scoped_session = AsyncScopedSession(
+    async_engine=get_async_engine(url_=URL_)
+)

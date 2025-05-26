@@ -1,2 +1,3 @@
 from .base_enum import EventsEnum
-from .base_models import QualityChangeDC, VideoCompleteDC, SearchFilterDC, PageViewDC
+from .base_models import (PageViewDC, QualityChangeDC, SearchFilterDC,
+                          VideoCompleteDC)

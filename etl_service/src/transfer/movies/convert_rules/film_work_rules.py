@@ -1,5 +1,6 @@
+from schemas.movies_schemas.film_work_models import (FilmWorkESModel,
+                                                     FilmWorkModel)
 from utils.movies_utils.etl_enum import PersonRoles
-from schemas.movies_schemas.film_work_models import FilmWorkModel, FilmWorkESModel
 
 
 class FilmWorkRules:
@@ -23,9 +24,7 @@ class FilmWorkRules:
                 for genre in film_work_model.genres
             ],
             title=film_work_model.title if film_work_model.title else "",
-            description=(
-                film_work_model.description if film_work_model.description else ""
-            ),
+            description=film_work_model.description or "",
             directors_names=[
                 person.full_name
                 for person in film_work_model.persons

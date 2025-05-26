@@ -25,7 +25,7 @@ class FilmService(BaseService):
     и Elasticsearch (для полнотекстового поиска).
     """
 
-    async def get_film_by_id(self, film_id: str) -> BaseModel | None:
+    async def get_film_by_id(self, film_id: str) -> list[BaseModel] | None:
         """Получить фильм по его ID."""
         log_info = f"Получение фильма по ID {film_id}"
 

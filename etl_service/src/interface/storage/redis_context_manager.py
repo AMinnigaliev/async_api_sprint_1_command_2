@@ -7,7 +7,9 @@ from interface.storage.redis_storage import RedisStorage
 
 __all__ = ["RedisContextManagerT", "RedisContextManager"]
 
-RedisContextManagerT = TypeVar("RedisContextManagerT", bound="RedisContextManager")
+RedisContextManagerT = TypeVar(
+    "RedisContextManagerT", bound="RedisContextManager"
+)
 
 
 class RedisContextManager:

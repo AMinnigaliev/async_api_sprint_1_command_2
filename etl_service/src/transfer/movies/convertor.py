@@ -1,11 +1,12 @@
 import json
 
 from core.logger import logger
-from models.movies.pg_models import FilmWork, Person, Genre
+from interface import ESClient_T, RedisStorage_T
 from models.movies.pg_models import Base as BaseModel
+from models.movies.pg_models import FilmWork, Genre, Person
 from schemas import Base as BaseSchema
-from transfer.movies.convert_rules import FilmWorkRules, PersonRules, GenreRules
-from interface import RedisStorage_T, ESClient_T
+from transfer.movies.convert_rules import (FilmWorkRules, GenreRules,
+                                           PersonRules)
 
 
 class Convertor:
@@ -47,7 +48,8 @@ class Convertor:
         """
         Точка запуска. Этапы:
         - Получение из Storage сущности.
-        - Преобразование сущностей в валидный для схемы индекса ES формат данных.
+        - Преобразование сущностей в валидный для схемы индекса ES формат
+        данных.
         - Сохранение валидных для схемы индекса ES данных в Storage.
 
         :return None:
@@ -59,7 +61,8 @@ class Convertor:
 
             if scan_lst:
                 logger.info(
-                    f"{key_rule}: start convert enrich data(count: {len(scan_lst)})"
+                    f"{key_rule}: start convert enrich data(count: "
+                    f"{len(scan_lst)})"
                 )
 
             for obj_key_rule in scan_lst:
@@ -67,24 +70,33 @@ class Convertor:
                     obj_key_rule=obj_key_rule
                 )
 
-                if obj_ and obj_.get("was_enrich") and (not obj_.get("was_convert")):
+                if obj_ and obj_.get("was_enrich") and (
+                        not obj_.get("was_convert")
+                ):
                     obj_id = obj_key_rule.split(f"{key_rule}_")[-1]
 
-                    transformation_data = await transformation_rule(obj_data=obj_)
+                    transformation_data = await transformation_rule(
+                        obj_data=obj_
+                    )
                     await self._save_transformation_data(
                         model_=model_,
                         obj_id=obj_id,
                         transformation_data=transformation_data,
                     )
                     convert_count += self.CONCAT
-                    logger.debug(f"{key_rule}: id={obj_id}, enrich data was convert")
+                    logger.debug(
+                        f"{key_rule}: id={obj_id}, enrich data was convert"
+                    )
 
             logger.info(
-                f"{key_rule}: enrich data was convert({convert_count} from {len(scan_lst)})"
+                f"{key_rule}: enrich data was convert({convert_count} from "
+                f"{len(scan_lst)})"
             )
 
     async def _get_object_data_by_key_rule(self, obj_key_rule: str) -> dict:
-        if obj_data := await self.redis_storage.retrieve_state(key_=obj_key_rule):
+        if obj_data := await self.redis_storage.retrieve_state(
+                key_=obj_key_rule
+        ):
             obj_deserialize_data = json.loads(obj_data)
 
             return obj_deserialize_data

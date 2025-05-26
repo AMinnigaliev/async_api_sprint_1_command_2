@@ -1,4 +1,5 @@
 from contextlib import contextmanager
+
 from infi.clickhouse_orm import Database
 
 from core import config
@@ -12,7 +13,10 @@ class ClickhouseSession(metaclass=SingletonMeta):
     def __init__(self):
         self._db = Database(
             db_name=config.clickhouse_db,
-            db_url=f"http://{config.clickhouse_host}:{config.clickhouse_http_port}",
+            db_url=(
+                f"http://{config.clickhouse_host}:"
+                f"{config.clickhouse_http_port}"
+            ),
             username=config.clickhouse_user,
             password=config.clickhouse_password,
             readonly=False,

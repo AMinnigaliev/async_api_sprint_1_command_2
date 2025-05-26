@@ -7,7 +7,6 @@ from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
 from .config import settings
 
-
 if settings.enable_jaeger:
     trace.set_tracer_provider(
         TracerProvider(

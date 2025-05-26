@@ -12,7 +12,9 @@ from utils import backoff_by_connection
 class GenreRules:
 
     @classmethod
-    @backoff_by_connection(exceptions=(ConnectionRefusedError, socket.gaierror))
+    @backoff_by_connection(
+        exceptions=(ConnectionRefusedError, socket.gaierror)
+    )
     async def genre_selection_data_rule(
         cls, pg_session, date_modified: datetime
     ) -> list[Genre]:
@@ -29,7 +31,9 @@ class GenreRules:
         return genres
 
     @classmethod
-    def genre_normalize_data_rule(cls, selection_data: list[Genre]) -> list[GenreModel]:
+    def genre_normalize_data_rule(
+            cls, selection_data: list[Genre]
+    ) -> list[GenreModel]:
         normalized_data = [
             GenreModel(
                 id=genre.id,

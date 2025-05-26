@@ -1,15 +1,15 @@
-import os
 import json
+import os
 
 from core import config
 from core.logger import logger
-from interface.es_client import ESClient_T
 from interface import RedisStorage_T
-from schemas.movies_schemas.film_work_models import FilmWorkESModel
-from schemas.movies_schemas.person_models import PersonModel
-from schemas.movies_schemas.genre_models import GenreModel
-from models.movies.pg_models import FilmWork, Person, Genre
+from interface.es_client import ESClient_T
 from models.movies.pg_models import Base as BaseModel
+from models.movies.pg_models import FilmWork, Genre, Person
+from schemas.movies_schemas.film_work_models import FilmWorkESModel
+from schemas.movies_schemas.genre_models import GenreModel
+from schemas.movies_schemas.person_models import PersonModel
 
 
 class Loader:
@@ -78,7 +78,9 @@ class Loader:
             scan_lst = await self.redis_storage.scan_iter(f"{key_rule}_es_*")
 
             if scan_lst:
-                logger.debug(f"{key_rule}: start load to ES(count: {len(scan_lst)})")
+                logger.debug(
+                    f"{key_rule}: start load to ES(count: {len(scan_lst)})"
+                )
 
             for obj_key_rule in scan_lst:
                 obj_id = obj_key_rule.split(f"{key_rule}_es_")[-1]
@@ -95,24 +97,30 @@ class Loader:
                 ):
                     result_ = await self._es_client.insert_document(
                         index_=key_rule,
-                        document=self._get_clear_es_dict(es_model_dict=es_model_dict),
+                        document=self._get_clear_es_dict(
+                            es_model_dict=es_model_dict
+                        ),
                         id_=obj_id,
                     )
 
                     if result_.get("status") is False:
                         logger.error(
-                            f"{key_rule}: error insert data(id={obj_id}) in ES: {result_.get('message')}"
+                            f"{key_rule}: error insert data(id={obj_id}) in "
+                            f"ES: {result_.get('message')}"
                         )
                     else:
                         load_count += self.CONCAT
-                        logger.debug(f"{key_rule}: id={obj_id}, data was save in ES")
+                        logger.debug(
+                            f"{key_rule}: id={obj_id}, data was save in ES"
+                        )
 
                         await self._delete_objects_by_obj_id(
                             obj_id=obj_id, key_rule=key_rule
                         )
 
             logger.info(
-                f"{key_rule}: was load in ES({load_count} from {len(scan_lst)})"
+                f"{key_rule}: was load in ES({load_count} from "
+                f"{len(scan_lst)})"
             )
 
     async def _get_object_data_by_key_rule(self, obj_key_rule: str) -> dict:
@@ -121,7 +129,9 @@ class Loader:
 
         return obj_deserialize_data
 
-    async def _delete_objects_by_obj_id(self, obj_id: str, key_rule: str) -> None:
+    async def _delete_objects_by_obj_id(
+            self, obj_id: str, key_rule: str
+    ) -> None:
         """
         Удаление объектов из Storage:
         - Удаление обогащенных сущностей.
@@ -134,20 +144,26 @@ class Loader:
         base_name = f"{key_rule}_{obj_id}"
         await self.redis_storage.delete_(name=base_name)
         logger.debug(
-            f"{key_rule}: id={obj_id}, BASE data was delete from Storage"  # nosec B608
+            f"{key_rule}: id={obj_id}, BASE data was delete from Storage"
+            # nosec B608
         )
 
         es_name = f"{key_rule}_es_{obj_id}"
         await self.redis_storage.delete_(name=es_name)
         logger.debug(
-            f"{key_rule}: id={obj_id}, ES data was delete from Storage"  # nosec B608
+            f"{key_rule}: id={obj_id}, ES data was delete from Storage"
+            # nosec B608
         )
 
     def _get_es_schema(self, name: str):
         try:
             with open(
                 os.path.join(
-                    config.base_dir, self.MODELS_PATH, self.MOVIES_MODELS_PATH, self.ES_INDICES_PATH, f"{name}.json"
+                    config.base_dir,
+                    self.MODELS_PATH,
+                    self.MOVIES_MODELS_PATH,
+                    self.ES_INDICES_PATH,
+                    f"{name}.json"
                 ),
                 "r",
             ) as fp:
@@ -157,5 +173,6 @@ class Loader:
 
         except FileNotFoundError:
             logger.warning(
-                f"{name}: not found json-file with index schema. If index not exist, it was create auto"
+                f"{name}: not found json-file with index schema. If index not "
+                f"exist, it was create auto"
             )

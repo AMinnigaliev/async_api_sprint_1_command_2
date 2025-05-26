@@ -1,8 +1,8 @@
-from uuid import UUID
 from datetime import datetime
+from uuid import UUID
 
 from sqlalchemy import UUID as UUID_SQLALCHEMY
-from sqlalchemy import ForeignKey, DateTime, String, Text, Float
+from sqlalchemy import DateTime, Float, ForeignKey, String, Text
 from sqlalchemy.ext.asyncio import AsyncAttrs
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
@@ -29,7 +29,9 @@ class Base(AsyncAttrs, DeclarativeBase):
 
 
 class TimeStampedMixin:
-    created: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow)
+    created: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=datetime.utcnow
+    )
     modified: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         default=datetime.utcnow,
@@ -71,7 +73,9 @@ class FilmWork(Base, SchemaContent, UUIDMixin, TimeStampedMixin):
 
     title: Mapped[str] = mapped_column(String)
     description: Mapped[str] = mapped_column(Text)
-    creation_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow)
+    creation_date: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=datetime.utcnow
+    )
     rating: Mapped[Float] = mapped_column(Float)
     type: Mapped[str] = mapped_column(Text)
 
@@ -88,7 +92,9 @@ class GenreFilmWork(Base, SchemaContent, UUIDMixin):
     film_work_id: Mapped[UUID] = mapped_column(
         UUID_SQLALCHEMY, ForeignKey("content.film_work.id"), primary_key=True
     )
-    created: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow)
+    created: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=datetime.utcnow
+    )
 
     genre_: Mapped["Genre"] = relationship(
         Genre,
@@ -119,7 +125,9 @@ class PersonFilmWork(Base, SchemaContent, UUIDMixin):
         UUID_SQLALCHEMY, ForeignKey("content.film_work.id"), primary_key=True
     )
     role: Mapped[str] = mapped_column(Text)
-    created: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow)
+    created: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=datetime.utcnow
+    )
 
     person_: Mapped["Person"] = relationship(
         Person,
