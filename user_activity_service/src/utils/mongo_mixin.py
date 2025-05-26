@@ -72,6 +72,7 @@ class MongoMixin:
                 .sort(sort_field, sort_direction)
                 .skip(skip)
                 .limit(per_page)
+                .to_list(length=None)
             )
 
         except PyMongoError as ex:
@@ -98,7 +99,7 @@ class MongoMixin:
         @rtype:
         """
         try:
-            result = await collection.insert_one(**doc_)
+            result = await collection.insert_one(doc_)
 
             if log_msg:
                 logger.info(log_msg)

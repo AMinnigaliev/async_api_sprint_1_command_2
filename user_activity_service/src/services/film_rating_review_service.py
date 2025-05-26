@@ -2,8 +2,8 @@ import logging.config
 from datetime import UTC, datetime
 from functools import lru_cache
 from typing import Any
-from uuid import UUID
 
+from bson import ObjectId
 from fastapi import Depends
 from pymongo import AsyncMongoClient
 
@@ -27,9 +27,9 @@ class RatingReviewService(MongoMixin):
 
     async def create(
         self,
-        review_id: UUID,
+        review_id: str,
         payload: dict[str | int, Any],
-        review_like: bool,
+        rating_review_data: FilmRatingReviewCreateUpdate,
     ) -> FilmRatingReviewBaseResponse:
         """
         Добавление:
@@ -44,22 +44,28 @@ class RatingReviewService(MongoMixin):
         @rtype FilmRatingReviewBaseResponse:
         """
         rating_review_mongo_doc = {
-            "review_id": str(review_id),
-            "user_id": str(payload["user_id"]),
-            "review_like": review_like,
+            "review_id": review_id,
+            "user_id": payload["user_id"],
+            "review_like": rating_review_data.review_like,
             "created_at": datetime.now(UTC),
         }
         rating_review_mongo_doc["_id"] = await self._insert_in_mongo(
             doc_=rating_review_mongo_doc,
             collection=self._film_rating_reviews_collection,
-            log_msg=f"Create FilmRatingReview (ID={rating_review_mongo_doc['_id']})",
+            log_msg=f"Create FilmRatingReview (ReviewID={review_id})",
         )
 
-        return FilmRatingReviewBaseResponse(**rating_review_mongo_doc)
+        return FilmRatingReviewBaseResponse(
+            id=str(rating_review_mongo_doc["_id"]),
+            review_id=review_id,
+            user_id=rating_review_mongo_doc["user_id"],
+            review_like=rating_review_mongo_doc["review_like"],
+            created_at=rating_review_mongo_doc["created_at"],
+        )
 
     async def update(
         self,
-        rating_review_id: UUID,
+        rating_review_id: str,
         rating_review_data: FilmRatingReviewCreateUpdate,
     ) -> FilmRatingReviewBaseResponse:
         """
@@ -72,17 +78,9 @@ class RatingReviewService(MongoMixin):
         @param rating_review_data:
         @rtype FilmRatingReviewBaseResponse:
         """
-        film_rating_review_mongo_doc = await self._get_one_from_mongo(
-            filters={
-                "_id": rating_review_id,
-                "review_id": rating_review_data.review_id,
-            },
-            collection=self._film_rating_reviews_collection,
-        )
-
         await self._update_in_mongo(
             collection=self._film_rating_reviews_collection,
-            filters={"_id": rating_review_id},
+            filters={"_id": ObjectId(rating_review_id)},
             update_data={
                 "review_like": rating_review_data.review_like,
                 "modified_at": datetime.now(UTC),
@@ -90,9 +88,22 @@ class RatingReviewService(MongoMixin):
             log_msg=f"Update FilmRatingReview (ID={rating_review_id})"
         )
 
-        return FilmRatingReviewBaseResponse(**film_rating_review_mongo_doc)
+        rating_review_mongo_doc = await self._get_one_from_mongo(
+            filters={
+                "_id": ObjectId(rating_review_id),
+            },
+            collection=self._film_rating_reviews_collection,
+        )
 
-    async def delete(self, rating_review_id: UUID) -> None:
+        return FilmRatingReviewBaseResponse(
+            id=str(rating_review_mongo_doc["_id"]),
+            review_id=rating_review_mongo_doc["review_id"],
+            user_id=rating_review_mongo_doc["user_id"],
+            review_like=rating_review_mongo_doc["review_like"],
+            created_at=rating_review_mongo_doc["created_at"],
+        )
+
+    async def delete(self, rating_review_id: str) -> None:
         """
         Удаление:
         - Оценки рецензии фильма.
@@ -103,7 +114,7 @@ class RatingReviewService(MongoMixin):
         """
         await self._delete_in_mongo(
             collection=self._film_rating_reviews_collection,
-            filters={"_id": rating_review_id},
+            filters={"_id": ObjectId(rating_review_id)},
             log_msg = f"Delete FilmRatingReview (ID={rating_review_id})"
         )
 

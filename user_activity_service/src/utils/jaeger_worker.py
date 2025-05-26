@@ -5,7 +5,6 @@ from opentelemetry import trace
 from opentelemetry.trace import set_span_in_context
 
 from src.core.config import settings
-from src.core.jaeger_init import tracer
 
 
 class JaegerWorker:
@@ -46,6 +45,8 @@ class JaegerWorker:
             @functools.wraps(func)
             async def async_wrapped(*args, **kwargs):
                 if settings.enable_jaeger:
+                    from src.core.jaeger_init import tracer
+
                     new_span_name = span_name if span_name else func.__name__
                     parent_span = trace.get_current_span()
 
@@ -66,6 +67,8 @@ class JaegerWorker:
             @functools.wraps(func)
             def sync_wrapped(*args, **kwargs):
                 if settings.enable_jaeger:
+                    from src.core.jaeger_init import tracer
+
                     new_span_name = span_name if span_name else func.__name__
                     parent_span = trace.get_current_span()
 

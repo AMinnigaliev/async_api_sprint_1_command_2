@@ -2,16 +2,22 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query
 
-from src.dependencies.auth import (role_dependency,
-                                   role_dependency_exp_important)
+from src.dependencies.auth import (
+    role_dependency,
+    role_dependency_exp_important,
+)
 from src.dependencies.movies import film_existence_dependency
-from src.schemas.film_review import (DeleteFilmReviewResponse,
-                                     FilmReviewCreateUpdate,
-                                     FilmReviewResponse,
-                                     FilmReviewsLstResponse)
+from src.schemas.film_review import (
+    DeleteFilmReviewResponse,
+    FilmReviewCreateUpdate,
+    FilmReviewResponse,
+    FilmReviewsLstResponse,
+)
 from src.schemas.user_role_enum import UserRoleEnum
-from src.services.film_review_service import (FilmReviewService,
-                                              get_film_review_service)
+from src.services.film_review_service import (
+    FilmReviewService,
+    get_film_review_service,
+)
 
 #  Рецензия фильма
 router = APIRouter()
@@ -106,7 +112,7 @@ async def create(
 )
 async def update(
     review_data: FilmReviewCreateUpdate,
-    film_review_id: UUID,
+    film_review_id: str,
     film_review_service: FilmReviewService = Depends(get_film_review_service),
 ) -> FilmReviewResponse:
     """
@@ -135,7 +141,7 @@ async def update(
     dependencies=[Depends(role_dependency(UserRoleEnum.get_all_roles()))],
 )
 async def delete(
-    film_review_id: UUID,
+    film_review_id: str,
     film_review_service: FilmReviewService = Depends(get_film_review_service),
 ) -> DeleteFilmReviewResponse:
     """

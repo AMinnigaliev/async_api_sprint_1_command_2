@@ -438,7 +438,9 @@ services:
           --bind_ip_all
       '
     expose:
-      - "27017"
+      - "27018"
+    ports:
+      - "27018:27017"
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - ./mongo/init_files/init_mongos1.sh:/init_files/init_mongos1.sh:ro

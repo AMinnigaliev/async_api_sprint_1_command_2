@@ -1,15 +1,19 @@
-from uuid import UUID
-
 from fastapi import APIRouter, Depends
 
-from src.dependencies.auth import (role_dependency,
-                                   role_dependency_exp_important)
-from src.schemas.film_rating_review import (DeleteRatingReviewResponse,
-                                            FilmRatingReviewBaseResponse,
-                                            FilmRatingReviewCreateUpdate)
+from src.dependencies.auth import (
+    role_dependency,
+    role_dependency_exp_important,
+)
+from src.schemas.film_rating_review import (
+    DeleteRatingReviewResponse,
+    FilmRatingReviewBaseResponse,
+    FilmRatingReviewCreateUpdate,
+)
 from src.schemas.user_role_enum import UserRoleEnum
-from src.services.film_rating_review_service import (RatingReviewService,
-                                                     get_rating_review_service)
+from src.services.film_rating_review_service import (
+    RatingReviewService,
+    get_rating_review_service,
+)
 
 #  Оценка рецензии фильма
 router = APIRouter()
@@ -22,7 +26,7 @@ router = APIRouter()
 )
 async def create(
     rating_review_data: FilmRatingReviewCreateUpdate,
-    review_id: UUID,
+    review_id: str,
     payload: dict = Depends(role_dependency_exp_important(UserRoleEnum.get_all_roles())),
     rating_review_service: RatingReviewService = Depends(get_rating_review_service),
 ) -> FilmRatingReviewBaseResponse:
@@ -54,7 +58,7 @@ async def create(
 )
 async def update(
     rating_review_data: FilmRatingReviewCreateUpdate,
-    rating_review_id: UUID,
+    rating_review_id: str,
     rating_review_service: RatingReviewService = Depends(get_rating_review_service),
 ) -> FilmRatingReviewBaseResponse:
     """
@@ -83,7 +87,7 @@ async def update(
     dependencies=[Depends(role_dependency(UserRoleEnum.get_all_roles()))],
 )
 async def delete(
-    rating_review_id: UUID,
+    rating_review_id: str,
     rating_review_service: RatingReviewService = Depends(
         get_rating_review_service
     ),
@@ -99,4 +103,4 @@ async def delete(
     """
     await rating_review_service.delete(rating_review_id=rating_review_id)
 
-    return DeleteRatingReviewResponse(message="Review rating deleted successfully")
+    return DeleteRatingReviewResponse(message="Review rating deleted successfully", rating_review_id=rating_review_id)

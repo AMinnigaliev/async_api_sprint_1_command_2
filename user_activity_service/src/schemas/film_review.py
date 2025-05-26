@@ -1,5 +1,4 @@
 from datetime import datetime
-from uuid import UUID
 
 from pydantic import BaseModel, Field
 
@@ -10,9 +9,9 @@ class FilmReviewCreateUpdate(BaseModel):
 
 
 class FilmReviewResponse(BaseModel):
-    id: str = Field(..., alias="_id", description="ID")
-    user_id: UUID = Field(..., description="ID пользователя")
-    film_id: UUID = Field(..., description="ID фильма")
+    id: str = Field(..., description="ID")
+    user_id: str = Field(..., description="ID пользователя")
+    film_id: str = Field(..., description="ID фильма")
     users_film_rating_id: str = Field(
         ..., description="ID оценки фильма пользователем"
     )
@@ -25,7 +24,7 @@ class FilmReviewResponse(BaseModel):
 
 
 class FilmReviewsLstResponse(BaseModel):
-    total: str = Field(..., description="Общее кол-во рецензий")
+    total: int = Field(..., description="Общее кол-во рецензий")
     page: int = Field(..., description="Номер страницы")
     per_page: int = Field(..., description="Кол-во рецензий на странице")
     total_pages: int = Field(..., description="Общее кол-во страниц")
