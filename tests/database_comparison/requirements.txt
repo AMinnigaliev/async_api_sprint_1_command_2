@@ -1,0 +1,4 @@
+python-dotenv==1.0.1
+pymongo==4.13.0
+psycopg==3.2.9
+pydantic==2.10.6

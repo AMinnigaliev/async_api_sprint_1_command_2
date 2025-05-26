@@ -56,3 +56,6 @@ opentelemetry-exporter-otlp-proto-http==1.32.0
 limits==4.7.3
 user-agents==2.2.0
 pycountry==24.6.1
+structlog==24.1.0
+python-json-logger==2.0.7
+sentry-sdk==0.10.2
