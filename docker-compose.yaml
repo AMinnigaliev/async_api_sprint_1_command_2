@@ -15,6 +15,7 @@ services:
       - auth_service
       - movies_service
       - events_service
+      - user_activity_service
     networks:
       - sec_network
 
@@ -75,6 +76,20 @@ services:
     networks:
       - sec_network
 
+  user_activity_service:
+    build: user_activity_service
+    container_name: ${USER_ACTIVITY_SERVICE_HOST}
+    restart: unless-stopped
+    expose:
+      - "${USER_ACTIVITY_SERVICE_PORT}"
+    depends_on:
+      mongos2:
+        condition: service_healthy
+    env_file:
+      - .env
+    networks:
+      - sec_network
+
   redis:
     image: redis:6.2
     container_name: ${REDIS_HOST}
@@ -82,6 +97,8 @@ services:
     restart: unless-stopped
     expose:
       - "${REDIS_PORT}"
+    ports:
+      - "${REDIS_PORT}:${REDIS_PORT}"
     healthcheck:
       test: [ "CMD", "redis-cli", "-p", "${REDIS_PORT}", "--raw", "-a", "${REDIS_PASSWORD}", "ping" ]
       interval: 10s
@@ -362,7 +379,7 @@ services:
 
   clickhouse:
     image: clickhouse/clickhouse-server:25.4.2
-    container_name: clickhouse
+    container_name: ${CLICKHOUSE_HOST}
     environment:
       - CLICKHOUSE_DB=$CLICKHOUSE_DB
       - CLICKHOUSE_USER=$CLICKHOUSE_USER
@@ -371,6 +388,243 @@ services:
       - clickhouse_data:/var/lib/clickhouse
     networks:
       - sec_network
+
+  mongors1n1:
+    container_name: mongors1n1
+    image: mongo:7.0
+    command: mongod --shardsvr --replSet mongors1 --dbpath /data/db --port 27017
+    expose:
+      - "27017"
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ./mongo/mongo_clusters/rs1n1:/data/db
+    networks:
+      - sec_network
+    healthcheck:
+      test: [ "CMD", "mongosh", "--eval", "db.adminCommand('ping')" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  mongors1n2:
+    container_name: mongors1n2
+    image: mongo:7.0
+    command: mongod --shardsvr --replSet mongors1 --dbpath /data/db --port 27017
+    expose:
+      - "27017"
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ./mongo/mongo_clusters/rs1n2:/data/db
+    networks:
+      - sec_network
+    healthcheck:
+      test: [ "CMD", "mongosh", "--eval", "db.adminCommand('ping')" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  mongors1n3:
+    container_name: mongors1n3
+    image: mongo:7.0
+    command: mongod --shardsvr --replSet mongors1 --dbpath /data/db --port 27017
+    expose:
+      - "27017"
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ./mongo/mongo_clusters/rs1n3:/data/db
+    networks:
+      - sec_network
+    healthcheck:
+      test: [ "CMD", "mongosh", "--eval", "db.adminCommand('ping')" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  mongors2n1:
+    container_name: mongors2n1
+    image: mongo:7.0
+    command: mongod --shardsvr --replSet mongors2 --dbpath /data/db --port 27017
+    expose:
+      - "27017"
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ./mongo/mongo_clusters/rs2n1:/data/db
+    networks:
+      - sec_network
+    healthcheck:
+      test: [ "CMD", "mongosh", "--eval", "db.adminCommand('ping')" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  mongors2n2:
+    container_name: mongors2n2
+    image: mongo:7.0
+    command: mongod --shardsvr --replSet mongors2 --dbpath /data/db --port 27017
+    expose:
+      - "27017"
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ./mongo/mongo_clusters/rs2n2:/data/db
+    networks:
+      - sec_network
+    healthcheck:
+      test: [ "CMD", "mongosh", "--eval", "db.adminCommand('ping')" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  mongors2n3:
+    container_name: mongors2n3
+    image: mongo:7.0
+    command: mongod --shardsvr --replSet mongors2 --dbpath /data/db --port 27017
+    expose:
+      - "27017"
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ./mongo/mongo_clusters/rs2n3:/data/db
+    networks:
+      - sec_network
+    healthcheck:
+      test: [ "CMD", "mongosh", "--eval", "db.adminCommand('ping')" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  mongocfg1:
+    container_name: mongocfg1
+    image: mongo:7.0
+    command: mongod --configsvr --replSet mongors1conf --dbpath /data/db --port 27017
+    expose:
+      - "27017"
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ./mongo/mongo_clusters/cfg1:/data/db
+    networks:
+      - sec_network
+    healthcheck:
+      test: [ "CMD", "mongosh", "--eval", "db.adminCommand('ping')" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  mongocfg2:
+    container_name: mongocfg2
+    image: mongo:7.0
+    command: mongod --configsvr --replSet mongors1conf --dbpath /data/db --port 27017
+    expose:
+      - "27017"
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ./mongo/mongo_clusters/cfg2:/data/db
+    networks:
+      - sec_network
+    healthcheck:
+      test: [ "CMD", "mongosh", "--eval", "db.adminCommand('ping')" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  mongocfg3:
+    container_name: mongocfg3
+    image: mongo:7.0
+    command: mongod --configsvr --replSet mongors1conf --dbpath /data/db --port 27017
+    expose:
+      - "27017"
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ./mongo/mongo_clusters/cfg3:/data/db
+    networks:
+      - sec_network
+    healthcheck:
+      test: [ "CMD", "mongosh", "--eval", "db.adminCommand('ping')" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  mongos1:
+    container_name: mongos1
+    image: mongo:7.0
+    depends_on:
+      mongocfg1:
+        condition: service_healthy
+      mongocfg2:
+        condition: service_healthy
+      mongocfg3:
+        condition: service_healthy
+      mongors1n1:
+        condition: service_healthy
+      mongors1n2:
+        condition: service_healthy
+      mongors1n3:
+        condition: service_healthy
+      mongors2n1:
+        condition: service_healthy
+      mongors2n2:
+        condition: service_healthy
+      mongors2n3:
+        condition: service_healthy
+    command: >
+      sh -c '
+        if [ ! -f /init_files/.init_done ]; then
+          echo "Настройка серверов конфигурации и сбор реплик шардов MongoDB..."
+          bash /init_files/init_mongos1.sh \
+            || { echo "Ошибка при выполнении init_mongos1.sh"; exit 1; }
+          echo "Настройка серверов конфигурации и сбор реплик шардов MongoDB завершено."
+          touch /init_files/.init_done
+        fi &&
+        exec mongos \
+          --configdb mongors1conf/mongocfg1:27017,mongocfg2:27017,mongocfg3:27017 \
+          --port 27017 \
+          --bind_ip_all
+      '
+    expose:
+      - "27017"
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ./mongo/init_files/init_mongos1.sh:/init_files/init_mongos1.sh:ro
+    networks:
+      - sec_network
+    healthcheck:
+      test: [ "CMD", "mongosh", "--eval", "db.adminCommand('ping')" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  mongos2:
+    container_name: mongos2
+    image: mongo:7.0
+    depends_on:
+      mongos1:
+        condition: service_healthy
+    command: >
+      sh -c '
+        if [ ! -f /init_files/.init_done ]; then
+          echo "Инициализация шардированного кластера MongoDB..."
+          bash /init_files/init_mongos2.sh \
+            || { echo "Ошибка при выполнении init_mongos2.sh"; exit 1; }
+          echo "Инициализация MongoDB успешно выполнена."
+          touch /init_files/.init_done
+        fi &&
+        exec mongos \
+          --configdb mongors1conf/mongocfg1:27017,mongocfg2:27017,mongocfg3:27017 \
+          --port 27017 \
+          --bind_ip_all
+      '
+    environment:
+      - MONGO_NAME=${MONGO_NAME}
+    expose:
+      - "27017"
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ./mongo/init_files/init_mongos2.sh:/init_files/init_mongos2.sh:ro
+    networks:
+      - sec_network
+    healthcheck:
+      test: [ "CMD", "mongosh", "--eval", "db.adminCommand('ping')" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
 networks:
   sec_network:
