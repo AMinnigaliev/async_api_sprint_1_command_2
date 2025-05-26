@@ -26,6 +26,7 @@ class BookmarkService:
     async def create(self, film_id: UUID, payload: dict) -> BookmarkResponse:
         """Добавить пользовательскую закладку на фильм."""
         user_id = payload.get("user_id")
+        film_id = str(film_id)
 
         logger.info(
             "Добавление пользовательской закладки на фильм. "
@@ -33,9 +34,18 @@ class BookmarkService:
             film_id, user_id
         )
 
+        existing = await self.collection.find_one(
+            {"user_id": user_id, "film_id": film_id}
+        )
+        if existing:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Bookmark already exists",
+            )
+
         doc = {
-            "user_id": str(user_id),
-            "film_id": str(film_id),
+            "user_id": user_id,
+            "film_id": film_id,
             "created_at": datetime.now(UTC),
         }
 

@@ -83,7 +83,7 @@ class FilmRatingService:
             "фильма по ID %s",
             film_id,
         )
-        doc = await self.collection_overall.find_one({"film_id": film_id})
+        doc = await self.collection_overall.find_one({"film_id": str(film_id)})
         if not doc:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -100,6 +100,7 @@ class FilmRatingService:
     ) -> FilmRatingResponse:
         """Добавить пользовательскую оценку фильма."""
         user_id = payload.get("user_id")
+        film_id = str(film_id)
 
         logger.info(
             "Добавление пользовательской оценки фильма. "
@@ -107,12 +108,20 @@ class FilmRatingService:
             film_id, user_id, rating
         )
 
-        now = datetime.now(UTC)
+        existing = await self.collection_ratings.find_one(
+            {"user_id": user_id, "film_id": film_id}
+        )
+        if existing:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="The rating already exists",
+            )
+
         doc = {
-            "film_id": str(film_id),
-            "user_id": str(user_id),
+            "film_id": film_id,
+            "user_id": user_id,
             "rating": rating,
-            "created_at": now,
+            "created_at": datetime.now(UTC),
         }
         try:
             result = await self.collection_ratings.insert_one(doc)
@@ -142,8 +151,6 @@ class FilmRatingService:
         )
 
         _id = get_object_id(rating_id)
-        now = datetime.now(UTC)
-
         existing = await self.collection_ratings.find_one(
             {"_id": _id, "user_id": user_id}
         )
@@ -154,9 +161,10 @@ class FilmRatingService:
             )
 
         film_id = existing.get("film_id")
+        now = datetime.now(UTC)
 
         await self.collection_ratings.update_one(
-            {"_id": rating_id, "user_id": user_id},
+            {"_id": _id, "user_id": user_id},
             {"$set": {"rating": new_rating, "modified_at": now}},
         )
 

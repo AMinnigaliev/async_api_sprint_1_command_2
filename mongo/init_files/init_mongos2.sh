@@ -31,7 +31,7 @@ declare -A shards=(
 )
 for coll in "${!shards[@]}"; do
   key=${shards[$coll]}
-  echo -n "  $coll ➟ $key… "
+  echo -n "  $coll -> $key... "
   mongosh --host "mongos1" --eval "
     sh.shardCollection(\"$MONGO_NAME.$coll\", { $key: 'hashed' });
   "
