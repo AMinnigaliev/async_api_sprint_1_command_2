@@ -1,0 +1,5 @@
+celery==5.5.2
+pydantic==2.11.5
+pydantic-settings==2.9.1
+sqlalchemy==2.0.38
+python-dotenv==1.1.0
