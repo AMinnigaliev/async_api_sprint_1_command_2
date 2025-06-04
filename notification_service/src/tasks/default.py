@@ -1,9 +1,11 @@
+from datetime import datetime, timedelta
 from typing import Any
 
 from celery import Task
+from sqlalchemy.sql.base import elements
 
 from celery_app import app
-from core import logger, CeleryBaseException
+from core import logger, CeleryBaseException, celery_config
 from models import DefaultTaskModel, TaskMetaModel
 
 
@@ -39,18 +41,23 @@ class DefaultTask(Task):
 
     def run(self, *args, **kwargs) -> None:
         try:
-            app.tasks[self._task_model.task_name].apply_async(
-                task_id=self._task_model.meta.task_id,
-                eta=self._task_model.meta.execution_at,
-                kwargs={
-                    "meta": {
-                        "x_request_id": self._task_model.meta.x_request_id,
-                        "relevance_at": self._task_model.meta.relevance_at,
-                    },
-                    "data": self._task_model.notification_data,
-                    "delivery_methods": self._task_model.delivery_methods,
+            tasks_kwargs = {
+                "meta": {
+                    "x_request_id": self._task_model.meta.x_request_id,
+                    "relevance_at": self._task_model.meta.relevance_at,
                 },
-            )
+                "notification_data": self._task_model.notification_data,
+                "delivery_methods": self._task_model.delivery_methods,
+            }
+            if execution_at := self._task_model.meta.execution_at:  # TODO:
+                app.tasks[self._task_model.task_name].apply_async(
+                    countdown=10,  # TODO:
+                    queue=celery_config.real_time_group,
+                    kwargs=tasks_kwargs,
+                )
+
+            else:
+                app.tasks[self._task_model.task_name].apply_async(kwargs=tasks_kwargs)
 
             log_msg = (
                 f"Create Task(UID: {self._task_model.meta.task_id}, name:'{self._task_model.task_name}'); "

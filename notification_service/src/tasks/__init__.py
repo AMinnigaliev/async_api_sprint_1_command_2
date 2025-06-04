@@ -1,7 +1,9 @@
 from celery_app import app
 from .default import DefaultTask
-from .real_time.simple_task import SimpleSum
+from .real_time.admin_info_message import AdminInfoMessage
 
+# Default
 app.register_task(DefaultTask())
 
-app.register_task(SimpleSum())
+# RealTimeQueue
+app.register_task(AdminInfoMessage())

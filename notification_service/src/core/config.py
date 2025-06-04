@@ -2,6 +2,7 @@ import os
 from typing import Any
 
 from kombu import Exchange, Queue
+from jinja2 import Environment, FileSystemLoader
 from pydantic import Field, computed_field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -17,12 +18,23 @@ class Configs(BaseSettings):
     base_dir: str = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     log_format: str = Field(default="%(asctime)s - %(levelname)s - %(message)s", alias="LOG_FORMAT")
 
+    @computed_field
+    @property
+    def template_env(self) -> Environment:
+        env = Environment(loader=FileSystemLoader(os.path.join(self.base_dir, "templates")))
+        return env
+
     # RabbitMQ:
     rmq_user: str = Field(default="guest", alias="RABBITMQ_DEFAULT_USER")
     rmq_password: str  = Field(default="guest", alias="RABBITMQ_DEFAULT_PASS")
     rmq_host: str  = Field(default="localhost", alias="RABBITMQ_HOST")
     rmq_port: str | int  = Field(default=5672, alias="RABBITMQ_PORT")
     rmq_vhost: str  = Field(default="/", alias="RABBITMQ_VHOST")
+
+    @computed_field
+    @property
+    def rmq_url(self) -> str:
+        return f"amqp://{self.rmq_user}:{self.rmq_password}@{self.rmq_host}:{self.rmq_port}{self.rmq_vhost}"
 
     # Postgres
     postgres_driver: str = Field(default="postgresql", alias="PG_DRIVER_NAME")
@@ -40,10 +52,8 @@ class CeleryConfigs(Configs):
     @computed_field
     @property
     def broker_url(self) -> str:
-        return os.getenv(
-            "CELERY_BROKER_URL",
-            default=f"amqp://{self.rmq_user}:{self.rmq_password}@{self.rmq_host}:{self.rmq_port}{self.rmq_vhost}",
-        )
+        return os.getenv("CELERY_BROKER_URL",self.rmq_url)
+
     @computed_field
     @property
     def backend_url(self) -> str:
@@ -132,16 +142,30 @@ class CeleryConfigs(Configs):
             Queue(
                 name=self.default_group,
                 exchange=self.exchanges[self.default_group],
+                routing_key=self.default_group,
             ),
             Queue(
                 name=self.real_time_group,
                 exchange=self.exchanges[self.real_time_group],
+                routing_key=self.real_time_group,
             ),
             Queue(
                 name=self.deferred_group,
                 exchange=self.exchanges[self.deferred_group],
+                routing_key=self.deferred_group,
             ),
         )
+
+    email_queue_name: str = Field(
+        default="email",
+        alias="EMAIL_QUEUE_NAME",
+        description="Название очереди для отправки оповещений через email",
+    )
+    webpush_queue_name: str = Field(
+        default="webpush",
+        alias="WEBPUSH_QUEUE_NAME",
+        description="Название очереди для отправки оповещений через webpush",
+    )
 
     # Tasks by groups
     @computed_field
