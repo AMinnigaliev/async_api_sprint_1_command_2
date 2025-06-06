@@ -3,7 +3,7 @@ from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = os.getenv('SECRET_KEY', 'secret_key')
+SECRET_KEY = os.getenv('SECRET_KEY', 'secret')
 ALGORITHM = "HS256"
 
 DEBUG = os.getenv('DEBUG', False) == 'True'
@@ -25,6 +25,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'movies',
     'users',
+    'notify',
 ]
 
 MIDDLEWARE = [
@@ -60,13 +61,13 @@ WSGI_APPLICATION = 'admin_service.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.getenv('PG_NAME'),
-        'USER': os.getenv('PG_USER'),
-        'PASSWORD': os.getenv('PG_PASSWORD'),
+        'NAME': os.getenv('PG_NAME', 'name'),
+        'USER': os.getenv('PG_USER', 'user'),
+        'PASSWORD': os.getenv('PG_PASSWORD', 'password'),
         'HOST': os.getenv('PG_HOST', '127.0.0.1'),
         'PORT': os.getenv('PG_PORT', 5432),
         'OPTIONS': {
-            'options': '-c search_path=public,admin,content',
+            'options': '-c search_path=public,admin,content,notify',
         },
     }
 }
@@ -86,8 +87,8 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-AUTH_SERVICE_HOST = os.getenv('AUTH_SERVICE_HOST')
-AUTH_SERVICE_PORT = os.getenv('AUTH_SERVICE_PORT')
+AUTH_SERVICE_HOST = os.getenv('AUTH_SERVICE_HOST', '127.0.0.1')
+AUTH_SERVICE_PORT = os.getenv('AUTH_SERVICE_PORT', '8000')
 AUTH_API_LOGIN_URL = (
     f"http://{AUTH_SERVICE_HOST}:{AUTH_SERVICE_PORT}/api/v1/auth/users/login"
 )
@@ -95,6 +96,13 @@ AUTH_USER_MODEL = "users.AdminUser"
 AUTHENTICATION_BACKENDS = [
     'users.backends.AdminBackend',
 ]
+
+NOTIFY_API_SERVICE_HOST = os.getenv('NOTIFY_API_SERVICE_HOST', '127.0.0.1')
+NOTIFY_API_SERVICE_PORT = os.getenv('NOTIFY_API_SERVICE_PORT', '8000')
+NOTIFY_API_URL = (
+    f"http://{NOTIFY_API_SERVICE_HOST}:{NOTIFY_API_SERVICE_PORT}.internal/api"
+    f"/v1/messages/"
+)
 
 LANGUAGE_CODE = 'en-us'
 

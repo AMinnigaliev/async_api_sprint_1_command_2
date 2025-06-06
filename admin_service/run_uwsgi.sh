@@ -3,7 +3,7 @@
 set -e
 
 if [ ! -f /app/.init_done ]; then
-    echo "Создание схемы admin и content в postgres."
+    echo "Создание схемы admin, content и notify в postgres."
     python3 /app/app_init/create_schemas.py || { echo "Ошибка при выполнении create_schemas.py"; exit 1; }
 
     echo "Предварительные операции успешно выполнены."

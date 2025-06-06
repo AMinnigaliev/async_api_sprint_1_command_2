@@ -8,14 +8,16 @@ logger = logging.getLogger(__name__)
 
 
 async def create_schemas() -> None:
-    """Функция создания схем admin и content в postgres."""
-    logger.info("Начало работы скрипта по созданию схемы admin и content.")
+    """Функция создания схем admin, content и notify в postgres."""
+    logger.info(
+        "Начало работы скрипта по созданию схемы admin, content и notify."
+    )
 
     dsn = (
-        f"dbname={os.getenv('PG_NAME')} "
-        f"user={os.getenv('PG_USER')} "
-        f"password={os.getenv('PG_PASSWORD')} "
-        f"host={os.getenv('PG_HOST')} "
+        f"dbname={os.getenv('PG_NAME', 'name')} "
+        f"user={os.getenv('PG_USER', 'user')} "
+        f"password={os.getenv('PG_PASSWORD', 'password')} "
+        f"host={os.getenv('PG_HOST', '127.0.0.1')} "
         f"port={os.getenv('PG_PORT', '5432')}"
     )
     conn = psycopg2.connect(dsn)
@@ -24,6 +26,7 @@ async def create_schemas() -> None:
     with conn.cursor() as cursor:
         cursor.execute("CREATE SCHEMA IF NOT EXISTS admin;")
         cursor.execute("CREATE SCHEMA IF NOT EXISTS content;")
+        cursor.execute("CREATE SCHEMA IF NOT EXISTS notify;")
 
     conn.close()
 
