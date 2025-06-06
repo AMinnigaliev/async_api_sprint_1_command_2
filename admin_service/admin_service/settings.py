@@ -100,8 +100,8 @@ AUTHENTICATION_BACKENDS = [
 NOTIFY_API_SERVICE_HOST = os.getenv('NOTIFY_API_SERVICE_HOST', '127.0.0.1')
 NOTIFY_API_SERVICE_PORT = os.getenv('NOTIFY_API_SERVICE_PORT', '8000')
 NOTIFY_API_URL = (
-    f"http://{NOTIFY_API_SERVICE_HOST}:{NOTIFY_API_SERVICE_PORT}.internal/api"
-    f"/v1/messages/"
+    f"http://{NOTIFY_API_SERVICE_HOST}:{NOTIFY_API_SERVICE_PORT}/api"
+    f"/v1/notify_api/messages/"
 )
 
 LANGUAGE_CODE = 'en-us'

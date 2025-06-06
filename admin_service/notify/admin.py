@@ -39,7 +39,7 @@ class OutgoingMessageAdmin(admin.ModelAdmin):
 
     fieldsets = (
         (None, {
-            'fields': ('title', 'body', 'delivery_methods')
+            'fields': ('title', 'body', 'url', 'delivery_methods')
         }),
         ('Получатели', {
             'fields': ('to_all_users', 'user_ids'),
@@ -75,20 +75,22 @@ class OutgoingMessageAdmin(admin.ModelAdmin):
         user_ids = obj.get_user_ids_list()
         relevance_at = obj.execution_at + timedelta(minutes=30)
 
+        delivery_methods = form.cleaned_data['delivery_methods']
+        method_codes = [method.code for method in delivery_methods]
+
         now = datetime.now(UTC)
         if obj.execution_at < now:
             obj.execution_at = now
 
         payload = {
-            'id': obj.id,
+            'id': str(obj.id),
             'kwargs': {
                 'meta': {
-                    'send_at': datetime.now(UTC).isoformat(),
-                    'X-Request-Id': request_id,
+                    'send_at': now.isoformat(),
                     'execution_at': obj.execution_at.isoformat(),
                     'relevance_at': relevance_at.isoformat(),
                 },
-                'delivery_methods': obj.get_delivery_methods_list(),
+                'delivery_methods': method_codes,
                 'notification_type': 'admin_info_message',
                 'notification_data': {
                     'user_ids': user_ids,
@@ -96,18 +98,19 @@ class OutgoingMessageAdmin(admin.ModelAdmin):
                     'data': {
                         'title': obj.title,
                         'body': obj.body,
+                        'url': obj.url,
                     },
                 },
             },
         }
 
         url = settings.NOTIFY_API_URL
+        headers = {
+            'Content-Type': 'application/json',
+            'X-Request-ID': request_id,
+        }
 
         try:
-            headers = {
-                'Content-Type': 'application/json',
-                'X-Request-ID': request_id,
-            }
             response = requests.post(
                 url, json=payload, headers=headers, timeout=5
             )
