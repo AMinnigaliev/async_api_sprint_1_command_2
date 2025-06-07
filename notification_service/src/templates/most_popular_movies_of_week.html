@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Топ {{ top_count }} самых популярных фильмов прошедшей недели:</title>
+</head>
+<body>
+    <div class="content">
+        {% block content %}
+            {{ username }}, предоставляем вам подборку новых фильмов с самым высоким рейтингом прошедшей недели:
+
+            <ul>
+            {% for movie in movies %}
+                <li>'{{ movie.title }}', iMDB рейтинг - {{ movie.rating }} баллов</li>
+            {% endfor %}
+            </ul>
+        {% endblock %}
+    </div>
+</body>
+</html>

@@ -1,11 +1,12 @@
 import asyncio
 import json
-from typing import Any
+from typing import Any, AsyncGenerator
 
+import aiohttp
 from celery import Task
 from jinja2 import Template
 
-from core import celery_config, CeleryBaseException
+from core import celery_config, CeleryBaseException, logger
 from models import DefaultTaskModel, TaskMetaModel
 from utils.rmq_client import AsyncRabbitMQClient
 
@@ -16,12 +17,13 @@ class AdminInfoMessage(Task):
     name = "admin_info_message"
     queue = celery_config.real_time_group
 
+    CHUNK = 500
+
     def __init__(self) -> None:
         super().__init__()
 
         self._task_model: DefaultTaskModel | None = None
         self._template: Template | None = None
-        self._rmq_client: AsyncRabbitMQClient | None = None
 
     @property
     def task_model(self) -> DefaultTaskModel | None:
@@ -30,7 +32,7 @@ class AdminInfoMessage(Task):
     @property
     def template(self):
         if not self._template:
-            self._template = celery_config.template_env.get_template("admin_info_message.html")
+            self._template = celery_config.jinja_template_env.get_template("admin_info_message.html")
 
         return self._template
 
@@ -44,25 +46,22 @@ class AdminInfoMessage(Task):
 
     @property
     def rmq_email_client(self):
-        if not self._rmq_client:
-            self._rmq_client = AsyncRabbitMQClient(
-                amqp_url=celery_config.rmq_url,
-                queue_name=celery_config.email_queue_name,
-            )
-
-        return self._rmq_client
+        return AsyncRabbitMQClient(
+            amqp_url=celery_config.rmq_url,
+            queue_name=celery_config.email_queue_name,
+        )
 
     @property
     def rmq_webpush_client(self):
-        if not self._rmq_client:
-            self._rmq_client = AsyncRabbitMQClient(
-                amqp_url=celery_config.rmq_url,
-                queue_name=celery_config.webpush_queue_name,
-            )
-
-        return self._rmq_client
+        return AsyncRabbitMQClient(
+            amqp_url=celery_config.rmq_url,
+            queue_name=celery_config.webpush_queue_name,
+        )
 
     def before_start(self, task_id: str, args, kwargs):
+        self._task_model = None
+        self._template = None
+
         meta_: dict[str, Any] = kwargs.get("meta", {})
 
         try:
@@ -76,6 +75,7 @@ class AdminInfoMessage(Task):
                 ),
                 delivery_methods=kwargs["delivery_methods"],
                 notification_data=kwargs["notification_data"],
+                task_name=self.name,
             )
 
         except KeyError as ex:
@@ -86,27 +86,78 @@ class AdminInfoMessage(Task):
 
     async def run_async(self):
         template_data = self.task_model.template_data
-
         base_render_data = {"title": template_data["title"], "body": template_data["body"]}
-        username_by_ids = await self._get_username_by_ids(user_ids=self.task_model.user_ids)
 
         output_data_by_users = dict()
-        for user_id, username in username_by_ids.items():
-            user_render_data = {"username": username, "user_id": user_id, **base_render_data}
-            output_data_by_users[user_id] = self.template.render(user_render_data)
+        async for user_info in self._get_user_info():
+            user_render_data = {
+                "username": f"{user_info.get('first_name', '')} {user_info.get('last_name', '')}",
+                "user_id": user_info["id"],
+                **base_render_data,
+            }
+            output_data_by_users[user_info["id"]] = self.template.render(user_render_data)
 
-        await self._notify(data_for_notification=output_data_by_users)
+            if output_data_by_users and len(output_data_by_users.keys()) >= self.CHUNK:
+                await self._notify(data_for_notification=output_data_by_users)
+                output_data_by_users = dict()
 
-    async def _get_username_by_ids(self, user_ids: list[str]) -> dict[str, str]:  # TODO:
-        return {id_: "qweasd" for id_ in user_ids}
+        if output_data_by_users:
+            await self._notify(data_for_notification=output_data_by_users)
+
+    async def _get_user_info(
+        self,
+        start_page: int = 1,
+        page_size: int = 2_000,
+        max_pages: int | None = None
+    ) -> AsyncGenerator[dict[str, Any], None]:
+        url = f"{celery_config.auth_service_url}/{celery_config.auth_service_get_users_info_uri}"
+        payload = {"user_ids": self.task_model.user_ids} if self.task_model.user_ids else {}
+        current_page = start_page
+        total_pages = None
+
+        async with aiohttp.ClientSession() as session:
+            while True:
+                if max_pages is not None and current_page > max_pages:
+                    break
+
+                params = {"page_number": current_page, "page_size": page_size}
+
+                try:
+                    async with session.post(url=url, params=params, json=payload, timeout=10) as response:
+                        response_data: dict[str, Any] =  await response.json()
+                        meta_: dict[str, str | int] = response_data.get("meta", {})
+                        users_info: list[dict[str, Any]] = response_data.get("users", [])
+
+                        if users_info:
+                            for user_info in users_info:
+                                yield user_info
+
+                        else:
+                            break
+
+                        if total_pages is None and "total_pages" in meta_:
+                            total_pages = meta_["total_pages"]
+
+                        if total_pages is not None and current_page >= total_pages:
+                            break
+
+                        current_page += 1
+                        await asyncio.sleep(1.0)
+
+                except (asyncio.TimeoutError, asyncio.CancelledError, aiohttp.ClientError) as ex:
+                    logger.error(f"Error get users: {ex}")
+                    break
+
+                except Exception as ex:
+                    logger.error(f"not correct_error: {ex}")
+                    break
 
     async def _notify(self, data_for_notification: dict[str, str]):
-        q = 1
         base_message_body = json.dumps(
             {
                 **self.task_model.meta.model_dump(mode="json"),
                 "message_body": data_for_notification,
-            }
+            },
         )
 
         if self.need_email_notification:

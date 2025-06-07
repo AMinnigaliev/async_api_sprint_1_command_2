@@ -626,6 +626,72 @@ services:
       timeout: 5s
       retries: 5
 
+  rabbitmq:
+    image: rabbitmq:3-management
+    restart: always
+    hostname: rabbitmq
+    environment:
+      - RABBITMQ_DEFAULT_USER=${RABBITMQ_DEFAULT_USER}
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_DEFAULT_PASS}
+    ports:
+      - 15672:15672
+      - 5672:5672
+    expose:
+      - "15672"
+      - "5672"
+    networks:
+      - sec_network
+
+  postgres-celery:
+    image: postgres
+    container_name: postgres-celery
+    restart: always
+    environment:
+      - POSTGRES_DB=${POSTGRES_CELERY_DB}
+      - POSTGRES_USER=${POSTGRES_CELERY_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_CELERY_PASSWORD}
+    ports:
+      - 5433:5432
+    expose:
+      - "5433"
+    networks:
+      - sec_network
+    volumes:
+      - pg_celery_data:/var/lib/postgresql/data
+
+  celery-worker:
+    build: ./notification_service
+    command: celery --app=celery_app worker --loglevel=info
+    depends_on:
+      - postgres-celery
+      - rabbitmq
+      - auth_service
+      - movies_service
+    networks:
+      - sec_network
+
+  celery-beat:
+    build: ./notification_service
+    command: celery --app=celery_app beat --loglevel=info
+    depends_on:
+      - postgres-celery
+      - rabbitmq
+      - auth_service
+      - movies_service
+    networks:
+      - sec_network
+
+  celery-flower:
+    build: ./notification_service
+    command: celery --app=celery_app flower --port=5555
+    ports:
+      - "5555:5555"
+    depends_on:
+      - postgres-celery
+      - rabbitmq
+    networks:
+      - sec_network
+
 networks:
   sec_network:
     driver: bridge
@@ -636,5 +702,6 @@ volumes:
   sentry-data:
   sentry-postgres:
   pg_data:
+  pg_celery_data:
   static_media_volume:
   clickhouse_data:

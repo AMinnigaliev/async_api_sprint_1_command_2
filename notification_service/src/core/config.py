@@ -20,14 +20,14 @@ class Configs(BaseSettings):
 
     @computed_field
     @property
-    def template_env(self) -> Environment:
+    def jinja_template_env(self) -> Environment:
         env = Environment(loader=FileSystemLoader(os.path.join(self.base_dir, "templates")))
         return env
 
     # RabbitMQ:
     rmq_user: str = Field(default="guest", alias="RABBITMQ_DEFAULT_USER")
     rmq_password: str  = Field(default="guest", alias="RABBITMQ_DEFAULT_PASS")
-    rmq_host: str  = Field(default="localhost", alias="RABBITMQ_HOST")
+    rmq_host: str  = Field(default="rabbitmq", alias="RABBITMQ_HOST")
     rmq_port: str | int  = Field(default=5672, alias="RABBITMQ_PORT")
     rmq_vhost: str  = Field(default="/", alias="RABBITMQ_VHOST")
 
@@ -37,12 +37,40 @@ class Configs(BaseSettings):
         return f"amqp://{self.rmq_user}:{self.rmq_password}@{self.rmq_host}:{self.rmq_port}{self.rmq_vhost}"
 
     # Postgres
-    postgres_driver: str = Field(default="postgresql", alias="PG_DRIVER_NAME")
-    postgres_db: str = Field(default="postgres", alias="PG_NAME")
-    postgres_user: str = Field(default="user", alias="PG_USER")
-    postgres_password: str = Field(default="password", alias="PG_PASSWORD")
-    postgres_host: str = Field(default="127.0.0.1", alias="PG_HOST")
-    postgres_port: int = Field(default=5432, alias="PG_PORT")
+    postgres_driver: str = Field(default="postgresql", alias="POSTGRES_CELERY_DRIVER_NAME")
+    postgres_db: str = Field(default="postgres", alias="POSTGRES_CELERY_DB")
+    postgres_user: str = Field(default="user", alias="POSTGRES_CELERY_USER")
+    postgres_password: str = Field(default="password", alias="POSTGRES_CELERY_PASSWORD")
+    postgres_host: str = Field(default="postgres-celery", alias="POSTGRES_CELERY_HOST")
+    postgres_port: int = Field(default=5432, alias="POSTGRES_CELERY_PORT")
+
+    @computed_field
+    @property
+    def pg_url(self) -> str:
+        return (
+            f"db+{self.postgres_driver}://{self.postgres_user}:{self.postgres_password}@"
+            f"{self.postgres_host}:{self.postgres_port}/{self.postgres_db}"
+        )
+
+    # MoviesService
+    movies_service_host: str = Field(default="movies_service1", alias="MOVIES_SERVICE_HOST")
+    movies_service_port: str = Field(default="8000", alias="MOVIES_SERVICE_PORT")
+    movies_service_film_search_internal_uri: str = Field(default="api/v1/internal/movies/films/search")
+
+    @computed_field
+    @property
+    def movies_service_url(self) -> str:
+        return f"http://{self.movies_service_host}:{self.movies_service_port}"
+
+    # AuthService
+    auth_service_host: str = Field(default="auth_service", alias="AUTH_SERVICE_HOST")
+    auth_service_port: str = Field(default="8000", alias="AUTH_SERVICE_PORT")
+    auth_service_get_users_info_uri: str = Field(default="api/v1/internal/user/info")
+
+    @computed_field
+    @property
+    def auth_service_url(self) -> str:
+        return f"http://{self.auth_service_host}:{self.auth_service_port}"
 
 
 class CeleryConfigs(Configs):
@@ -57,13 +85,7 @@ class CeleryConfigs(Configs):
     @computed_field
     @property
     def backend_url(self) -> str:
-        return os.getenv(
-            "CELERY_BACKEND_URL",
-            default=(
-                f"db+{self.postgres_driver}://{self.postgres_user}:{self.postgres_password}@"
-                f"{self.postgres_host}:{self.postgres_port}/{self.postgres_db}"
-            ),
-        )
+        return os.getenv("CELERY_BACKEND_URL", default=self.pg_url)
 
     # Serialization task
     task_serializer: str = Field(
@@ -81,6 +103,7 @@ class CeleryConfigs(Configs):
         alias="CELERY_ACCEPT_CONTENT",
         description="Разрешенный тип данных для задач",
     )
+    task_expires: int = Field(default=7200, alias="CELERY_TASK_EXPIRES")
 
     # Timezone
     enable_utc: bool = Field(default=True, alias="CELERY_ENABLE_UTC")
@@ -156,6 +179,17 @@ class CeleryConfigs(Configs):
             ),
         )
 
+    # Tasks by groups
+    @computed_field
+    @property
+    def task_routes(self) -> dict[str, dict[str, Any]]:
+        return {
+            "tasks.default.default_task": {"queue": self.default_group},
+            f"tasks.{self.real_time_group}.*": {"queue": self.real_time_group},
+            f"tasks.{self.deferred_group}.*": {"queue": self.deferred_group},
+        }
+
+    # Notification adapters queues
     email_queue_name: str = Field(
         default="email",
         alias="EMAIL_QUEUE_NAME",
@@ -166,16 +200,6 @@ class CeleryConfigs(Configs):
         alias="WEBPUSH_QUEUE_NAME",
         description="Название очереди для отправки оповещений через webpush",
     )
-
-    # Tasks by groups
-    @computed_field
-    @property
-    def task_routes(self) -> dict[str, dict[str, Any]]:
-        return {
-            "tasks.default.default_task": {"queue": self.default_group},
-            f"tasks.{self.real_time_group}.*": {"queue": self.real_time_group},
-            f"tasks.{self.deferred_group}.*": {"queue": self.deferred_group},
-        }
 
 
 config = Configs()

@@ -10,6 +10,7 @@ class TaskMetaModel(BaseModel):
     x_request_id: str | None = Field(default=None, description="ID запроса")
     send_at: str | None = Field(default=None, description="Дата и время отправки задачи на выполнение (iso)")
     execution_at: str | None = Field(default=None, description="Дата и время выполнения задачи (iso)")
+    countdown: int | None = Field(default=None, description="Через сколько секунд выполнить задачу")
     relevance_at: str | None = Field(
         default=None,
         description="До какого периода задача актуальна для выполнения (iso)",
@@ -20,8 +21,8 @@ class DefaultTaskModel(BaseModel):
     """Модель данных для Default-задачи."""
 
     meta: TaskMetaModel
-    delivery_methods: list[str] = Field(description="Методы оповещения")
-    notification_data: dict[Any, Any] = Field(description="Данные для формирования оповещения")
+    delivery_methods: list[str] | None = Field(default=None, description="Методы оповещения")
+    notification_data: dict[Any, Any] | None = Field(default=None, description="Данные для формирования оповещения")
     task_name: str | None = Field(default=None, description="Наименование задачи")
 
     @property
@@ -30,4 +31,4 @@ class DefaultTaskModel(BaseModel):
 
     @property
     def user_ids(self) -> list[str]:
-        return self.notification_data.get("user_ids")
+        return self.notification_data.get("user_ids", [])

@@ -5,6 +5,7 @@ from fastapi.responses import ORJSONResponse
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 
 from src.api.v1 import films, genres, healthcheck, persons
+from src.api.internal.v1 import films as internal_films
 from src.core.config import settings
 from src.db.elastic import get_elastic
 from src.db.redis_client import get_redis_cache
@@ -24,7 +25,12 @@ app = FastAPI(
     ]
 )
 FastAPIInstrumentor.instrument_app(app)
+
+# Route-внешние (используются пользователями)
 api_router = APIRouter(prefix="/api/v1")
+
+# Route-внутренние (используются для взаимодействия с внутренними сервисами)
+internal_api_router = APIRouter(prefix="/api/v1/internal")
 
 
 @app.on_event('startup')
@@ -92,7 +98,7 @@ async def shutdown():
         await es.close()
 
 
-# Подключение роутеров
+# Подключение Route - внешних
 api_router.include_router(
     films.router, prefix="/movies/films", tags=["films"]
 )
@@ -105,8 +111,14 @@ api_router.include_router(
 api_router.include_router(
     healthcheck.router, prefix="/movies", tags=["healthcheck"]
 )
-
 app.include_router(api_router)
+
+# Подключение Route - внутренних
+internal_api_router.include_router(
+    internal_films.router, prefix="/movies/films", tags=["internal_films"]
+)
+app.include_router(internal_api_router)
+
 
 # Middleware:
 app.add_middleware(AsyncRateLimitMiddleware)

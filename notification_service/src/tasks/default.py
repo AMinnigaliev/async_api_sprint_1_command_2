@@ -26,10 +26,11 @@ class DefaultTask(Task):
             self._task_model = DefaultTaskModel(
                 meta=TaskMetaModel(
                     task_id=task_id,
-                    x_request_id=meta_.get("x-Request-Id"),  # TODO:
+                    x_request_id=meta_.get("x-Request-Id"),
                     send_at=meta_.get("send_at"),
                     execution_at=meta_.get("execution_at"),
                     relevance_at=meta_.get("relevance_at"),
+                    countdown=meta_.get("countdown"),
                 ),
                 delivery_methods=kwargs["delivery_methods"],
                 task_name=kwargs["notification_type"],
@@ -49,11 +50,21 @@ class DefaultTask(Task):
                 "notification_data": self._task_model.notification_data,
                 "delivery_methods": self._task_model.delivery_methods,
             }
-            if execution_at := self._task_model.meta.execution_at:  # TODO:
+
+            if execution_at := self._task_model.meta.execution_at:
                 app.tasks[self._task_model.task_name].apply_async(
-                    countdown=10,  # TODO:
+                    eta=datetime.fromisoformat(execution_at),
                     queue=celery_config.real_time_group,
                     kwargs=tasks_kwargs,
+                    expires=celery_config.task_expires,
+                )
+
+            elif countdown := self._task_model.meta.countdown:
+                app.tasks[self._task_model.task_name].apply_async(
+                    countdown=countdown,
+                    queue=celery_config.real_time_group,
+                    kwargs=tasks_kwargs,
+                    expires=celery_config.task_expires,
                 )
 
             else:
