@@ -7,6 +7,7 @@ from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 from sqlalchemy import text
 
 from src.api.v1 import healthcheck, user, user_role, validate
+from src.api.internal.v1 import user as internal_user
 from src.core.config import settings
 from src.db.postgres import async_session
 from src.db.redis_client import get_redis_auth
@@ -26,7 +27,12 @@ app = FastAPI(
     ]
 )
 FastAPIInstrumentor.instrument_app(app)
+
+# Route-внешние (используются пользователями)
 api_router = APIRouter(prefix="/api/v1")
+
+# Route-внутренние (используются для взаимодействия с внутренними сервисами)
+internal_api_router = APIRouter(prefix="/api/v1/internal")
 
 
 @app.on_event('startup')
@@ -89,7 +95,7 @@ async def shutdown():
         await redis_auth.close()
 
 
-# Подключение роутеров
+# Подключение Route - внешних
 api_router.include_router(
     validate.router, prefix="/auth/validate", tags=["Validate"]
 )
@@ -102,8 +108,15 @@ api_router.include_router(
 api_router.include_router(
     healthcheck.router, prefix="/auth", tags=["healthcheck"]
 )
-
 app.include_router(api_router)
+
+
+# Подключение Route - внутренних
+internal_api_router.include_router(
+    internal_user.router, prefix="/user", tags=["internal_users"]
+)
+app.include_router(internal_api_router)
+
 
 # Middleware:
 app.add_middleware(AsyncRateLimitMiddleware)

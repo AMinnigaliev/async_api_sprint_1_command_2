@@ -1,4 +1,5 @@
 from decimal import Decimal
+from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -97,3 +98,8 @@ class Film(FilmBase):
     directors: list[PersonBase] = Field(
         ..., description="Список режиссёров фильма"
     )
+
+
+class SearchParams(BaseModel):
+    query: dict[Any, Any]
+    sort: list[dict[Any, Any]]
