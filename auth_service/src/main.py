@@ -1,5 +1,5 @@
 import logging
-import sentry_init
+# import src.sentry_init
 
 from fastapi import APIRouter, Depends, FastAPI
 from fastapi.responses import ORJSONResponse
