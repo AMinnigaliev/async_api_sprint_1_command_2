@@ -212,7 +212,7 @@ services:
     image: sentry:9
     container_name: sentry-api
     env_file:
-      - ./sentry/.env
+      - .env
     depends_on:
       - db-sentry
       - redis-sentry
@@ -227,7 +227,7 @@ services:
     image: sentry:9
     container_name: sentry-worker
     env_file:
-      - ./sentry/.env
+      - .env
     command: sentry run worker
     depends_on:
       - db-sentry
@@ -241,7 +241,7 @@ services:
     image: sentry:9
     container_name: sentry-cron
     env_file:
-      - ./sentry/.env
+      - .env
     command: sentry run cron
     depends_on:
       - db-sentry
@@ -625,6 +625,31 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+
+  websocket_sender:
+    build: ./websocket_sender
+    container_name: websocket_sender
+    restart: unless-stopped
+
+    # переменные читаем из .env
+    env_file:
+      - .env
+
+    environment:
+      WEBSOCKET_SENDER_PORT: ${WEBSOCKET_SENDER_PORT:-8004}
+
+      # внешний RabbitMQ
+      RABBIT_HOST: ${RABBIT_HOST}
+      RABBIT_PORT: ${RABBIT_PORT:-5672}
+      RABBIT_USER: ${RABBIT_USER}
+      RABBIT_PASSWORD: ${RABBIT_PASSWORD}
+      RABBIT_VHOST: ${RABBIT_VHOST:-/}
+
+      # имя очереди, которую отдаёт notification-worker
+      WEBSOCKET_QUEUE_NAME: ${WEBSOCKET_QUEUE_NAME:-websocket}
+
+    ports:
+      - "8004:8004"
 
 networks:
   sec_network:

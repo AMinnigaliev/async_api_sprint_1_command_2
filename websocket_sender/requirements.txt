@@ -1,0 +1,9 @@
+fastapi==0.111.0
+uvicorn[standard]==0.30.0
+pydantic-settings==2.*
+aio-pika==9.*
+python-jose==3.*
+orjson==3.*
+opentelemetry-instrumentation==0.46b0
+sentry-sdk==2.*
+prometheus-client==0.20.*
