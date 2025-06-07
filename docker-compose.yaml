@@ -692,6 +692,31 @@ services:
     networks:
       - sec_network
 
+  websocket_sender:
+    build: ./websocket_sender
+    container_name: websocket_sender
+    restart: unless-stopped
+
+    # переменные читаем из .env
+    env_file:
+      - .env
+
+    environment:
+      WEBSOCKET_SENDER_PORT: ${WEBSOCKET_SENDER_PORT:-8004}
+
+      # внешний RabbitMQ
+      RABBIT_HOST: ${RABBIT_HOST}
+      RABBIT_PORT: ${RABBIT_PORT:-5672}
+      RABBIT_USER: ${RABBIT_USER}
+      RABBIT_PASSWORD: ${RABBIT_PASSWORD}
+      RABBIT_VHOST: ${RABBIT_VHOST:-/}
+
+      # имя очереди, которую отдаёт notification-worker
+      WEBSOCKET_QUEUE_NAME: ${WEBSOCKET_QUEUE_NAME:-websocket}
+
+    ports:
+      - "8004:8004"
+
 networks:
   sec_network:
     driver: bridge
