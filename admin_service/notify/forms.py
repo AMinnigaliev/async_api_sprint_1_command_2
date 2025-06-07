@@ -1,5 +1,5 @@
 import uuid
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from django.forms import ModelForm, ValidationError
 
@@ -45,7 +45,7 @@ class OutgoingMessageForm(ModelForm):
         кидаем ValidationError.
         """
         execution_at = self.cleaned_data.get('execution_at')
-        max_allowed_time = datetime.now(UTC) + timedelta(weeks=1)
+        max_allowed_time = datetime.now(timezone.utc) + timedelta(weeks=1)
         if execution_at > max_allowed_time:
             raise ValidationError(
                 'Время отправки не может быть больше, чем на 1 неделю вперед.'

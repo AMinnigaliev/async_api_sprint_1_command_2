@@ -1,6 +1,6 @@
 import logging
 import uuid
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 import requests
 from django.conf import settings
@@ -78,7 +78,7 @@ class OutgoingMessageAdmin(admin.ModelAdmin):
         delivery_methods = form.cleaned_data['delivery_methods']
         method_codes = [method.code for method in delivery_methods]
 
-        now = datetime.now(UTC)
+        now = datetime.now(timezone.utc)
         if obj.execution_at < now:
             obj.execution_at = now
 

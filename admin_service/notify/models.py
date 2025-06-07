@@ -1,5 +1,4 @@
 import uuid
-from datetime import UTC, datetime, timedelta
 
 from django.db import models
 from django.utils.translation import gettext_lazy as _
@@ -76,7 +75,6 @@ class OutgoingMessage(models.Model):
     )
     execution_at = models.DateTimeField(
         verbose_name=_('Execution at (date/time)'),
-        default=datetime.now(UTC) + timedelta(minutes=1),
         help_text=_('When the Notify_worker should process this message'),
     )
     success = models.BooleanField(
