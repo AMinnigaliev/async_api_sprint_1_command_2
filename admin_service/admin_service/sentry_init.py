@@ -1,6 +1,7 @@
 import os
-import sentry_sdk
 from importlib import import_module
+
+import sentry_sdk
 
 _framework = os.getenv("SENTRY_FRAMEWORK")  # fastapi / flask / django / plain
 

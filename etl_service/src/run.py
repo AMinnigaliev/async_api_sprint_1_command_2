@@ -1,5 +1,5 @@
 import asyncio
-import sentry_init
+# import sentry_init
 
 from scheduler import EventsETLScheduler, MoviesETLScheduler
 
