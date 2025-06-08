@@ -14,7 +14,7 @@ class RedisService:
     def __init__(self, redis_client: Redis):
         self.redis_client = redis_client
 
-    async def get(self, code: str) -> FullUrl:
+    async def get(self, code: str) -> FullUrl | None:
         """Получает полную ссылку по коду."""
         logger.debug("Получение полной ссылки из Redis: code=%s.", code)
         try:
@@ -26,20 +26,23 @@ class RedisService:
             )
             raise RedisUnavailable()
 
-        logger.info("Ссылка найден в Redis: code=%s. url=%s.", code, url)
+        if url:
+            logger.info("Ссылка найден в Redis: code=%s. url=%s.", code, url)
 
-        try:
-            return FullUrl(**url)
+            try:
+                return FullUrl(url=url)
 
-        except ValidationError as e:
-            logger.warning(
-                "Ошибка при валидации ссылки из Redis в модель %s: %s. "
-                "Данные для валидации: %s",
-                FullUrl.__name__, e, url
-            )
-            await self.delete(code)
+            except ValidationError as e:
+                logger.warning(
+                    "Ошибка при валидации ссылки из Redis в модель %s: %s. "
+                    "Данные для валидации: %s",
+                    FullUrl.__name__, e, url
+                )
+                await self.delete(code)
 
-            return None
+                return None
+
+        return None
 
     async def set(
         self, code: str, url: str, expire: int = settings.short_url_expire
@@ -60,7 +63,7 @@ class RedisService:
             raise RedisUnavailable()
 
         logger.info(
-            "Токен добавлен в Redis: code=%s, expire=%d сек.", code, expire
+            "Ссылка добавлена в Redis: code=%s, expire=%d сек.", code, expire
         )
 
     async def delete(self, code: str) -> None:

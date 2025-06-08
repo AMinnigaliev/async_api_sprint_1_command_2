@@ -5,7 +5,6 @@ from fastapi.responses import ORJSONResponse
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 
 from src.api.v1 import healthcheck, redirect, short_url
-from src.clients.rabbit import RabbitMQConnection
 from src.core.config import settings
 from src.core.logger import LOGGING
 from src.db.redis_client import get_redis_url
@@ -30,7 +29,7 @@ api_router = APIRouter()
 @app.on_event('startup')
 async def startup():
     """
-    Событие запуска приложения: нициализация подключение к Redis.
+    Событие запуска приложения: инициализация подключения к Redis.
     """
     # Инициализация подключения к Redis
     logger.info("Инициализация подключений к Redis...")
@@ -73,7 +72,7 @@ api_router.include_router(
     healthcheck.router, prefix="/api/v1/short_url", tags=["healthcheck"]
 )
 api_router.include_router(
-    redirect.router, prefix="/short_url", tags=["redirect"]
+    redirect.router, tags=["redirect"]
 )
 
 app.include_router(api_router)

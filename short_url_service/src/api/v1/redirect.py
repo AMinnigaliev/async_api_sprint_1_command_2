@@ -17,7 +17,7 @@ async def redirect(
     request_id: str = Depends(get_request_id),
     short_url_service: ShortUrlService = Depends(get_short_url_service),
 ):
-    url = short_url_service.get_url(code)
+    url = await short_url_service.get_url(code)
 
     return RedirectResponse(
         url=url,

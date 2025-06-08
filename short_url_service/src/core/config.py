@@ -29,7 +29,7 @@ class Settings(BaseSettings):
         """
         return self.env_type == "prod"
 
-    short_domain: str = Field("short.local", alias="SHORT_DOMAIN")
+    domain: str = Field("short.local", alias="DOMAIN")
 
     redis_host: str = Field("redis", alias="REDIS_HOST")
     redis_port: int = Field(6379, alias="REDIS_PORT")

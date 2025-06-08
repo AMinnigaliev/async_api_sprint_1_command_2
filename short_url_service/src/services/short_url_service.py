@@ -38,7 +38,7 @@ class ShortUrlService:
         if not await self.redis_url.get(code):
             await self.redis_url.set(code, url)
 
-        short_url = f"http://{settings.short_domain}/{code}"
+        short_url = f"http://{settings.domain}/{code}"
 
         return ShortUrl(short_url=short_url)
 
@@ -50,7 +50,7 @@ class ShortUrlService:
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Short URL not found",
             )
-        return url
+        return url.url
 
 
 @lru_cache()

@@ -8,11 +8,12 @@ from src.services.short_url_service import (ShortUrlService,
 router = APIRouter()
 
 
-@router.post("", dependencies=Depends(get_request_id), response_model=ShortUrl)
+@router.post(
+    "", dependencies=[Depends(get_request_id)], response_model=ShortUrl
+)
 async def create(
     payload: FullUrl,
     short_url_service: ShortUrlService = Depends(get_short_url_service),
-
 ):
     url = str(payload.url)
     return await short_url_service.create(url)
