@@ -13,9 +13,11 @@ services:
     env_file: .env
     depends_on:
       - auth_service
+      - admin_service
       - movies_service
       - events_service
       - user_activity_service
+      - short_url_service
     networks:
       - sec_network
 
@@ -48,8 +50,6 @@ services:
       - "${AUTH_SERVICE_PORT}"
     depends_on:
       redis:
-        condition: service_healthy
-      elasticsearch:
         condition: service_healthy
       postgres:
         condition: service_healthy
@@ -87,6 +87,57 @@ services:
         condition: service_healthy
     env_file:
       - .env
+    networks:
+      - sec_network
+
+  notify_api_service:
+    build: notify_api_service
+    container_name: ${NOTIFY_API_SERVICE_HOST}
+    restart: unless-stopped
+    expose:
+      - "${NOTIFY_API_SERVICE_PORT}"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    env_file:
+      - .env
+    networks:
+      - sec_network
+
+  short_url_service:
+    build: short_url_service
+    container_name: ${SHORT_URL_SERVICE_HOST}
+    restart: unless-stopped
+    expose:
+      - "${SHORT_URL_SERVICE_PORT}"
+    ports:
+      - "8080:${SHORT_URL_SERVICE_PORT}"
+    depends_on:
+      redis:
+        condition: service_healthy
+    env_file:
+      - .env
+    networks:
+      - sec_network
+
+  rabbitmq:
+    image: rabbitmq:3.11-management
+    container_name: ${RABBIT_HOST}
+    restart: unless-stopped
+    expose:
+      - "5672"
+    ports:
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBIT_LOGIN}
+      RABBITMQ_DEFAULT_PASS: ${RABBIT_PASSWORD}
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: [ "CMD", "rabbitmq-diagnostics", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     networks:
       - sec_network
 
@@ -133,142 +184,142 @@ services:
     networks:
       - sec_network
 
-  elasticsearch-logs:
-    image: docker.elastic.co/elasticsearch/elasticsearch:8.6.2
-    container_name: elasticsearch-logs
-    environment:
-      - node.name=elasticsearch-logs
-      - cluster.name=logs-cluster
-      - discovery.type=single-node
-      - ELASTIC_PASSWORD=${LOG_ELASTIC_PASSWORD}
-      - xpack.security.enabled=true
-      - ingest.geoip.downloader.enabled=false
-      - bootstrap.memory_lock=true
-      - ES_JAVA_OPTS=-Xms1g -Xmx1g
-    ulimits:
-      memlock:
-        soft: -1
-        hard: -1
-    volumes:
-      - es-logs-data:/usr/share/elasticsearch/data
-    healthcheck:
-      test: [ "CMD", "curl", "-s", "-f", "${LOG_ELASTIC_SCHEME}://elastic:${LOG_ELASTIC_PASSWORD}@localhost:9200/_cluster/health" ]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-    ports:
-      - "9201:9200"     # наружу -> 9201, внутри -> 9200
-    networks:
-      - sec_network
-
-  kibana-logs:
-    image: docker.elastic.co/kibana/kibana:8.6.2
-    container_name: kibana-logs
-    depends_on:
-      elasticsearch-logs:
-        condition: service_healthy
-    environment:
-      ELASTICSEARCH_HOSTS: "${LOG_ELASTIC_SCHEME}://${LOG_ELASTIC_HOST}:${LOG_ELASTIC_PORT}"
-      ELASTICSEARCH_SERVICEACCOUNT_TOKEN: ${KIBANA_SERVICE_TOKEN}
-    ports:
-      - "5601:5601"
-    networks:
-      - sec_network
-
-  logstash:
-    image: docker.elastic.co/logstash/logstash:8.6.2
-    container_name: logstash
-    depends_on:
-      elasticsearch-logs:
-        condition: service_healthy
-    volumes:
-      - ./logstash/pipeline:/usr/share/logstash/pipeline:ro
-    environment:
-      LOG_ELASTIC_SCHEME: ${LOG_ELASTIC_SCHEME}
-      LOG_ELASTIC_HOST: ${LOG_ELASTIC_HOST}
-      LOG_ELASTIC_PORT: ${LOG_ELASTIC_PORT}
-      LOG_ELASTIC_USERNAME: ${LOG_ELASTIC_USERNAME}
-      LOG_ELASTIC_PASSWORD: ${LOG_ELASTIC_PASSWORD}
-    ports:
-      - "6000:5000"   # TCP-input (json-логхендлеры)
-      - "5044:5044"   # Beats-input (Filebeat)
-    networks:
-      - sec_network
-
-  filebeat:
-    image: docker.elastic.co/beats/filebeat:8.6.2
-    container_name: filebeat
-    user: root                    # нужен доступ к docker.sock
-    volumes:
-      - /var/lib/docker/containers:/var/lib/docker/containers:ro
-      - /var/run/docker.sock:/var/run/docker.sock
-      - ./filebeat/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro
-    depends_on:
-      logstash:
-        condition: service_started
-    networks: [ sec_network ]
-
-  sentry-api:
-    image: sentry:9
-    container_name: sentry-api
-    env_file:
-      - ./sentry/.env
-    depends_on:
-      - db-sentry
-      - redis-sentry
-    ports:
-      - "9000:9000"          # UI → http://localhost:9000
-    networks:
-      - sec_network
-    volumes:
-      - sentry-data:/var/lib/sentry/files
-
-  sentry-worker:
-    image: sentry:9
-    container_name: sentry-worker
-    env_file:
-      - ./sentry/.env
-    command: sentry run worker
-    depends_on:
-      - db-sentry
-      - redis-sentry
-    networks:
-      - sec_network
-    volumes:
-      - sentry-data:/var/lib/sentry/files
-
-  sentry-cron:
-    image: sentry:9
-    container_name: sentry-cron
-    env_file:
-      - ./sentry/.env
-    command: sentry run cron
-    depends_on:
-      - db-sentry
-      - redis-sentry
-    networks:
-      - sec_network
-    volumes:
-      - sentry-data:/var/lib/sentry/files
-
-  db-sentry:
-    image: postgres:12
-    container_name: db-sentry
-    environment:
-      POSTGRES_USER: sentry
-      POSTGRES_PASSWORD: sentry
-      POSTGRES_DB: sentry
-    volumes:
-      - sentry-postgres:/var/lib/postgresql/data
-    networks:
-      - sec_network
-
-  redis-sentry:
-    image: redis:6-alpine
-    container_name: redis-sentry
-    restart: always
-    networks:
-      - sec_network
+#  elasticsearch-logs:
+#    image: docker.elastic.co/elasticsearch/elasticsearch:8.6.2
+#    container_name: elasticsearch-logs
+#    environment:
+#      - node.name=elasticsearch-logs
+#      - cluster.name=logs-cluster
+#      - discovery.type=single-node
+#      - ELASTIC_PASSWORD=${LOG_ELASTIC_PASSWORD}
+#      - xpack.security.enabled=true
+#      - ingest.geoip.downloader.enabled=false
+#      - bootstrap.memory_lock=true
+#      - ES_JAVA_OPTS=-Xms1g -Xmx1g
+#    ulimits:
+#      memlock:
+#        soft: -1
+#        hard: -1
+#    volumes:
+#      - es-logs-data:/usr/share/elasticsearch/data
+#    healthcheck:
+#      test: [ "CMD", "curl", "-s", "-f", "${LOG_ELASTIC_SCHEME}://elastic:${LOG_ELASTIC_PASSWORD}@localhost:9200/_cluster/health" ]
+#      interval: 30s
+#      timeout: 10s
+#      retries: 5
+#    ports:
+#      - "9201:9200"     # наружу -> 9201, внутри -> 9200
+#    networks:
+#      - sec_network
+#
+#  kibana-logs:
+#    image: docker.elastic.co/kibana/kibana:8.6.2
+#    container_name: kibana-logs
+#    depends_on:
+#      elasticsearch-logs:
+#        condition: service_healthy
+#    environment:
+#      ELASTICSEARCH_HOSTS: "${LOG_ELASTIC_SCHEME}://${LOG_ELASTIC_HOST}:${LOG_ELASTIC_PORT}"
+#      ELASTICSEARCH_SERVICEACCOUNT_TOKEN: ${KIBANA_SERVICE_TOKEN}
+#    ports:
+#      - "5601:5601"
+#    networks:
+#      - sec_network
+#
+#  logstash:
+#    image: docker.elastic.co/logstash/logstash:8.6.2
+#    container_name: logstash
+#    depends_on:
+#      elasticsearch-logs:
+#        condition: service_healthy
+#    volumes:
+#      - ./logstash/pipeline:/usr/share/logstash/pipeline:ro
+#    environment:
+#      LOG_ELASTIC_SCHEME: ${LOG_ELASTIC_SCHEME}
+#      LOG_ELASTIC_HOST: ${LOG_ELASTIC_HOST}
+#      LOG_ELASTIC_PORT: ${LOG_ELASTIC_PORT}
+#      LOG_ELASTIC_USERNAME: ${LOG_ELASTIC_USERNAME}
+#      LOG_ELASTIC_PASSWORD: ${LOG_ELASTIC_PASSWORD}
+#    ports:
+#      - "6000:5000"   # TCP-input (json-логхендлеры)
+#      - "5044:5044"   # Beats-input (Filebeat)
+#    networks:
+#      - sec_network
+#
+#  filebeat:
+#    image: docker.elastic.co/beats/filebeat:8.6.2
+#    container_name: filebeat
+#    user: root                    # нужен доступ к docker.sock
+#    volumes:
+#      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+#      - /var/run/docker.sock:/var/run/docker.sock
+#      - ./filebeat/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro
+#    depends_on:
+#      logstash:
+#        condition: service_started
+#    networks: [ sec_network ]
+#
+#  sentry-api:
+#    image: sentry:9
+#    container_name: sentry-api
+#    env_file:
+#      - ./sentry/.env
+#    depends_on:
+#      - db-sentry
+#      - redis-sentry
+#    ports:
+#      - "9000:9000"          # UI → http://localhost:9000
+#    networks:
+#      - sec_network
+#    volumes:
+#      - sentry-data:/var/lib/sentry/files
+#
+#  sentry-worker:
+#    image: sentry:9
+#    container_name: sentry-worker
+#    env_file:
+#      - ./sentry/.env
+#    command: sentry run worker
+#    depends_on:
+#      - db-sentry
+#      - redis-sentry
+#    networks:
+#      - sec_network
+#    volumes:
+#      - sentry-data:/var/lib/sentry/files
+#
+#  sentry-cron:
+#    image: sentry:9
+#    container_name: sentry-cron
+#    env_file:
+#      - ./sentry/.env
+#    command: sentry run cron
+#    depends_on:
+#      - db-sentry
+#      - redis-sentry
+#    networks:
+#      - sec_network
+#    volumes:
+#      - sentry-data:/var/lib/sentry/files
+#
+#  db-sentry:
+#    image: postgres:12
+#    container_name: db-sentry
+#    environment:
+#      POSTGRES_USER: sentry
+#      POSTGRES_PASSWORD: sentry
+#      POSTGRES_DB: sentry
+#    volumes:
+#      - sentry-postgres:/var/lib/postgresql/data
+#    networks:
+#      - sec_network
+#
+#  redis-sentry:
+#    image: redis:6-alpine
+#    container_name: redis-sentry
+#    restart: always
+#    networks:
+#      - sec_network
 
   postgres:
     image: postgres:16-alpine
@@ -626,6 +677,97 @@ services:
       timeout: 5s
       retries: 5
 
+  rabbitmq:
+    image: rabbitmq:3-management
+    restart: always
+    hostname: rabbitmq
+    environment:
+      - RABBITMQ_DEFAULT_USER=${RABBITMQ_DEFAULT_USER}
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_DEFAULT_PASS}
+    ports:
+      - 15672:15672
+      - 5672:5672
+    expose:
+      - "15672"
+      - "5672"
+    networks:
+      - sec_network
+
+  postgres-celery:
+    image: postgres
+    container_name: postgres-celery
+    restart: always
+    environment:
+      - POSTGRES_DB=${POSTGRES_CELERY_DB}
+      - POSTGRES_USER=${POSTGRES_CELERY_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_CELERY_PASSWORD}
+    ports:
+      - 5433:5432
+    expose:
+      - "5433"
+    networks:
+      - sec_network
+    volumes:
+      - pg_celery_data:/var/lib/postgresql/data
+
+  celery-worker:
+    build: ./notification_service
+    command: celery --app=celery_app worker --loglevel=info
+    depends_on:
+      - postgres-celery
+      - rabbitmq
+      - auth_service
+      - movies_service
+    networks:
+      - sec_network
+
+  celery-beat:
+    build: ./notification_service
+    command: celery --app=celery_app beat --loglevel=info
+    depends_on:
+      - postgres-celery
+      - rabbitmq
+      - auth_service
+      - movies_service
+    networks:
+      - sec_network
+
+  celery-flower:
+    build: ./notification_service
+    command: celery --app=celery_app flower --port=5555
+    ports:
+      - "5555:5555"
+    depends_on:
+      - postgres-celery
+      - rabbitmq
+    networks:
+      - sec_network
+
+  websocket_sender:
+    build: ./websocket_sender
+    container_name: websocket_sender
+    restart: unless-stopped
+
+    # переменные читаем из .env
+    env_file:
+      - .env
+
+    environment:
+      WEBSOCKET_SENDER_PORT: ${WEBSOCKET_SENDER_PORT:-8004}
+
+      # внешний RabbitMQ
+      RABBIT_HOST: ${RABBIT_HOST}
+      RABBIT_PORT: ${RABBIT_PORT:-5672}
+      RABBIT_USER: ${RABBIT_USER}
+      RABBIT_PASSWORD: ${RABBIT_PASSWORD}
+      RABBIT_VHOST: ${RABBIT_VHOST:-/}
+
+      # имя очереди, которую отдаёт notification-worker
+      WEBSOCKET_QUEUE_NAME: ${WEBSOCKET_QUEUE_NAME:-websocket}
+
+    ports:
+      - "8004:8004"
+
 networks:
   sec_network:
     driver: bridge
@@ -636,5 +778,7 @@ volumes:
   sentry-data:
   sentry-postgres:
   pg_data:
+  pg_celery_data:
   static_media_volume:
   clickhouse_data:
+  rabbitmq_data:
