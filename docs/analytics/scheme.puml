@@ -13,28 +13,77 @@ System_Ext(mobile, "Mobile App", "Отправляет события и зап�
 
 ' Группа микросервисов как составляющая единой платформы
 System_Boundary(s1, "Movies system") {
-    ' Сервис авторизации
-    Container(auth, "Auth-сервис", "FastAPI", "Выдача, проверка и валидация токенов доступа")
+    Rectangle "Auth part" {
+        ' Сервис авторизации
+        Container(auth, "Auth-сервис", "FastAPI", "Выдача, проверка и валидация токенов доступа")
 
-    ' Сервис кинотеатра
-    Container(movies, "Movies-сервис", "FastAPI", "Просмотр контента кинотеатра")
+       ' Хранилища данных
+        ContainerDb(redis_auth, "Redis db0", "In-memory Key-Value Store", "Статус токенов")
+        ContainerDb(postgres_auth, "PostgreSQL", "Relational Database", "Хранение пользователей")
+}
+    Rectangle "Movies content part" {
+        ' Сервис кинотеатра
+        Container(movies, "Movies-сервис", "FastAPI", "Просмотр контента кинотеатра")
 
-    ' Сервис админпанели
-    Container(admin, "Admin-сервис", "Django", "Веб-интерфейс для управления системой и пользователями")
+        ' Сервис админпанели
+        Container(admin, "Admin-сервис", "Django", "Веб-интерфейс для управления контентом и управления рассылками уведомлений")
 
-    ' Сервисы обработки событий
-    Container(flask, "Event-сервис", "Python + Flask", "Входной шлюз для событий (валидация, обогащение, публикация)")
-    Container(etl, "ETL-сервис", "Python + Scheduler", "Обработка page_view пар и отправка в ClickHouse")
+        ' Сервис ETL контента
+        Container(etl_content, "ETL-сервис(content)", "Python + Scheduler", "Перенос контента из PostgreSQL в Elasticsearch")
 
-    ' Система обмена сообщениями
-    Container(kafka, "Kafka", "Apache Kafka", "Очередь событий")
+        ' Хранилища данных
+        ContainerDb(redis_content, "Redis db1", "In-memory Key-Value Store", "Кеш токенов и контента")
+        ContainerDb(postgres_content, "PostgreSQL", "Relational Database", "Хранение контента и пользователей")
+        ContainerDb(elastic, "Elasticsearch", "Search engine", "Поиск контента")
+    }
+    Rectangle "Event part" {
+        ' Сервис обработки событий
+        Container(event, "Event-сервис", "Python + Flask", "Входной шлюз для событий (валидация, обогащение, публикация)")
 
-    ' Хранилищи данных
-    ContainerDb(redis, "Redis", "In-memory Key-Value Store", "Кеш токенов")
-    ContainerDb(clickhouse, "ClickHouse", "OLAP Database", "Хранение аналитических событий")
-    ContainerDb(postgres, "PostgreSQL", "Relational Database", "Хранение контента и пользователей")
-    ContainerDb(elastic, "Elasticsearch", "Search engine", "Поиск контента")
+        ' Система обмена сообщениями
+        Container(kafka, "Kafka", "Apache Kafka", "Очередь событий")
 
+        ' Сервис ETL событий
+        Container(etl_event, "ETL-сервис(event)", "Python + Scheduler", "Обработка page_view пар и отправка в ClickHouse")
+
+        ' Система обмена сообщениями
+        Container(kafka, "Kafka", "Apache Kafka", "Очередь событий")
+
+        ' Хранилища данных
+        ContainerDb(redis_event, "Redis db3", "In-memory Key-Value Store", "Кеш")
+        ContainerDb(clickhouse, "ClickHouse", "OLAP Database", "Хранение аналитических событий")
+    }
+
+    Rectangle "Notification part" {
+        ' Сервис уведомлений
+        Container(notify_api, "Notify API", "FastAPI", "Приём и управление событиями для отправки уведомлений")
+        Container(notify_worker, "Notify Worker", "Python Worker", "Асинхронная отправка уведомлений пользователям")
+
+        ' Сервис сокращённых ссылок
+        Container(short_link, "Short_link", "FastAPI", "Работа с сокращёнными ссылками")
+
+        ' Очереди
+        Container(rabbitmq_tasks, "RabbitMQ Tasks", "Message Broker", "Очередь задач на отправку")
+        Container(rabbitmq_delivery, "RabbitMQ Delivery", "Message Broker", "Очередь доставки уведомлений")
+
+        ' Отправители
+        Container(sms_sender, "SMS Sender", "Python Worker", "Отправка SMS-сообщений")
+        Container(email_sender, "Email Sender", "Python Worker", "Отправка email-уведомлений")
+        Container(ws_sender, "WebSocket Sender", "Python Worker", "Отправка через WebSocket")
+
+        ' Хранилища данных
+        ContainerDb(postgres_notify, "PostgreSQL", "Relational Database", "Хранение уведомлений и истории отправок")
+        ContainerDb(redis_url, "Redis db14", "In-memory Key-Value Store", "Хранение сокращённых ссылок")
+    }
+
+    Rectangle "UGC part" {
+        ' Сервис пользовательской активности
+        Container(ugc, "User_activity-сервис", "FastAPI", "Пользовательская активность")
+
+        ' Хранилища данных
+        ContainerDb(mongodb, "MongoDB", " Document-oriented DB", "Хранение пользовательской активности")
+        ContainerDb(redis_ugc, "Redis db15", "In-memory Key-Value Store", "Кеш токенов и id контента")
+    }
 }
 
 ' Взаимодействия пользователя
@@ -43,26 +92,59 @@ Rel(user, mobile, "Использует Mobile app")
 Rel(user, admin, "Использует админку", "HTTPS")
 
 ' Взаимодействия приложений с сервисами
-Rel(spa, flask, "Отправляет событие", "HTTPS/JSON")
-Rel(mobile, flask, "Отправляет событие", "HTTPS/JSON")
+Rel(spa, event, "Отправляет событие", "HTTPS/JSON")
+Rel(mobile, event, "Отправляет событие", "HTTPS/JSON")
 Rel(spa, movies, "Взаимодействие с сервисом", "HTTPS/JSON")
 Rel(mobile, movies, "Взаимодействие с сервисом", "HTTPS/JSON")
 Rel(spa, auth, "Взаимодействие с сервисом", "HTTPS/JSON")
 Rel(mobile, auth, "Взаимодействие с сервисом", "HTTPS/JSON")
+Rel(spa, ugc, "Взаимодействие с сервисом", "HTTPS/JSON")
+Rel(mobile, ugc, "Взаимодействие с сервисом", "HTTPS/JSON")
 
-' Межсервисные взаимодействия
+' Взаимодействия подсистемы контента
 Rel(admin, auth, "Проверка прав доступа при входе", "HTTP/REST")
-Rel(admin, postgres, "CRUD контента", "Django ORM")
-Rel(flask, auth, "Проверка токена", "HTTP/JSON")
-Rel(flask, redis, "Кеш токенов", "Redis protocol")
-Rel(flask, kafka, "Публикация событий", "Kafka protocol")
-Rel(etl, kafka, "Читает события", "Kafka consumer")
-Rel(etl, clickhouse, "Запись аналитики", "ClickHouse SQL")
-Rel(etl, postgres, "Читает контент пачками", "SQLAlchemy Async")
-Rel(etl, elastic, "Индексация контента", "Async HTTP/Batch")
-Rel(movies, redis, "Кеш токенов и контента", "Redis protocol")
+Rel(admin, postgres_content, "CRUD контента", "Django ORM")
+Rel(movies, redis_content, "Кеш токенов и контента", "Redis protocol")
 Rel(movies, auth, "Проверка токена", "HTTP/JSON")
 Rel(movies, elastic, "Выполняет полнотекстовый поиск контента по запросам пользователя", "HTTP/JSON")
-Rel(auth, redis, "Кеш токенов", "Redis protocol")
-Rel(auth, postgres, "CRUD пользователей", "SQLAlchemy Async")
+
+' Взаимодействия подсистемы РАА
+Rel(auth, redis_auth, "Состояние токенов", "Redis protocol")
+Rel(auth, postgres_auth, "CRUD пользователей", "SQLAlchemy Async")
+
+' Взаимодействия подсистемы событий
+Rel(event, auth, "Проверка токена", "HTTP/JSON")
+Rel(event, redis_event, "Кеш токенов", "Redis protocol")
+Rel(event, kafka, "Публикация событий", "Kafka protocol")
+Rel(etl_event, kafka, "Читает события", "Kafka consumer")
+Rel(etl_event, clickhouse, "Запись аналитики", "ClickHouse SQL")
+Rel(etl_content, postgres_content, "Читает контент пачками", "SQLAlchemy Async")
+Rel(etl_content, elastic, "Индексация контента", "Async HTTP/Batch")
+
+' Взаимодействия подсистемы пользовательской активности
+Rel(ugc, redis_ugc, "Кеш токенов и id контента", "Redis protocol")
+Rel(ugc, mongodb, "Запись пользовательских действий", "Mongo protocol")
+Rel(ugc, auth, "Проверка токена", "HTTP/JSON")
+Rel(ugc, movies, "Проверка id контента", "HTTP/JSON")
+
+' Взаимодействия подсистемы уведомлений
+Rel(notify_worker, postgres_notify, "Хранение уведомлений", "SQL/ORM")
+
+Rel(notify_api, short_link, "Отложенные сообщения", "HTTP/JSON")
+Rel(short_link, redis_url, "Хранение ссылок", "Redis protocol")
+
+Rel(admin, notify_api, "Управление рассылками", "HTTP/REST")
+Rel(ugc, notify_api, "Управление рассылками", "HTTP/REST")
+
+Rel(notify_api, rabbitmq_tasks, "Публикация задач на отправку", "AMQP")
+Rel(rabbitmq_tasks, notify_worker, "Задачи на отправку", "AMQP")
+
+Rel(notify_worker, rabbitmq_delivery, "Публикация событий доставки", "AMQP")
+Rel(notify_worker, auth, "Получение данных пользователя", "HTTP/JSON")
+Rel(notify_worker, movies, "Получение данных контента", "HTTP/JSON")
+Rel(notify_worker, ugc, "Получение данных UGC", "HTTP/JSON")
+
+Rel(rabbitmq_delivery, sms_sender, "Уведомления на SMS", "AMQP")
+Rel(rabbitmq_delivery, email_sender, "Уведомления на Email", "AMQP")
+Rel(rabbitmq_delivery, ws_sender, "Уведомления через WebSocket", "AMQP")
 @enduml

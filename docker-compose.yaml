@@ -12,11 +12,12 @@ services:
       - ./nginx/data/static.html:/data/static.html
     env_file: .env
     depends_on:
-      - ${AUTH_SERVICE_HOST}
-      - ${ADMIN_SERVICE_HOST}
-      - ${MOVIES_SERVICE_HOST}
+      - auth_service
+      - admin_service
+      - movies_service
       - events_service
-      - ${USER_ACTIVITY_SERVICE_HOST}
+      - user_activity_service
+      - short_url_service
     networks:
       - sec_network
 
@@ -103,6 +104,22 @@ services:
     networks:
       - sec_network
 
+  short_url_service:
+    build: short_url_service
+    container_name: ${SHORT_URL_SERVICE_HOST}
+    restart: unless-stopped
+    expose:
+      - "${SHORT_URL_SERVICE_PORT}"
+    ports:
+      - "8080:${SHORT_URL_SERVICE_PORT}"
+    depends_on:
+      redis:
+        condition: service_healthy
+    env_file:
+      - .env
+    networks:
+      - sec_network
+
   rabbitmq:
     image: rabbitmq:3.11-management
     container_name: ${RABBIT_HOST}
@@ -166,7 +183,7 @@ services:
       - es_data:/usr/share/elasticsearch/data
     networks:
       - sec_network
-#
+
 #  elasticsearch-logs:
 #    image: docker.elastic.co/elasticsearch/elasticsearch:8.6.2
 #    container_name: elasticsearch-logs
@@ -241,7 +258,7 @@ services:
 #      logstash:
 #        condition: service_started
 #    networks: [ sec_network ]
-
+#
 #  sentry-api:
 #    image: sentry:9
 #    container_name: sentry-api

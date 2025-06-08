@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, HttpUrl
 
 
 class NotificationPayload(BaseModel):
@@ -8,7 +8,7 @@ class NotificationPayload(BaseModel):
         None, description="Заголовок уведомления (необязательно)"
     )
     body: str = Field(..., description="Текст уведомления")
-    url: str | None = Field(None, description="Ссылка (необязательно)")
+    url: HttpUrl | None = Field(None, description="Ссылка (необязательно)")
 
 
 class NotificationData(BaseModel):

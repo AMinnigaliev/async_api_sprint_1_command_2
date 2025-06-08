@@ -86,8 +86,7 @@ async def startup():
 @app.on_event('shutdown')
 async def shutdown():
     """
-    Событие завершения работы приложения: закрытие подключений к Redis и
-    Elasticsearch.
+    Событие завершения работы приложения: закрытие подключений к Redis.
     """
     # Закрытие подключений к Redis
     redis_auth = await get_redis_auth()
